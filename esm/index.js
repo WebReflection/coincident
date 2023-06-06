@@ -1,8 +1,11 @@
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = '854ac5c3-44f1-4b2e-8d34-902cf30ef895';
+const CHANNEL = '198405d2-5d0e-4d7a-bc32-c27392730449';
 
-const {BYTES_PER_ELEMENT} = Int32Array;
-const {ceil} = Math;
+// just minifier friendly for Blob Workers' cases ... also safer against monkey-patched globals (don't ask me)
+const {Atomics, Error, Int32Array, JSON, Map, Proxy, SharedArrayBuffer, String, Uint16Array, WeakMap} = globalThis;
+
+const {BYTES_PER_ELEMENT: I32_BYTES} = Int32Array;
+const {BYTES_PER_ELEMENT: UI16_BYTES} = Uint16Array;
 const {fromCharCode} = String;
 
 const context = new WeakMap;
@@ -11,7 +14,7 @@ let uid = 0;
 
 /**
  * Create once a `Proxy` able to orchestrate synchronous `postMessage` out of the box.
- * @param {globalThis} self the context in which code should run
+ * @param {globalThis | Worker} self the context in which code should run
  * @param {{parse: (serialized: string) => any, stringify: (serializable: any) => string}} [JSON] an optional `JSON` like interface to `parse` or `stringify` content
  */
 export default (self, {parse, stringify} = JSON) => {
@@ -22,28 +25,25 @@ export default (self, {parse, stringify} = JSON) => {
         const id = uid++;
 
         // wait until result length is known
-        let sb = new SharedArrayBuffer(BYTES_PER_ELEMENT);
+        let sb = new SharedArrayBuffer(I32_BYTES);
         let i32a = new Int32Array(sb);
         self.postMessage({[CHANNEL]: {action, args, id, sb}});
         Atomics.wait(i32a, 0);
 
         // commit transaction using the right buffer length
-        const length32 = Atomics.load(i32a, 0);
-        const length16 = ceil(length32 / 2);
-        sb = new SharedArrayBuffer(length16 * BYTES_PER_ELEMENT);
+        const length = Atomics.load(i32a, 0);
+        const bytes = UI16_BYTES * length;
+        sb = new SharedArrayBuffer(bytes + (bytes % I32_BYTES));
         i32a = new Int32Array(sb);
-        self.postMessage({[CHANNEL]: {args: [length16], id, sb}});
+        self.postMessage({[CHANNEL]: {id, sb}});
         Atomics.wait(i32a, 0);
 
         // retrieve serialized chars and parse
         let content = '';
-        for (let i = 0; i < length16;) {
-          const c = Atomics.load(i32a, i++);
-          const a = c >> 16;
-          const b = c & 0xFFFF;
+        for (let ui16a = new Uint16Array(sb), i = 0; i < length; i++)
           // TODO: find out if a push + unique fromCharCode has good old limitations/issues
-          content += (i * 2) > length32 ? fromCharCode(a) : fromCharCode(a, b);
-        }
+          //       if not, benchmark switching over single fromCharCode(...pshed) approach
+          content += fromCharCode(Atomics.load(ui16a, i));
         return parse(content);
       },
       set(actions, action, callback) {
@@ -55,13 +55,9 @@ export default (self, {parse, stringify} = JSON) => {
               const i32a = new Int32Array(sb);
               if (!action) {
                 const result = job.get(id);
-                const {length} = result;
                 job.delete(id);
-                for (let i = 0, j = 0; i < args[0]; i++) {
-                  const a = result.charCodeAt(j++) << 16;
-                  const b = j === length ? 0 : result.charCodeAt(j++);
-                  Atomics.store(i32a, i, a + b);
-                }
+                for (let ui16a = new Uint16Array(sb), i = 0; i < result.length; i++)
+                  ui16a[i] = result.charCodeAt(i);
                 Atomics.notify(i32a, 0);
               }
               else if (actions.has(action)) {

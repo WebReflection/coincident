@@ -1,6 +1,8 @@
 import coincident from '../es.js';
 
+const until = coincident(self);
+
 console.log('asking for an input');
 // pauses in a non blocking way the worker until the answer has been received
-console.log('input', coincident(self).input('what is 1 + 2 ?'));
+console.log('input', until.input('what is 1 + 3 ?'));
 console.log('input received');
