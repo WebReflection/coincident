@@ -1,8 +1,8 @@
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = 'a073b3d7-2b7f-4675-ba44-a25231e5d9ef';
+const CHANNEL = 'de4546b5-3651-4b6a-81cb-2260b14d7d87';
 
-// just minifier friendly for Blob Workers' cases ... also safer against monkey-patched globals (don't ask me)
-const {Atomics, Error, Int32Array, JSON, Map, Proxy, SharedArrayBuffer, String, Uint16Array, WeakMap} = globalThis;
+// just minifier friendly for Blob Workers' cases
+const {Atomics, Int32Array, Map, SharedArrayBuffer, Uint16Array} = globalThis;
 
 // common constants / utilities for repeated operations
 const {BYTES_PER_ELEMENT: I32_BYTES} = Int32Array;
@@ -15,16 +15,22 @@ const context = new WeakMap;
 // used to generate a unique `id` per each worker `postMessage` "transaction"
 let uid = 0;
 
+// used to transfer buffers instead of copying these
+let list = [];
+
 /**
  * Create once a `Proxy` able to orchestrate synchronous `postMessage` out of the box.
  * @param {globalThis | Worker} self the context in which code should run
  * @param {{parse: (serialized: string) => any, stringify: (serializable: any) => string}} [JSON] an optional `JSON` like interface to `parse` or `stringify` content
  */
-export default (self, {parse, stringify} = JSON) => {
+const coincident = (self, {parse, stringify} = JSON) => {
   if (!context.has(self)) {
 
     // ensure the CHANNEL and data are posted correctly
-    const post = (id, sb, action, args) => self.postMessage({[CHANNEL]: {id, sb, action, args}});
+    const post = (id, sb, action, args) => self.postMessage(
+      {[CHANNEL]: {id, sb, action, args}},
+      {transfer: list.splice(0)}
+    );
 
     context.set(self, new Proxy(new Map, {
       // worker related: get any utility that should be available on the main thread
@@ -35,6 +41,10 @@ export default (self, {parse, stringify} = JSON) => {
         // wait until result length is known (use just i32 for simplicity)
         let sb = new SharedArrayBuffer(I32_BYTES);
         let i32a = new Int32Array(sb);
+
+        // if a transfer list has been passed, drop it from args
+        if (args.at(-1) === list) args.pop();
+
         post(id, sb, action, args);
         Atomics.wait(i32a, 0);
 
@@ -108,3 +118,7 @@ export default (self, {parse, stringify} = JSON) => {
   }
   return context.get(self);
 };
+
+coincident.transfer = (...args) => { list = args };
+
+export default coincident;
