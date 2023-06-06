@@ -1,5 +1,5 @@
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = 'abd83994-8b06-4e38-8fd6-e7ff4490adca';
+const CHANNEL = 'b7c82a36-f339-49b3-bf4f-7c8ff13de3fc';
 
 // just minifier friendly for Blob Workers' cases
 const {Atomics, Int32Array, Map, SharedArrayBuffer, Uint16Array} = globalThis;
@@ -7,6 +7,7 @@ const {Atomics, Int32Array, Map, SharedArrayBuffer, Uint16Array} = globalThis;
 // common constants / utilities for repeated operations
 const {BYTES_PER_ELEMENT: I32_BYTES} = Int32Array;
 const {BYTES_PER_ELEMENT: UI16_BYTES} = Uint16Array;
+const {load, notify, store, wait} = Atomics;
 const {fromCharCode} = String;
 
 // retain either main threads or workers global context
@@ -45,11 +46,13 @@ const coincident = (self, {parse, stringify} = JSON) => {
         // if a transfer list has been passed, drop it from args
         if (args.at(-1) === list) args.pop();
 
+        // ask for invoke with arguments ...
         post(id, sb, action, args);
-        Atomics.wait(i32a, 0);
+        // ... and wait for it
+        wait(i32a, 0);
 
-        // commit transaction using the right buffer length
-        const length = Atomics.load(i32a, 0);
+        // commit transaction using the returned / needed buffer length
+        const length = load(i32a, 0);
         // calculate the needed ui16 bytes length to store the result string
         const bytes = UI16_BYTES * length;
         // round up to the next amount of bytes divided by 4 to allow i32 operations
@@ -59,14 +62,14 @@ const coincident = (self, {parse, stringify} = JSON) => {
         // ask for results ...
         post(id, sb);
         // ... and wait for it
-        Atomics.wait(i32a, 0);
+        wait(i32a, 0);
 
         // retrieve serialized chars and parse via known length and an ui16 view
         let content = '';
         for (let ui16a = new Uint16Array(sb), i = 0; i < length; i++)
           // TODO: find out if a push + unique fromCharCode has good old limitations/issues
           //       if not, benchmark switching over single fromCharCode(...pushed) approach
-          content += fromCharCode(Atomics.load(ui16a, i));
+          content += fromCharCode(load(ui16a, i));
         // return deserialized content after previous dance to recreate it
         return parse(content);
       },
@@ -78,9 +81,10 @@ const coincident = (self, {parse, stringify} = JSON) => {
           const job = new Map;
           // add the event listener once (first defined setter, all others work the same)
           self.addEventListener('message', async ({data}) => {
-            // check against the very same library as CHANNEL, ignore otherwise
-            if (data?.[CHANNEL]) {
-              const {action, args, id, sb} = data[CHANNEL];
+            // grub the very same library CHANNEL; ignore otherwise
+            const details = data?.[CHANNEL];
+            if (details) {
+              const {action, args, id, sb} = details;
               // shared i32 array to unlock any worker waiting for results
               const i32a = new Int32Array(sb);
               // no action/args means: get results out of the well known `id`
@@ -90,8 +94,6 @@ const coincident = (self, {parse, stringify} = JSON) => {
                 // populate the SaredArrayBuffer with utf-16 chars code
                 for (let ui16a = new Uint16Array(sb), i = 0; i < result.length; i++)
                   ui16a[i] = result.charCodeAt(i);
-                // release the worker's lock
-                Atomics.notify(i32a, 0);
               }
               // action available and it must be defined/known on the main thread
               else if (actions.has(action)) {
@@ -101,13 +103,14 @@ const coincident = (self, {parse, stringify} = JSON) => {
                 job.set(id, result);
                 // communicate the required SharedArrayBuffer length out of the
                 // resulting serialized string
-                Atomics.store(i32a, 0, result.length);
-                // release te worker waiting to dispatch the next event
-                Atomics.notify(i32a, 0);
+                store(i32a, 0, result.length);
               }
               // unknown action should be notified as missing on the main thread
-              else
+              else {
                 throw new Error(`Unsupported action: ${action}`);
+              }
+              // release te worker waiting to dispatch the next event
+              notify(i32a, 0);
             }
           });
         }
