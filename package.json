@@ -9,7 +9,8 @@
     "rollup:es": "rollup --config rollup/es.config.js && sed -i.bck 's/^var /self./' es.js && rm -rf es.js.bck",
     "coveralls": "c8 report --reporter=text-lcov | coveralls",
     "test": "c8 node test/index.js",
-    "server": "npx static-handler --cors --coop --coep ."
+    "server": "npx static-handler --cors --coop --coep .",
+    "size": "cat es.js | brotli | wc -c"
   },
   "keywords": [
     "Atomics",
