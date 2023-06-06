@@ -1,6 +1,6 @@
 'use strict';
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = '8c3e4839-d260-4083-bf73-e4daee7f60d5';
+const CHANNEL = 'a073b3d7-2b7f-4675-ba44-a25231e5d9ef';
 
 // just minifier friendly for Blob Workers' cases ... also safer against monkey-patched globals (don't ask me)
 const {Atomics, Error, Int32Array, JSON, Map, Proxy, SharedArrayBuffer, String, Uint16Array, WeakMap} = globalThis;
@@ -93,7 +93,7 @@ module.exports = (self, {parse, stringify} = JSON) => {
                 // communicate the required SharedArrayBuffer length out of the
                 // resulting serialized string
                 Atomics.store(i32a, 0, result.length);
-                // release te worker waiting to dispatch the bext event
+                // release te worker waiting to dispatch the next event
                 Atomics.notify(i32a, 0);
               }
               // unknown action should be notified as missing on the main thread

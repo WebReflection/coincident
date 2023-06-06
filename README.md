@@ -34,7 +34,7 @@ console.log('input received');
 
 ## API
 
-The module exports a utility/helper able to *Proxy* once a generic *globalThis* (or *self*) context, adding an unobtrusive listener when such context runs on the main thread, providing orchestration out of the box for *workers* that import and use such module.
+The module exports a utility/helper able to *Proxy* once a generic *worker* or *globalThis* / *self* context, adding an unobtrusive listener, in the *worker* case, on the main thread, providing orchestration out of the box for bootstrapped *workers* that use such module.
 
 ```js
 import coincident from 'coincident';
