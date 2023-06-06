@@ -1,5 +1,5 @@
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = 'afb2af69-0411-4ea1-86a6-2cb839e71db4';
+const CHANNEL = '8c3e4839-d260-4083-bf73-e4daee7f60d5';
 
 // just minifier friendly for Blob Workers' cases ... also safer against monkey-patched globals (don't ask me)
 const {Atomics, Error, Int32Array, JSON, Map, Proxy, SharedArrayBuffer, String, Uint16Array, WeakMap} = globalThis;
@@ -55,7 +55,7 @@ export default (self, {parse, stringify} = JSON) => {
         let content = '';
         for (let ui16a = new Uint16Array(sb), i = 0; i < length; i++)
           // TODO: find out if a push + unique fromCharCode has good old limitations/issues
-          //       if not, benchmark switching over single fromCharCode(...pshed) approach
+          //       if not, benchmark switching over single fromCharCode(...pushed) approach
           content += fromCharCode(Atomics.load(ui16a, i));
         // return deserialized content after previous dance to recreate it
         return parse(content);
