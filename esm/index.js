@@ -1,5 +1,5 @@
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = '3a094819-8d6b-4f32-8151-44ecb9297a0d';
+const CHANNEL = 'afb2af69-0411-4ea1-86a6-2cb839e71db4';
 
 // just minifier friendly for Blob Workers' cases ... also safer against monkey-patched globals (don't ask me)
 const {Atomics, Error, Int32Array, JSON, Map, Proxy, SharedArrayBuffer, String, Uint16Array, WeakMap} = globalThis;
@@ -22,6 +22,10 @@ let uid = 0;
  */
 export default (self, {parse, stringify} = JSON) => {
   if (!context.has(self)) {
+
+    // ensure the CHANNEL and data are posted correctly
+    const post = (id, sb, action, args) => self.postMessage({[CHANNEL]: {id, sb, action, args}});
+
     context.set(self, new Proxy(new Map, {
       // worker related: get any utility that should be available on the main thread
       get: (_, action) => (...args) => {
@@ -31,7 +35,7 @@ export default (self, {parse, stringify} = JSON) => {
         // wait until result length is known (use just i32 for simplicity)
         let sb = new SharedArrayBuffer(I32_BYTES);
         let i32a = new Int32Array(sb);
-        self.postMessage({[CHANNEL]: {action, args, id, sb}});
+        post(id, sb, action, args);
         Atomics.wait(i32a, 0);
 
         // commit transaction using the right buffer length
@@ -43,7 +47,7 @@ export default (self, {parse, stringify} = JSON) => {
         // use an i32 view to wait for results
         i32a = new Int32Array(sb);
         // ask for results ...
-        self.postMessage({[CHANNEL]: {id, sb}});
+        post(id, sb);
         // ... and wait for it
         Atomics.wait(i32a, 0);
 
