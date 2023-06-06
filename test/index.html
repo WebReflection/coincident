@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <script type="module">
+    import coincident from '../es.js';
+    const worker = new Worker('./worker.js', {type: 'module'});
+    // sync way VS promise based (more Webbish)
+    //coincident(worker).input = value => prompt(value);/*
+    coincident(worker).input = placeholder => new Promise(resolve => {
+      const [user, submit] = document.querySelectorAll('input');
+      submit.addEventListener('click', event => {
+        event.preventDefault();
+        resolve(user.value.trim());
+      }, {once: true});
+      question.removeAttribute('hidden');
+      user.placeholder = placeholder;
+      user.focus();
+    });
+    //*/
+    </script>
+  </head>
+  <body>
+    <form id="question" hidden>
+      <input required>
+      <input type="submit">
+    </form>
+  </body>
+</html>

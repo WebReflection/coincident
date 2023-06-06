@@ -1,0 +1,36 @@
+{
+  "name": "coincident",
+  "version": "0.0.0",
+  "description": "A memory efficient Atomics based Proxy to simplify, and synchronize, Worker related tasks.",
+  "main": "./cjs/index.js",
+  "scripts": {
+    "build": "node rollup/channel.cjs && npm run cjs && npm run rollup:es && npm run test",
+    "cjs": "ascjs --no-default esm cjs",
+    "rollup:es": "rollup --config rollup/es.config.js && sed -i.bck 's/^var /self./' es.js && rm -rf es.js.bck",
+    "coveralls": "c8 report --reporter=text-lcov | coveralls",
+    "test": "c8 node test/index.js",
+    "server": "npx static-handler --cors --coop --coep ."
+  },
+  "keywords": ["Atomics", "Worker", "sync", "synchronize"],
+  "author": "Andrea Giammarchi",
+  "license": "ISC",
+  "devDependencies": {
+    "@rollup/plugin-node-resolve": "^15.1.0",
+    "@rollup/plugin-terser": "^0.4.3",
+    "ascjs": "^5.0.1",
+    "c8": "^7.14.0",
+    "coveralls": "^3.1.1",
+    "rollup": "^3.23.1",
+    "static-handler": "^0.4.0"
+  },
+  "module": "./esm/index.js",
+  "type": "module",
+  "exports": {
+    ".": {
+      "import": "./esm/index.js",
+      "default": "./cjs/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "unpkg": "es.js"
+}
