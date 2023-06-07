@@ -1,6 +1,6 @@
 'use strict';
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = '905f4883-139d-4bed-bf2a-b4e61fec8475';
+const CHANNEL = 'a6752de4-137c-4476-9bf6-53391389a8ac';
 
 // just minifier friendly for Blob Workers' cases
 const {Atomics, Int32Array, Map, SharedArrayBuffer, Uint16Array} = globalThis;
@@ -34,10 +34,7 @@ const coincident = (self, {parse, stringify} = JSON) => {
 
     context.set(self, new Proxy(new Map, {
       // worker related: get any utility that should be available on the main thread
-      get: (_, action) => (...args) => {
-        // avoid awaiting this Proxy (for whatever reason wasmoon does this)
-        if (action === 'then') return args[0]();
-
+      get: (_, action) => action === 'then' ? null : ((...args) => {
         // transaction id
         const id = uid++;
 
@@ -77,7 +74,7 @@ const coincident = (self, {parse, stringify} = JSON) => {
 
         // return deserialized content after previous dance to recreate it
         return parse(result);
-      },
+      }),
 
       // main thread related: react to any utility a worker is asking for
       set(actions, action, callback) {
