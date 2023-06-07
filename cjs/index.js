@@ -1,6 +1,6 @@
 'use strict';
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = 'bd97610f-e514-4409-911c-e35696a48c95';
+const CHANNEL = 'b4815a9b-e286-4099-8c46-5dd115b2dac6';
 
 // just minifier friendly for Blob Workers' cases
 const {Atomics, Int32Array, Map, SharedArrayBuffer, Uint16Array} = globalThis;
@@ -80,8 +80,8 @@ const coincident = (self, {parse, stringify} = JSON) => {
       set(actions, action, callback) {
         // lazy event listener and logic handling, triggered once by setters actions
         if (!actions.size) {
-          // maps jobs by `id` as they are asked for
-          const job = new Map;
+          // maps results by `id` as they are asked for
+          const results = new Map;
           // add the event listener once (first defined setter, all others work the same)
           self.addEventListener('message', async ({data}) => {
             // grub the very same library CHANNEL; ignore otherwise
@@ -97,7 +97,7 @@ const coincident = (self, {parse, stringify} = JSON) => {
                   // await for result either sync or async and serialize it
                   const result = stringify(await actions.get(action)(...args));
                   // store the result for "the very next" event listener call
-                  job.set(id, result);
+                  results.set(id, result);
                   // communicate the required SharedArrayBuffer length out of the
                   // resulting serialized string
                   store(i32a, 0, result.length);
@@ -109,13 +109,13 @@ const coincident = (self, {parse, stringify} = JSON) => {
               }
               // no action means: get results out of the well known `id`
               else {
-                const result = job.get(id);
-                job.delete(id);
+                const result = results.get(id);
+                results.delete(id);
                 // populate the SaredArrayBuffer with utf-16 chars code
                 for (let ui16a = new Uint16Array(sb), i = 0; i < result.length; i++)
                   ui16a[i] = result.charCodeAt(i);
               }
-              // release te worker waiting to dispatch the next event
+              // release te worker waiting either the length or the result
               notify(i32a, 0);
             }
           });
