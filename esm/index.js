@@ -1,5 +1,5 @@
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = 'b4815a9b-e286-4099-8c46-5dd115b2dac6';
+const CHANNEL = '39d04fb7-01ea-4565-9e17-35aa0c124f6f';
 
 // just minifier friendly for Blob Workers' cases
 const {Atomics, Int32Array, Map, SharedArrayBuffer, Uint16Array} = globalThis;
@@ -65,14 +65,14 @@ const coincident = (self, {parse, stringify} = JSON) => {
         wait(i32a, 0);
 
         // retrieve serialized chars and parse via known length and an ui16 view
-        let content = '';
+        let result = '';
         for (let ui16a = new Uint16Array(sb), i = 0; i < length; i++)
           // TODO: find out if a push + unique fromCharCode has good old limitations/issues
           //       if not, benchmark switching over single fromCharCode(...pushed) approach
-          content += fromCharCode(load(ui16a, i));
+          result += fromCharCode(load(ui16a, i));
 
         // return deserialized content after previous dance to recreate it
-        return parse(content);
+        return parse(result);
       },
 
       // main thread related: react to any utility a worker is asking for
