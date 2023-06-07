@@ -8,7 +8,7 @@
     const worker = new Worker('./worker.js', {type: 'module'});
     // sync way VS promise based (more Webbish)
     // add a slash in front of the next line to see the form
-    /**/coincident(worker).input = value => prompt(value);/*
+    //**/coincident(worker).input = value => prompt(value);/*
     coincident(worker).input = placeholder => new Promise(resolve => {
       const [user, submit] = document.querySelectorAll('input');
       submit.addEventListener('click', event => {
