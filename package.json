@@ -10,7 +10,7 @@
     "rollup:structured": "rollup --config rollup/structured.config.js",
     "coveralls": "c8 report --reporter=text-lcov | coveralls",
     "test": "c8 node test/index.js",
-    "server": "npx static-handler --cors --coop --coep .",
+    "server": "npx static-handler --cors --coop --coep --corp .",
     "size": "cat es.js | brotli | wc -c; cat structured.js | brotli | wc -c"
   },
   "keywords": [
@@ -27,8 +27,8 @@
     "ascjs": "^5.0.1",
     "c8": "^7.14.0",
     "coveralls": "^3.1.1",
-    "rollup": "^3.23.1",
-    "static-handler": "^0.4.0"
+    "rollup": "^3.24.0",
+    "static-handler": "^0.4.1"
   },
   "module": "./esm/index.js",
   "type": "module",
