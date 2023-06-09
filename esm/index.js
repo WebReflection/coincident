@@ -1,5 +1,5 @@
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = 'cac1bd70-1a6f-4486-b3ea-53a0558e836c';
+const CHANNEL = 'fe71b755-1439-415f-bb3d-cd0fd3cce5d5';
 
 // just minifier friendly for Blob Workers' cases
 const {Atomics, Int32Array, Map, SharedArrayBuffer, Uint16Array} = globalThis;
@@ -8,7 +8,7 @@ const {Atomics, Int32Array, Map, SharedArrayBuffer, Uint16Array} = globalThis;
 const {BYTES_PER_ELEMENT: I32_BYTES} = Int32Array;
 const {BYTES_PER_ELEMENT: UI16_BYTES} = Uint16Array;
 
-const {isArray} = Array;
+const {from, isArray} = Array;
 const {notify, wait} = Atomics;
 const {fromCharCode} = String;
 
@@ -40,7 +40,7 @@ const coincident = (self, {parse, stringify} = JSON) => {
 
         // first contact: just ask for how big the buffer should be
         let sb = new SharedArrayBuffer(I32_BYTES);
-        let i32a = new Int32Array(sb);
+        const i32a = new Int32Array(sb);
 
         // if a transfer list has been passed, drop it from args
         let transfer = [];
@@ -59,21 +59,13 @@ const coincident = (self, {parse, stringify} = JSON) => {
 
         // round up to the next amount of bytes divided by 4 to allow i32 operations
         sb = new SharedArrayBuffer(bytes + (bytes % I32_BYTES));
-        i32a = new Int32Array(sb);
 
         // ask for results and wait for it
         post([], id, sb);
-        wait(i32a, 0);
+        wait(new Int32Array(sb), 0);
 
-        // retrieve serialized chars and parse via known length and an ui16 view
-        let result = '';
-        for (let ui16a = new Uint16Array(sb), i = 0; i < length; i++)
-          // TODO: find out if a push + unique fromCharCode has good old limitations/issues
-          //       if not, benchmark switching over single fromCharCode(...pushed) approach
-          result += fromCharCode(ui16a[i]);
-
-        // return deserialized content after previous dance to recreate it
-        return parse(result);
+        // transform the shared buffer into a string and return it parsed
+        return parse(fromCharCode(...new Uint16Array(sb).slice(0, length)));
       }),
 
       // main thread related: react to any utility a worker is asking for
