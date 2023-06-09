@@ -1,5 +1,5 @@
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = 'fe71b755-1439-415f-bb3d-cd0fd3cce5d5';
+const CHANNEL = 'd1a65bf9-0d02-44be-99ff-a7259eb03f16';
 
 // just minifier friendly for Blob Workers' cases
 const {Atomics, Int32Array, Map, SharedArrayBuffer, Uint16Array} = globalThis;
