@@ -1,6 +1,6 @@
 'use strict';
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = 'a6752de4-137c-4476-9bf6-53391389a8ac';
+const CHANNEL = 'cac1bd70-1a6f-4486-b3ea-53a0558e836c';
 
 // just minifier friendly for Blob Workers' cases
 const {Atomics, Int32Array, Map, SharedArrayBuffer, Uint16Array} = globalThis;
@@ -8,11 +8,12 @@ const {Atomics, Int32Array, Map, SharedArrayBuffer, Uint16Array} = globalThis;
 // common constants / utilities for repeated operations
 const {BYTES_PER_ELEMENT: I32_BYTES} = Int32Array;
 const {BYTES_PER_ELEMENT: UI16_BYTES} = Uint16Array;
-const {load, notify, store, wait} = Atomics;
+
 const {isArray} = Array;
+const {notify, wait} = Atomics;
 const {fromCharCode} = String;
 
-// retain buffers to trnasfer
+// retain buffers to transfer
 const buffers = new WeakSet;
 
 // retain either main threads or workers global context
@@ -52,7 +53,7 @@ const coincident = (self, {parse, stringify} = JSON) => {
         wait(i32a, 0);
 
         // commit transaction using the returned / needed buffer length
-        const length = load(i32a, 0);
+        const length = i32a[0];
 
         // calculate the needed ui16 bytes length to store the result string
         const bytes = UI16_BYTES * length;
@@ -70,7 +71,7 @@ const coincident = (self, {parse, stringify} = JSON) => {
         for (let ui16a = new Uint16Array(sb), i = 0; i < length; i++)
           // TODO: find out if a push + unique fromCharCode has good old limitations/issues
           //       if not, benchmark switching over single fromCharCode(...pushed) approach
-          result += fromCharCode(load(ui16a, i));
+          result += fromCharCode(ui16a[i]);
 
         // return deserialized content after previous dance to recreate it
         return parse(result);
@@ -100,7 +101,7 @@ const coincident = (self, {parse, stringify} = JSON) => {
                   results.set(id, result);
                   // communicate the required SharedArrayBuffer length out of the
                   // resulting serialized string
-                  store(i32a, 0, result.length);
+                  i32a[0] = result.length;
                 }
                 // unknown action should be notified as missing on the main thread
                 else {
