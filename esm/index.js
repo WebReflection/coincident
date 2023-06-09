@@ -1,5 +1,5 @@
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = 'd1a65bf9-0d02-44be-99ff-a7259eb03f16';
+const CHANNEL = '65e450a9-132e-4231-bc79-2f7c260d2fdc';
 
 // just minifier friendly for Blob Workers' cases
 const {Atomics, Int32Array, Map, SharedArrayBuffer, Uint16Array} = globalThis;
@@ -8,7 +8,7 @@ const {Atomics, Int32Array, Map, SharedArrayBuffer, Uint16Array} = globalThis;
 const {BYTES_PER_ELEMENT: I32_BYTES} = Int32Array;
 const {BYTES_PER_ELEMENT: UI16_BYTES} = Uint16Array;
 
-const {from, isArray} = Array;
+const {isArray} = Array;
 const {notify, wait} = Atomics;
 const {fromCharCode} = String;
 
