@@ -1,9 +1,9 @@
 'use strict';
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = 'c85efda3-9cb0-445f-bf66-cc19f6c7a1f3';
+const CHANNEL = '40e10a29-4d31-4dc2-940e-f87c0a72fd7e';
 
 // just minifier friendly for Blob Workers' cases
-const {Atomics, Int32Array, Map, SharedArrayBuffer, Uint16Array} = globalThis;
+const {Int32Array, Map, SharedArrayBuffer, Uint16Array} = globalThis;
 
 // common constants / utilities for repeated operations
 const {BYTES_PER_ELEMENT: I32_BYTES} = Int32Array;
