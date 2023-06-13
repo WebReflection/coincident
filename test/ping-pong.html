@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <script type="module">
+    import coincident from '../esm/index.js';
+    const worker = new Worker('./ping-pong.js', {type: 'module'});
+
+    const wrap = coincident(worker);
+
+    // define a method that can be synchronouly waited for
+    wrap.ask = prompt;
+
+    // ask to compute a sum
+    document.body.textContent = await wrap.sum(3);
+    </script>
+  </head>
+</html>

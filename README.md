@@ -34,7 +34,9 @@ console.log('input received');
 
 ## API
 
-The module exports a utility/helper able to *Proxy* once a generic *worker* or *globalThis* / *self* context, adding an unobtrusive listener, in the *worker* case, on the main thread, providing orchestration out of the box for bootstrapped *workers* that use such module.
+The module exports a utility/helper able to *Proxy* once a generic *worker* or *globalThis* / *self* context, adding an unobtrusive listener, providing orchestration out of the box for bootstrapped *workers* that use such module.
+
+#### Worker -> Main
 
 ```js
 import coincident from 'coincident';
@@ -57,9 +59,31 @@ The second optional argument of the `coincident(context[, JSON])` helper can be 
 
 **Additionally**, the exported function has a `coincident.tranfer(...buffers)` helper that if used as last argument of any worker demanded task will transfer buffers instead of cloning/copying these.
 
+#### Main -> Worker
+
+This module can also communicate from a *main* thread to a *worker*, but in this case the *main* thread needs to `await` for results because [Atomics.wait() cannot be used in main](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Atomics/wait).
+
+```html
+<script type="module">
+  // main thread
+  import coincident from 'coincident';
+  const worker = new Worker('./worker.js', {type: 'module'});
+
+  document.body.textContent = await coincident(worker).compute(1, 2);
+</script>
+```
+
+```js
+// worker.js
+import coincident from 'coincident';
+
+// expose a specific function to the main thread
+coincident(self).compute = (a, b) => (a + b);
+```
+
 
 ### coincident/structured
 
-This entry point exports the exact same module except it uses [@ungap/structured-clone/json](https://github.com/ungap/structured-clone/#tojson) `parse` and `stringify` functions, allowing more complex, or recursive, objects to be passed along as result to the *worker*.
+This entry point exports the exact same module except it uses [@ungap/structured-clone/json](https://github.com/ungap/structured-clone/#tojson) `parse` and `stringify` functions, allowing more complex, or recursive, objects to be passed along as result to, or from, the *worker*.
 
 Please keep in mind not all complex types are supported by the polyfill.

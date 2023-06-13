@@ -1,5 +1,5 @@
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = '65e450a9-132e-4231-bc79-2f7c260d2fdc';
+const CHANNEL = 'c85efda3-9cb0-445f-bf66-cc19f6c7a1f3';
 
 // just minifier friendly for Blob Workers' cases
 const {Atomics, Int32Array, Map, SharedArrayBuffer, Uint16Array} = globalThis;
@@ -9,8 +9,14 @@ const {BYTES_PER_ELEMENT: I32_BYTES} = Int32Array;
 const {BYTES_PER_ELEMENT: UI16_BYTES} = Uint16Array;
 
 const {isArray} = Array;
-const {notify, wait} = Atomics;
+const {notify, wait, waitAsync} = Atomics;
 const {fromCharCode} = String;
+
+// automatically uses sync wait (worker -> main)
+// or fallback to async wait (main -> worker)
+const waitFor = (isAsync, buffer) => isAsync ?
+                  waitAsync(buffer, 0) :
+                  (wait(buffer, 0), {value: {then: fn => fn()}});
 
 // retain buffers to transfer
 const buffers = new WeakSet;
@@ -49,23 +55,26 @@ const coincident = (self, {parse, stringify} = JSON) => {
 
         // ask for invoke with arguments and wait for it
         post(transfer, id, sb, action, args);
-        wait(i32a, 0);
 
-        // commit transaction using the returned / needed buffer length
-        const length = i32a[0];
+        // helps deciding how to wait for results
+        const isAsync = self instanceof Worker;
+        return waitFor(isAsync, i32a).value.then(() => {
+          // commit transaction using the returned / needed buffer length
+          const length = i32a[0];
 
-        // calculate the needed ui16 bytes length to store the result string
-        const bytes = UI16_BYTES * length;
+          // calculate the needed ui16 bytes length to store the result string
+          const bytes = UI16_BYTES * length;
 
-        // round up to the next amount of bytes divided by 4 to allow i32 operations
-        sb = new SharedArrayBuffer(bytes + (bytes % I32_BYTES));
+          // round up to the next amount of bytes divided by 4 to allow i32 operations
+          sb = new SharedArrayBuffer(bytes + (bytes % I32_BYTES));
 
-        // ask for results and wait for it
-        post([], id, sb);
-        wait(new Int32Array(sb), 0);
-
-        // transform the shared buffer into a string and return it parsed
-        return parse(fromCharCode(...new Uint16Array(sb).slice(0, length)));
+          // ask for results and wait for it
+          post([], id, sb);
+          return waitFor(isAsync, new Int32Array(sb)).value.then(
+            // transform the shared buffer into a string and return it parsed
+            () => parse(fromCharCode(...new Uint16Array(sb).slice(0, length)))
+          );
+        });
       }),
 
       // main thread related: react to any utility a worker is asking for
