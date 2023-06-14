@@ -1,6 +1,8 @@
 'use strict';
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = '40e10a29-4d31-4dc2-940e-f87c0a72fd7e';
+const CHANNEL = '65762173-c0e8-432d-8ea3-592c8d3140f4';
+
+const waitAsyncFallback = (m => /* c8 ignore start */ m.__esModule ? m.default : m /* c8 ignore stop */)(require('./fallback.js'));
 
 // just minifier friendly for Blob Workers' cases
 const {Int32Array, Map, SharedArrayBuffer, Uint16Array} = globalThis;
@@ -16,7 +18,7 @@ const {fromCharCode} = String;
 // automatically uses sync wait (worker -> main)
 // or fallback to async wait (main -> worker)
 const waitFor = (isAsync, buffer) => isAsync ?
-                  waitAsync(buffer, 0) :
+                  (waitAsync || waitAsyncFallback)(buffer, 0) :
                   (wait(buffer, 0), {value: {then: fn => fn()}});
 
 // retain buffers to transfer
