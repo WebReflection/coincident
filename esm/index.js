@@ -1,5 +1,5 @@
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = 'eef159e0-b39b-4e0e-b711-43432daf4928';
+const CHANNEL = 'cbdc3d3e-e212-4a5c-abde-c61ed4758492';
 
 import waitAsyncFallback from './fallback.js';
 
@@ -16,9 +16,9 @@ const {fromCharCode} = String;
 
 // automatically uses sync wait (worker -> main)
 // or fallback to async wait (main -> worker)
-const waitFor = (isAsync, buffer) => isAsync ?
-                  (waitAsync || waitAsyncFallback)(buffer, 0) :
-                  (wait(buffer, 0), {value: {then: fn => fn()}});
+const waitFor = (isAsync, sb) => isAsync ?
+                  (waitAsync || waitAsyncFallback)(sb, 0) :
+                  (wait(sb, 0), {value: {then: fn => fn()}});
 
 // retain buffers to transfer
 const buffers = new WeakSet;
@@ -47,8 +47,7 @@ const coincident = (self, {parse, stringify} = JSON) => {
         const id = uid++;
 
         // first contact: just ask for how big the buffer should be
-        let sb = new SharedArrayBuffer(I32_BYTES);
-        const i32a = new Int32Array(sb);
+        let sb = new Int32Array(new SharedArrayBuffer(I32_BYTES));
 
         // if a transfer list has been passed, drop it from args
         let transfer = [];
@@ -60,9 +59,9 @@ const coincident = (self, {parse, stringify} = JSON) => {
 
         // helps deciding how to wait for results
         const isAsync = self instanceof Worker;
-        return waitFor(isAsync, i32a).value.then(() => {
+        return waitFor(isAsync, sb).value.then(() => {
           // commit transaction using the returned / needed buffer length
-          const length = i32a[0];
+          const length = sb[0];
 
           // filter undefined results
           if (!length) return;
@@ -71,13 +70,13 @@ const coincident = (self, {parse, stringify} = JSON) => {
           const bytes = UI16_BYTES * length;
 
           // round up to the next amount of bytes divided by 4 to allow i32 operations
-          sb = new SharedArrayBuffer(bytes + (bytes % I32_BYTES));
+          sb = new Int32Array(new SharedArrayBuffer(bytes + (bytes % I32_BYTES)));
 
           // ask for results and wait for it
           post([], id, sb);
-          return waitFor(isAsync, new Int32Array(sb)).value.then(
+          return waitFor(isAsync, sb).value.then(
             // transform the shared buffer into a string and return it parsed
-            () => parse(fromCharCode(...new Uint16Array(sb).slice(0, length)))
+            () => parse(fromCharCode(...new Uint16Array(sb.buffer).slice(0, length)))
           );
         });
       }),
@@ -94,8 +93,6 @@ const coincident = (self, {parse, stringify} = JSON) => {
             const details = data?.[CHANNEL];
             if (isArray(details)) {
               const [id, sb, ...rest] = details;
-              // shared i32 array to unlock any worker waiting for results
-              const i32a = new Int32Array(sb);
               // action available: it must be defined/known on the main thread
               if (rest.length) {
                 const [action, args] = rest;
@@ -107,7 +104,7 @@ const coincident = (self, {parse, stringify} = JSON) => {
                     results.set(id, result);
                     // communicate the required SharedArrayBuffer length out of the
                     // resulting serialized string
-                    i32a[0] = result.length;
+                    sb[0] = result.length;
                   }
                 }
                 // unknown action should be notified as missing on the main thread
@@ -120,11 +117,11 @@ const coincident = (self, {parse, stringify} = JSON) => {
                 const result = results.get(id);
                 results.delete(id);
                 // populate the SaredArrayBuffer with utf-16 chars code
-                for (let ui16a = new Uint16Array(sb), i = 0; i < result.length; i++)
+                for (let ui16a = new Uint16Array(sb.buffer), i = 0; i < result.length; i++)
                   ui16a[i] = result.charCodeAt(i);
               }
               // release te worker waiting either the length or the result
-              notify(i32a, 0);
+              notify(sb, 0);
             }
           });
         }
