@@ -1,5 +1,5 @@
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = '65762173-c0e8-432d-8ea3-592c8d3140f4';
+const CHANNEL = 'eef159e0-b39b-4e0e-b711-43432daf4928';
 
 import waitAsyncFallback from './fallback.js';
 
@@ -64,6 +64,9 @@ const coincident = (self, {parse, stringify} = JSON) => {
           // commit transaction using the returned / needed buffer length
           const length = i32a[0];
 
+          // filter undefined results
+          if (!length) return;
+
           // calculate the needed ui16 bytes length to store the result string
           const bytes = UI16_BYTES * length;
 
@@ -99,11 +102,13 @@ const coincident = (self, {parse, stringify} = JSON) => {
                 if (actions.has(action)) {
                   // await for result either sync or async and serialize it
                   const result = stringify(await actions.get(action)(...args));
-                  // store the result for "the very next" event listener call
-                  results.set(id, result);
-                  // communicate the required SharedArrayBuffer length out of the
-                  // resulting serialized string
-                  i32a[0] = result.length;
+                  if (result) {
+                    // store the result for "the very next" event listener call
+                    results.set(id, result);
+                    // communicate the required SharedArrayBuffer length out of the
+                    // resulting serialized string
+                    i32a[0] = result.length;
+                  }
                 }
                 // unknown action should be notified as missing on the main thread
                 else {

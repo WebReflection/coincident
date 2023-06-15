@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <script type="module">
+    import coincident from '../esm/index.js';
+    const worker = new Worker('./undefined.js', {type: 'module'});
+    coincident(worker).undefined = () => {};
+    coincident(worker).null = () => null;
+    //*/
+    </script>
+  </head>
+  <body>
+    <form id="question" hidden>
+      <input required>
+      <input type="submit">
+    </form>
+  </body>
+</html>
