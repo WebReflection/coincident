@@ -1,6 +1,6 @@
 'use strict';
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = 'cbdc3d3e-e212-4a5c-abde-c61ed4758492';
+const CHANNEL = 'ecd801ea-3290-4c7f-9e30-216cbbe88359';
 
 const waitAsyncFallback = (m => /* c8 ignore start */ m.__esModule ? m.default : m /* c8 ignore stop */)(require('./fallback.js'));
 

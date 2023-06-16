@@ -1,5 +1,5 @@
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = 'cbdc3d3e-e212-4a5c-abde-c61ed4758492';
+const CHANNEL = 'ecd801ea-3290-4c7f-9e30-216cbbe88359';
 
 import waitAsyncFallback from './fallback.js';
 
