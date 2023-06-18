@@ -1,6 +1,6 @@
 'use strict';
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = 'ecd801ea-3290-4c7f-9e30-216cbbe88359';
+const CHANNEL = 'c3bf191a-08e7-4e3d-b125-a77dab5e1504';
 
 const waitAsyncFallback = (m => /* c8 ignore start */ m.__esModule ? m.default : m /* c8 ignore stop */)(require('./fallback.js'));
 
@@ -89,10 +89,12 @@ const coincident = (self, {parse, stringify} = JSON) => {
           // maps results by `id` as they are asked for
           const results = new Map;
           // add the event listener once (first defined setter, all others work the same)
-          self.addEventListener('message', async ({data}) => {
+          self.addEventListener('message', async (event) => {
             // grub the very same library CHANNEL; ignore otherwise
-            const details = data?.[CHANNEL];
+            const details = event.data?.[CHANNEL];
             if (isArray(details)) {
+              // if early enough, avoid leaking data to other listeners
+              event.stopImmediatePropagation();
               const [id, sb, ...rest] = details;
               // action available: it must be defined/known on the main thread
               if (rest.length) {
