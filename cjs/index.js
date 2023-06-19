@@ -1,7 +1,7 @@
 'use strict';
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = 'c3bf191a-08e7-4e3d-b125-a77dab5e1504';
 
+const CHANNEL = (m => /* c8 ignore start */ m.__esModule ? m.default : m /* c8 ignore stop */)(require('./channel.js'));
 const waitAsyncFallback = (m => /* c8 ignore start */ m.__esModule ? m.default : m /* c8 ignore stop */)(require('./fallback.js'));
 
 // just minifier friendly for Blob Workers' cases
