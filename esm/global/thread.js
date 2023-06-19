@@ -30,7 +30,7 @@ import {
   DELETE
 } from './traps.js';
 
-const bound = target => typeof target === 'function' ? target() : target;
+const bound = target => typeof target === FUNCTION ? target() : target;
 
 const argument = asEntry(
   (type, value) => {
