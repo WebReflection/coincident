@@ -103,8 +103,8 @@ While the initial utility/behavior is preserved on both sides, the *Worker* can 
 ```html
 <!-- main page -->
 <script type="module">
-    import coincident from 'coincident/global';
-    const proxy = coincident(new Worker('./worker.js', {type: 'module'}));
+  import coincident from 'coincident/global';
+  const proxy = coincident(new Worker('./worker.js', {type: 'module'}));
 </script>
 ```
 
