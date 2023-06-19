@@ -1,6 +1,6 @@
 /*! (c) Andrea Giammarchi - ISC */
-const CHANNEL = 'c3bf191a-08e7-4e3d-b125-a77dab5e1504';
 
+import CHANNEL from './channel.js';
 import waitAsyncFallback from './fallback.js';
 
 // just minifier friendly for Blob Workers' cases
