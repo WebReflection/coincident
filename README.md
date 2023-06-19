@@ -94,7 +94,7 @@ Please keep in mind not all complex types are supported by the polyfill.
 This entry point exports the same `coincident` module (using *JSON* as default) **but** the *Worker* utility returns an obejct with 3 fields:
 
   * **proxy** it's the usual proxy utility to expose or invoke functions defined in the main counter-part
-  * **global** it's the proxy that orchestrates access to the *main* world, including the ability to pass callbacks from the *Worker*, with the only caveat these will be inevitably executed asynchronously on the main thread, so that *Promise* or *thenable* work out of the box but *accessors* or defined callbacks will need to be awaited from the worker too. DOM listeners should be also handled with no issues but the `event` can't *preventDefault* or *stopPropagation* as the listener will be asynchronous too (also listeners are currently untested)
+  * **global** it's the proxy that orchestrates access to the *main* world, including the ability to pass callbacks from the *Worker*, with the only caveat these will be inevitably executed asynchronously on the main thread, so that *Promise* or *thenable* work out of the box but *accessors* or defined callbacks will need to be awaited from the worker too. DOM listeners should be also handled with no issues but the `event` can't *preventDefault* or *stopPropagation* as the listener will be asynchronous too
   * **isGlobal** is an utility that helps introspection of global proxies, callbacks, classes, or references
 
 While the initial utility/behavior is preserved on both sides, the *Worker* can seamlessly use *global* / *main* thread to operate on DOM, *localStorage*, or literally anything else, included *Promise* based operations, DOM listeners, and so on.
@@ -122,6 +122,11 @@ document.body.innerHTML = '<h1>Hello World!</h1>';
 document.body.appendChild(
   document.createElement('div')
 ).textContent = '😱';
+
+const scoped = true;
+document.body.addEventListener('click', event => {
+  console.log(event.type, 'running in a worker', scoped);
+});
 ```
 
 See the [test/global.js](./test/global.js) file or reach `http://localhost:8080/test/global.html` locally to play around this feature.
