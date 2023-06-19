@@ -6,6 +6,14 @@ proxy.greetings();
 
 const {document} = global;
 
+const arr = global.Array(1, 2, 3);
+const obj = arr[Symbol.iterator]();
+console.assert(
+  typeof obj.next === 'function' && (
+    typeof obj[Symbol.iterator] === 'function' ||
+    typeof obj[Symbol.asyncIterator] !== 'function'
+));
+
 console.assert(document.body === document.body);
 console.assert(typeof document.body === 'object');
 console.assert(typeof document.addEventListener === 'function');
