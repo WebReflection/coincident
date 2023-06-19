@@ -2,7 +2,14 @@ import coincident from '../global.js';
 
 const {proxy, global, isGlobal} = coincident(self);
 
+proxy.greetings();
+
 const {document} = global;
+
+console.assert(document.body === document.body);
+console.assert(typeof document.body === 'object');
+console.assert(typeof document.addEventListener === 'function');
+
 document.body.innerHTML = '<h1>Hello World!</h1>';
 
 document.body.addEventListener('click', event => {

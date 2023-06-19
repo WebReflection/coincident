@@ -6,6 +6,9 @@
     <script type="module">
     import coincident from '../global.js';
     const proxy = coincident(new Worker('./global.js', {type: 'module'}));
+    proxy.greetings = () => {
+      console.log('Greetings from main!');
+    };
     </script>
   </head>
 </html>
