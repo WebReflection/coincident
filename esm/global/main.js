@@ -61,7 +61,7 @@ export default (thread, MAIN, THREAD) => {
     __thread__(DELETE, entry(STRING, id));
   });
 
-  const target = ({type, value}) => {
+  const target = ([type, value]) => {
     switch (type) {
       case OBJECT:
         return value == null ? globalThis : (

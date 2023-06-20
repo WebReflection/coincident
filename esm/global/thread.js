@@ -65,7 +65,7 @@ export default (main, MAIN, THREAD) => {
   });
 
   const register = (entry) => {
-    const {type, value} = entry;
+    const [type, value] = entry;
     if (!proxies.has(value)) {
       const target = type === FUNCTION ? Bound.bind(entry) : entry;
       const proxy = new Proxy(target, proxyHandler);
@@ -77,7 +77,7 @@ export default (main, MAIN, THREAD) => {
   };
 
   const fromEntry = entry => {
-    const {type, value} = entry;
+    const [type, value] = entry;
     switch (type) {
       case OBJECT:
         return typeof value === NUMBER ? register(entry) : value;
@@ -131,7 +131,7 @@ export default (main, MAIN, THREAD) => {
 
   return {
     proxy: main,
-    global: new Proxy({type: OBJECT, value: null}, proxyHandler),
+    global: new Proxy([OBJECT, null], proxyHandler),
     isGlobal: value => typeof value === OBJECT && !!value && __proxied__ in value
   };
 };

@@ -41,7 +41,7 @@ export const augment = (descriptor, how) => {
   return descriptor;
 };
 
-export const entry = (type, value) => ({type, value});
+export const entry = (type, value) => [type, value];
 
 export const asEntry = transform => value => {
   const type = typeof value;
