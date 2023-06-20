@@ -8,6 +8,6 @@ writeFileSync(
   CHANNEL,
   readFileSync(CHANNEL).toString().replace(
     /(['"]).*?\1/,
-    `$1${randomUUID()}$1;`
+    `$1${randomUUID()}$1`
   )
 );
