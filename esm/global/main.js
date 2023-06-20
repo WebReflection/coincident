@@ -46,10 +46,13 @@ const values = new Map;
 
 const result = asEntry((type, value) => {
   if (!ids.has(value)) {
-    // map values by id
-    // map ids by value
-    ids.set(value, id);
-    values.set(id++, value);
+    let sid;
+    // a bit apocalyptic scenario but if this main runs forever
+    // and the id does a whole int32 roundtrip we might have still
+    // some reference danglign around
+    while (values.has(sid = id++));
+    ids.set(value, sid);
+    values.set(sid, value);
   }
   return entry(type, ids.get(value));
 });
@@ -109,7 +112,6 @@ export default (thread, MAIN, THREAD) => {
     [SET]: (target, name, value) => result(set(target, name, value)),
     [SET_PROTOTYPE_OF]: (target, proto) => result(setPrototypeOf(target, proto)),
     [DELETE](id) {
-      // console.log('main', DELETE, id, values.has(id));
       ids.delete(values.get(id));
       values.delete(id);
     }

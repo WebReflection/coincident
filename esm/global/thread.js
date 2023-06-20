@@ -38,7 +38,11 @@ const argument = asEntry(
       return bound(value[__proxied__]);
     if (type === FUNCTION) {
       if (!values.has(value)) {
-        const sid = String(id++);
+        let sid;
+        // a bit apocalyptic scenario but if this thread runs forever
+        // and the id does a whole int32 roundtrip we might have still
+        // some reference danglign around
+        while (values.has(sid = String(id++)));
         ids.set(value, sid);
         values.set(sid, value);
       }
@@ -122,7 +126,6 @@ export default (main, MAIN, THREAD) => {
         return fromEntry(entry).apply(fromEntry(ctx), args.map(fromEntry));
       case DELETE: {
         const id = fromEntry(entry);
-        // console.log('thread', DELETE, id, values.has(id));
         ids.delete(values.get(id));
         values.delete(id);
       }

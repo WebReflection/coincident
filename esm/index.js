@@ -33,6 +33,7 @@ let uid = 0;
  * Create once a `Proxy` able to orchestrate synchronous `postMessage` out of the box.
  * @param {globalThis | Worker} self the context in which code should run
  * @param {{parse: (serialized: string) => any, stringify: (serializable: any) => string}} [JSON] an optional `JSON` like interface to `parse` or `stringify` content
+ * @returns {ProxyHandler<globalThis> | ProxyHandler<Worker>}
  */
 const coincident = (self, {parse, stringify} = JSON) => {
   // create a Proxy once for the given context (globalThis or Worker instance)

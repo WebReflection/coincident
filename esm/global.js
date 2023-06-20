@@ -9,9 +9,17 @@ const THREAD = CHANNEL + 'T';
 const proxies = new WeakMap;
 
 /**
+ * @typedef {object} Coincident
+ * @property {ProxyHandler<globalThis>} proxy
+ * @property {ProxyHandler<Window>} global
+ * @property {(value: any) => boolean} isGlobal
+ */
+
+/**
  * Create once a `Proxy` able to orchestrate synchronous `postMessage` out of the box.
- * @param {globalThis | Worker} self the context in which code should run
- * @param {{parse: (serialized: string) => any, stringify: (serializable: any) => string}} [JSON] an optional `JSON` like interface to `parse` or `stringify` content
+ * In workers, returns a `{proxy, global, isGlobal}` namespace to reach globals synchronously.
+ * @param {Worker | globalThis} self the context in which code should run
+ * @returns {ProxyHandler<Worker> | Coincident}
  */
 const coincident = (self, ...args) => {
   const proxy = $coincident(self, ...args);
