@@ -1,23 +1,24 @@
-import coincident from '../global.js';
-import uhtml from './uhtml.mjs';
+import coincident from '../uhtml.js';
 
-const {global} = coincident(self);
-const {render, html} = uhtml(global);
+const {global, uhtml} = coincident(self);
+const {render, html} = uhtml;
 const {document} = global;
 
-input('');
+input('', handler);
 
-function input(value) {
+function input(value, handler) {
   render(document.body, html`
     <div>
       <!-- ensure always one listener as setter to avoid races -->
       <!-- use always same listener reference otherwise -->
-      <input value="${value}" .oninput="${event => {
-        const {value} = event.target;
-        console.log(value);
-        input(value);
-      }}" />
+      <input value=${value} @input=${[handler, {invoke: 'stopImmediatePropagation'}]} />
       <div>${value}</div>
     </div>
   `);
+}
+
+function handler(event) {
+  const {value} = event.target;
+  console.log(value);
+  input(value, handler);
 }

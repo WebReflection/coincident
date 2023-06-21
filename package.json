@@ -12,7 +12,7 @@
     "rollup:uhtml": "rollup --config rollup/uhtml.config.js",
     "test": "c8 node test/index.js",
     "server": "npx static-handler --cors --coop --coep --corp .",
-    "size": "cat es.js | brotli | wc -c; cat structured.js | brotli | wc -c; cat global.js | brotli | wc -c",
+    "size": "cat es.js | brotli | wc -c; cat structured.js | brotli | wc -c; cat global.js | brotli | wc -c; cat uhtml.js | brotli | wc -c",
     "coverage": "mkdir -p ./coverage; c8 report --reporter=text-lcov > ./coverage/lcov.info"
   },
   "keywords": [
