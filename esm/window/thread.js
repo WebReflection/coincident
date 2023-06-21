@@ -134,8 +134,19 @@ export default (main, MAIN, THREAD) => {
 
   return {
     proxy: main,
-    global: new Proxy([OBJECT, null], proxyHandler),
-    isGlobal: value => typeof value === OBJECT && !!value && __proxied__ in value
+    window: new Proxy([OBJECT, null], proxyHandler),
+    isWindowProxy: value => typeof value === OBJECT && !!value && __proxied__ in value,
+    // TODO: remove this stuff ASAP
+    get global() {
+      console.warn('Deprecated: please access `window` field instead');
+      return this.window;
+    },
+    get isGlobal() {
+      return function (value) {
+        console.warn('Deprecated: please access `isWindowProxy` field instead');
+        return this.isWindowProxy(value);
+      }.bind(this);
+    }
   };
 };
 

@@ -40,8 +40,12 @@
       "default": "./cjs/index.js"
     },
     "./global": {
-      "import": "./esm/global.js",
-      "default": "./cjs/global.js"
+      "import": "./esm/window.js",
+      "default": "./cjs/window.js"
+    },
+    "./window": {
+      "import": "./esm/window.js",
+      "default": "./cjs/window.js"
     },
     "./structured": {
       "import": "./esm/structured.js",
