@@ -4,15 +4,16 @@
   "description": "An Atomics based Proxy to simplify, and synchronize, Worker related tasks",
   "main": "./cjs/index.js",
   "scripts": {
-    "build": "node rollup/channel.cjs && npm run cjs && npm run rollup:es && npm run rollup:global && npm run rollup:structured && npm run test",
+    "build": "node rollup/channel.cjs && npm run cjs && npm run rollup:es && npm run rollup:global && npm run rollup:structured && npm run rollup:uhtml && npm run test",
     "cjs": "ascjs --no-default esm cjs",
     "rollup:es": "rollup --config rollup/es.config.js",
     "rollup:global": "rollup --config rollup/global.config.js",
     "rollup:structured": "rollup --config rollup/structured.config.js",
-    "coveralls": "c8 report --reporter=text-lcov | coveralls",
+    "rollup:uhtml": "rollup --config rollup/uhtml.config.js",
     "test": "c8 node test/index.js",
     "server": "npx static-handler --cors --coop --coep --corp .",
-    "size": "cat es.js | brotli | wc -c; cat structured.js | brotli | wc -c; cat global.js | brotli | wc -c"
+    "size": "cat es.js | brotli | wc -c; cat structured.js | brotli | wc -c; cat global.js | brotli | wc -c",
+    "coverage": "mkdir -p ./coverage; c8 report --reporter=text-lcov > ./coverage/lcov.info"
   },
   "keywords": [
     "Atomics",
@@ -26,10 +27,10 @@
     "@rollup/plugin-node-resolve": "^15.1.0",
     "@rollup/plugin-terser": "^0.4.3",
     "ascjs": "^5.0.1",
-    "c8": "^7.14.0",
-    "coveralls": "^3.1.1",
-    "rollup": "^3.24.0",
-    "static-handler": "^0.4.1"
+    "c8": "^8.0.0",
+    "rollup": "^3.25.1",
+    "static-handler": "^0.4.1",
+    "uhtml": "^3.2.1"
   },
   "module": "./esm/index.js",
   "type": "module",
@@ -45,6 +46,10 @@
     "./structured": {
       "import": "./esm/structured.js",
       "default": "./cjs/structured.js"
+    },
+    "./uhtml": {
+      "import": "./esm/uhtml.js",
+      "default": "./cjs/uhtml.js"
     },
     "./package.json": "./package.json"
   },

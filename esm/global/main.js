@@ -43,6 +43,28 @@ import {
 let id = 0;
 const ids = new Map;
 const values = new Map;
+const eventsHandler = new WeakMap;
+const {addEventListener} = EventTarget.prototype;
+
+// this should never be on the way as it's extremely light and fast
+// but it's necessary to allow "preventDefault" or other event invokes at distance
+defineProperty(EventTarget.prototype, 'addEventListener', {
+  value(type, listener, ...options) {
+    if (options.at(0)?.invoke) {
+      if (!eventsHandler.has(this))
+        eventsHandler.set(this, new Map);
+      eventsHandler.get(this).set(type, [].concat(options[0].invoke));
+      delete options[0].invoke;
+    }
+    return addEventListener.call(this, type, listener, ...options);
+  }
+});
+
+const handleEvent = event => {
+  const {currentTarget, target, type} = event;
+  for (const method of eventsHandler.get(currentTarget || target)?.get(type) || [])
+    event[method]();
+};
 
 const result = asEntry((type, value) => {
   if (!ids.has(value)) {
@@ -74,6 +96,7 @@ export default (thread, MAIN, THREAD) => {
         if (typeof value === STRING) {
           if (!values.has(value)) {
             const cb = function (...args) {
+              if (args.at(0) instanceof Event) handleEvent(...args);
               return __thread__(
                 APPLY,
                 entry(FUNCTION, value),

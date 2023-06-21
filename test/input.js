@@ -1,23 +1,23 @@
 import coincident from '../global.js';
+import uhtml from './uhtml.mjs';
 
 const {global} = coincident(self);
-globalThis.document = global.document;
+const {render, html} = uhtml(global);
+const {document} = global;
 
-import('./hyperhtml.mjs').then(({bind}) => {
-  const html = bind(document.body);
-  const handler = event => {
-    const {value} = event.target;
-    console.log(value);
-    input(html, value, handler);
-  };
-  input(html, '', handler);
-});
+input('');
 
-function input(html, value, handler) {
-  html`
+function input(value) {
+  render(document.body, html`
     <div>
-      <input value="${value}" oninput="${handler}" />
+      <!-- ensure always one listener as setter to avoid races -->
+      <!-- use always same listener reference otherwise -->
+      <input value="${value}" .oninput="${event => {
+        const {value} = event.target;
+        console.log(value);
+        input(value);
+      }}" />
       <div>${value}</div>
     </div>
-  `;
+  `);
 }
