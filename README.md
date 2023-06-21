@@ -89,34 +89,34 @@ This entry point exports the exact same module except it uses [@ungap/structured
 Please keep in mind not all complex types are supported by the polyfill.
 
 
-### coincident/global
+### coincident/window
 
 This entry point exports the same `coincident` module (using *JSON* as default) **but** the *Worker* utility returns an obejct with 3 fields:
 
   * **proxy** it's the usual proxy utility to expose or invoke functions defined in the main counter-part
-  * **global** it's the proxy that orchestrates access to the *main* world, including the ability to pass callbacks from the *Worker*, with the only caveat these will be inevitably executed asynchronously on the main thread, so that *Promise* or *thenable* work out of the box but *accessors* or defined callbacks will need to be awaited from the worker too. DOM listeners should be also handled with no issues but the `event` can't *preventDefault* or *stopPropagation* as the listener will be asynchronous too. All global/well known *Symbol* also cross boundaries so that `[...global.document.querySelectorAll('*')]` or any other *Symbol* based functionality should be preserved, as long as the `symbol` is known as runtime symbols can't cross paths in any meaningful way.
-  * **isGlobal** is an utility that helps introspection of global proxies, callbacks, classes, or references
+  * **window** it's the proxy that orchestrates access to the *main* world, including the ability to pass callbacks from the *Worker*, with the only caveat these will be inevitably executed asynchronously on the main thread, so that *Promise* or *thenable* work out of the box but *accessors* or defined callbacks will need to be awaited from the worker too. DOM listeners should be also handled with no issues but the `event` can't *preventDefault* or *stopPropagation* as the listener will be asynchronous too. All well known *Symbol* also cross boundaries so that `[...window.document.querySelectorAll('*')]` or any other *Symbol* based functionality should be preserved, as long as the `symbol` is known as runtime symbols can't cross paths in any meaningful way.
+  * **isWindowProxy** is an utility that helps introspection of window proxies, callbacks, classes, or main thread references in general
 
-While the initial utility/behavior is preserved on both sides, the *Worker* can seamlessly use *global* / *main* thread to operate on DOM, *localStorage*, or literally anything else, included *Promise* based operations, DOM listeners, and so on.
+While the initial utility/behavior is preserved on both sides, the *Worker* can seamlessly use *window* / *main* thread to operate on DOM, *localStorage*, or literally anything else, included *Promise* based operations, DOM listeners, and so on.
 
 
 ```html
 <!-- main page -->
 <script type="module">
-  import coincident from 'coincident/global';
+  import coincident from 'coincident/window';
   const proxy = coincident(new Worker('./worker.js', {type: 'module'}));
 </script>
 ```
 
 ```js
 // The worker.js !!!
-import coincident from 'coincident/global';
+import coincident from 'coincident/window';
 
-const {proxy, global, isGlobal} = coincident(self);
+const {proxy, window, isWindowProxy} = coincident(self);
 // the proxy can expose or answer to main proxy counter part
 
 // ... but here is the fun part ...
-const {document} = global;
+const {document} = window;
 document.body.innerHTML = '<h1>Hello World!</h1>';
 
 document.body.appendChild(
@@ -129,4 +129,4 @@ document.body.addEventListener('click', event => {
 });
 ```
 
-See the [test/global.js](./test/global.js) file or reach `http://localhost:8080/test/global.html` locally to play around this feature.
+See the [test/window.js](./test/window.js) file or reach `http://localhost:8080/test/window.html` locally to play around this feature.

@@ -1,8 +1,8 @@
 import coincident from '../uhtml.js';
 
-const {global, uhtml} = coincident(self);
+const {window, uhtml} = coincident(self);
 const {render, html} = uhtml;
-const {document} = global;
+const {document} = window;
 
 tick(uhtml);
 setInterval(tick, 1000, uhtml);

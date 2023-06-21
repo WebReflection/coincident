@@ -1,9 +1,9 @@
-import coincident from '../global.js';
+import coincident from '../window.js';
 
-const {global} = coincident(self);
+const {window} = coincident(self);
 
 // neededd as global in hyperHTML module
-globalThis.document = global.document;
+globalThis.document = window.document;
 
 import('./hyperhtml.mjs').then(({bind}) => {
   const html = bind(document.body);
