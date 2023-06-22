@@ -91,20 +91,20 @@ Please keep in mind not all complex types are supported by the polyfill.
 
 ### coincident/window
 
-This entry point exports the same `coincident` module (using *JSON* as default) **but** the *Worker* utility returns an obejct with 3 fields:
+This entry point exports the same `coincident` module (using *JSON* as default) **but** the utility returns an obejct with 3 fields:
 
-  * **proxy** it's the usual proxy utility to expose or invoke functions defined in the main counter-part
-  * **window** it's the proxy that orchestrates access to the *main* world, including the ability to pass callbacks from the *Worker*, with the only caveat these will be inevitably executed asynchronously on the main thread, so that *Promise* or *thenable* work out of the box but *accessors* or defined callbacks will need to be awaited from the worker too. DOM listeners should be also handled with no issues but the `event` can't *preventDefault* or *stopPropagation* as the listener will be asynchronous too. All well known *Symbol* also cross boundaries so that `[...window.document.querySelectorAll('*')]` or any other *Symbol* based functionality should be preserved, as long as the `symbol` is known as runtime symbols can't cross paths in any meaningful way.
-  * **isWindowProxy** is an utility that helps introspection of window proxies, callbacks, classes, or main thread references in general
+  * **proxy** it's the usual proxy utility to expose or invoke functions defined in the main counter-part.
+  * **window** it's the proxy that orchestrates access to the *main* world in *Workers*, including the ability to pass callbacks from the *Worker*, with the only caveat these will be inevitably executed asynchronously on the main thread, so that *Promise* or *thenable* work out of the box but *accessors* or defined callbacks will need to be awaited from the worker too. DOM listeners should be also handled with no issues but the `event` can't *preventDefault* or *stopPropagation* as the listener will be asynchronous too. All well known *Symbol* also cross boundaries so that `[...window.document.querySelectorAll('*')]` or any other *Symbol* based functionality should be preserved, as long as the `symbol` is known as runtime symbols can't cross paths in any meaningful way. In the *main* thread, this is just a reference to the `globalThis` object.
+  * **isWindowProxy** is an utility that helps introspecting window proxies, callbacks, classes, or main thread references in general. This returns always `false` in the *main* thread.
 
-While the initial utility/behavior is preserved on both sides, the *Worker* can seamlessly use *window* / *main* thread to operate on DOM, *localStorage*, or literally anything else, included *Promise* based operations, DOM listeners, and so on.
+While the initial utility/behavior is preserved on both sides via `proxy`, the *Worker* can seamlessly use `window` utility to operate on *DOM*, *localStorage*, or literally anything else, included *Promise* based operations, DOM listeners, and so on.
 
 
 ```html
 <!-- main page -->
 <script type="module">
   import coincident from 'coincident/window';
-  const proxy = coincident(new Worker('./worker.js', {type: 'module'}));
+  const {proxy} = coincident(new Worker('./worker.js', {type: 'module'}));
 </script>
 ```
 
@@ -130,3 +130,38 @@ document.body.addEventListener('click', event => {
 ```
 
 See the [test/window.js](./test/window.js) file or reach `http://localhost:8080/test/window.html` locally to play around this feature.
+
+
+### coincident/uhtml
+
+This export includes [uhtml](https://github.com/WebReflection/uhtml#readme) to fully drive reactive UI from a Worker.
+
+The `uhtml` field is added to the returned object after `coincident(self)` call.
+
+```html
+<!-- main page -->
+<script type="module">
+  import coincident from 'coincident/window';
+  const {proxy, uhtml} = coincident(new Worker('./worker.js', {type: 'module'}));
+  // uhtml directly on main thread
+  const {render, html} = uhtml;
+</script>
+```
+
+```js
+// The worker.js !!!
+import coincident from 'coincident/window';
+
+const {proxy, window, uhtml} = coincident(self);
+
+// uhtml directly from the thread
+const {render, html} = uhtml;
+
+const {document} = window;
+
+render(document.body, html`
+  <h1>Hello uhtml!</h1>
+`);
+```
+
+See [test/uhtml.html](./test/uhtml.html) page or test it locally after `npm run server`.

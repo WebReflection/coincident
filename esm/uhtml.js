@@ -7,10 +7,10 @@ import init from 'uhtml/init';
  * @param {Worker | globalThis} self the context in which code should run
  */
 const coincident = (self, ...args) => {
-  const utility = $coincident(self, ...args);
-  if (!(self instanceof Worker))
-    utility.uhtml = init(utility.window);
-  return utility;
+  const utilities = $coincident(self, ...args);
+  if (!utilities.uhtml)
+    utilities.uhtml = init(utilities.window);
+  return utilities;
 }
 
 coincident.transfer = $coincident.transfer;
