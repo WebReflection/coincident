@@ -131,6 +131,20 @@ document.body.addEventListener('click', event => {
 
 See the [test/window.js](./test/window.js) file or reach `http://localhost:8080/test/window.html` locally to play around this feature.
 
+#### Extra features
+
+Beside providing some handy utility, the `window` (and other exports such as `uhtml`) allows *Workers*' listeners to synchronously invoke methods on the **event** on the main thread, before the proxied worker function gets a chance to get executed (remember, functions form the *worker* are inevitably async when executed from *main*).
+
+```js
+document.body.addEventListener(
+  'click',
+  event => console.log(event.type),
+  {invoke: ['preventDefault', 'stopImmediatePropagation']}
+);
+```
+
+When options are passed, be sure these contains [all the details you need](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#parameters) *plus* an `invoke` *string* or array of strings.
+
 
 ### coincident/uhtml
 
@@ -164,4 +178,4 @@ render(document.body, html`
 `);
 ```
 
-See [test/uhtml.html](./test/uhtml.html) page or test it locally after `npm run server`.
+See [test/uhtml.js](./test/uhtml.js) page or test it locally via `http://localhost:8080/test/uhtml.html` after `npm run server`.
