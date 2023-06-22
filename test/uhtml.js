@@ -1,6 +1,7 @@
+import * as JSON from '../node_modules/@ungap/structured-clone/esm/json.js';
 import coincident from '../uhtml.js';
 
-const {window, uhtml} = coincident(self);
+const {window, uhtml} = coincident(self, JSON);
 const {render, html} = uhtml;
 const {document} = window;
 

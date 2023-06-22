@@ -86,7 +86,17 @@ coincident(self).compute = (a, b) => (a + b);
 
 This entry point exports the exact same module except it uses [@ungap/structured-clone/json](https://github.com/ungap/structured-clone/#tojson) `parse` and `stringify` functions, allowing more complex, or recursive, objects to be passed along as result to, or from, the *worker*.
 
-Please keep in mind not all complex types are supported by the polyfill.
+Please keep in mind not all complex types are supported by the polyfill but also any other export could use this version with ease:
+
+```js
+import * as JSON from '@ungap/structured-clone/json';
+import coincident from 'coincident/uhtml';
+
+// bootstrap in both main / workers like this
+const {proxy, window, isWindowProxy} = coincident(self, JSON);
+
+// that's it: structured-clone enabled for responses!
+```
 
 
 ### coincident/window
