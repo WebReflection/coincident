@@ -35,11 +35,15 @@ import {
 let id = 0;
 const ids = new Map;
 const values = new Map;
+
 const __proxied__ = Symbol();
 
 const bound = target => typeof target === FUNCTION ? target() : target;
 
 const isWindowProxy = value => typeof value === OBJECT && !!value && __proxied__ in value;
+
+const isArray = 'isArray';
+const localArray = Array[isArray];
 
 const argument = asEntry(
   (type, value) => {
@@ -50,7 +54,7 @@ const argument = asEntry(
         let sid;
         // a bit apocalyptic scenario but if this thread runs forever
         // and the id does a whole int32 roundtrip we might have still
-        // some reference danglign around
+        // some reference dangling around
         while (values.has(sid = String(id++)));
         ids.set(value, sid);
         values.set(sid, value);
@@ -110,11 +114,7 @@ export default (main, MAIN, THREAD) => {
     },
     [DELETE_PROPERTY]: (target, name) => result(DELETE_PROPERTY, target, argument(name)),
     [GET_PROTOTYPE_OF]: target => result(GET_PROTOTYPE_OF, target),
-    [GET]: (target, name) => name === __proxied__ ? target : (
-      name === 'apply' && typeof target === FUNCTION ?
-        (self, args) => result(APPLY, target, argument(self), args.map(argument)) :
-        result(GET, target, argument(name))
-    ),
+    [GET]: (target, name) => name === __proxied__ ? target : result(GET, target, argument(name)),
     [GET_OWN_PROPERTY_DESCRIPTOR]: (target, name) => {
       const descriptor = result(GET_OWN_PROPERTY_DESCRIPTOR, target, argument(name));
       return descriptor && augment(descriptor, fromEntry);
@@ -140,10 +140,12 @@ export default (main, MAIN, THREAD) => {
   };
 
   const window = new Proxy([OBJECT, null], proxyHandler);
-  const localArray = Array.isArray;
-  const remoteArray = window.Array.isArray;
 
-  defineProperty(Array, 'isArray', {
+  // this is needed to avoid confusion when new Proxy([type, value])
+  // passes through `isArray` check, as that would return always true
+  // by specs and there's no Proxy trap to avoid it.
+  const remoteArray = window.Array[isArray];
+  defineProperty(Array, isArray, {
     value: ref => isWindowProxy(ref) ? remoteArray(ref) : localArray(ref)
   });
 

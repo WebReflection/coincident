@@ -3,16 +3,21 @@ import coincident from '../window.js';
 const {window} = coincident(self);
 
 const a = window.Array(1, 2);
-console.log(Array.isArray(new window.Number(0)));
-console.log(Array.isArray(a), Array.isArray(new window.Array(0)));
+console.assert(!Array.isArray(new window.Number(0)));
+console.assert(Array.isArray(a));
+console.assert(Array.isArray(new window.Array(0)));
 
-console.log(window.Array.isArray(new window.Number(0)));
-console.log(window.Array.isArray(a), window.Array.isArray(new window.Array(0)));
+console.assert(!window.Array.isArray(new window.Number(0)));
+console.assert(window.Array.isArray(a));
+console.assert(window.Array.isArray(new window.Array(0)));
 
-console.log(window.Array.isArray(new Number(0)));
-console.log(window.Array.isArray(a), window.Array.isArray([0]));
+console.assert(!window.Array.isArray(new Number(0)));
+console.assert(window.Array.isArray(a));
+console.assert(window.Array.isArray([0]));
 
-console.log(Object.getOwnPropertyDescriptor(Array, 'isArray'));
+console.assert(!Object.getOwnPropertyDescriptor(Array, 'isArray').enumerable);
 
+console.log([...a]);
+window.console.log(a);
 console.log.apply(null, [a]);
 window.console.log.apply(null, [a]);
