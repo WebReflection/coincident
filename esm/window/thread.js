@@ -69,7 +69,7 @@ export default (main, MAIN, THREAD) => {
   });
 
   const register = (entry) => {
-    const [type, value] = entry;
+    const {t: type, v: value} = entry;
     if (!proxies.has(value)) {
       const target = type === FUNCTION ? Bound.bind(entry) : entry;
       const proxy = new Proxy(target, proxyHandler);
@@ -81,7 +81,7 @@ export default (main, MAIN, THREAD) => {
   };
 
   const fromEntry = entry => {
-    const [type, value] = entry;
+    const {t: type, v: value} = entry;
     switch (type) {
       case OBJECT:
         return typeof value === NUMBER ? register(entry) : value;
@@ -134,7 +134,7 @@ export default (main, MAIN, THREAD) => {
 
   return {
     proxy: main,
-    window: new Proxy([OBJECT, null], proxyHandler),
+    window: new Proxy({t: OBJECT, v: null}, proxyHandler),
     isWindowProxy: value => typeof value === OBJECT && !!value && __proxied__ in value,
     // TODO: remove this stuff ASAP
     get global() {
