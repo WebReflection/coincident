@@ -1,5 +1,6 @@
 import {
   augment,
+  defineProperty,
   entry,
   asEntry,
   symbol
@@ -30,7 +31,15 @@ import {
   DELETE
 } from './traps.js';
 
+
+let id = 0;
+const ids = new Map;
+const values = new Map;
+const __proxied__ = Symbol();
+
 const bound = target => typeof target === FUNCTION ? target() : target;
+
+const isWindowProxy = value => typeof value === OBJECT && !!value && __proxied__ in value;
 
 const argument = asEntry(
   (type, value) => {
@@ -52,12 +61,6 @@ const argument = asEntry(
   }
 );
 
-const __proxied__ = Symbol();
-
-let id = 0;
-const ids = new Map;
-const values = new Map;
-
 export default (main, MAIN, THREAD) => {
   const {[MAIN]: __main__} = main;
 
@@ -69,7 +72,7 @@ export default (main, MAIN, THREAD) => {
   });
 
   const register = (entry) => {
-    const {t: type, v: value} = entry;
+    const [type, value] = entry;
     if (!proxies.has(value)) {
       const target = type === FUNCTION ? Bound.bind(entry) : entry;
       const proxy = new Proxy(target, proxyHandler);
@@ -81,7 +84,7 @@ export default (main, MAIN, THREAD) => {
   };
 
   const fromEntry = entry => {
-    const {t: type, v: value} = entry;
+    const [type, value] = entry;
     switch (type) {
       case OBJECT:
         return typeof value === NUMBER ? register(entry) : value;
@@ -107,7 +110,11 @@ export default (main, MAIN, THREAD) => {
     },
     [DELETE_PROPERTY]: (target, name) => result(DELETE_PROPERTY, target, argument(name)),
     [GET_PROTOTYPE_OF]: target => result(GET_PROTOTYPE_OF, target),
-    [GET]: (target, name) => name === __proxied__ ? target : result(GET, target, argument(name)),
+    [GET]: (target, name) => name === __proxied__ ? target : (
+      name === 'apply' && typeof target === FUNCTION ?
+        (self, args) => result(APPLY, target, argument(self), args.map(argument)) :
+        result(GET, target, argument(name))
+    ),
     [GET_OWN_PROPERTY_DESCRIPTOR]: (target, name) => {
       const descriptor = result(GET_OWN_PROPERTY_DESCRIPTOR, target, argument(name));
       return descriptor && augment(descriptor, fromEntry);
@@ -132,10 +139,18 @@ export default (main, MAIN, THREAD) => {
     }
   };
 
+  const window = new Proxy([OBJECT, null], proxyHandler);
+  const localArray = Array.isArray;
+  const remoteArray = window.Array.isArray;
+
+  defineProperty(Array, 'isArray', {
+    value: ref => isWindowProxy(ref) ? remoteArray(ref) : localArray(ref)
+  });
+
   return {
+    window,
+    isWindowProxy,
     proxy: main,
-    window: new Proxy({t: OBJECT, v: null}, proxyHandler),
-    isWindowProxy: value => typeof value === OBJECT && !!value && __proxied__ in value,
     // TODO: remove this stuff ASAP
     get global() {
       console.warn('Deprecated: please access `window` field instead');
