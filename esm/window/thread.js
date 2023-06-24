@@ -1,5 +1,7 @@
 import {
+  TypedArray,
   augment,
+  defineProperty,
   entry,
   asEntry,
   symbol
@@ -30,7 +32,19 @@ import {
   DELETE
 } from './traps.js';
 
+
+let id = 0;
+const ids = new Map;
+const values = new Map;
+
+const __proxied__ = Symbol();
+
 const bound = target => typeof target === FUNCTION ? target() : target;
+
+const isWindowProxy = value => typeof value === OBJECT && !!value && __proxied__ in value;
+
+const isArray = 'isArray';
+const localArray = Array[isArray];
 
 const argument = asEntry(
   (type, value) => {
@@ -41,25 +55,23 @@ const argument = asEntry(
         let sid;
         // a bit apocalyptic scenario but if this thread runs forever
         // and the id does a whole int32 roundtrip we might have still
-        // some reference danglign around
+        // some reference dangling around
         while (values.has(sid = String(id++)));
         ids.set(value, sid);
         values.set(sid, value);
       }
       return entry(type, ids.get(value));
     }
+    if (!(value instanceof TypedArray)) {
+      for(const key in value)
+        value[key] = argument(value[key]);
+    }
     return entry(type, value);
   }
 );
 
-const __proxied__ = Symbol();
-
-let id = 0;
-const ids = new Map;
-const values = new Map;
-
 export default (main, MAIN, THREAD) => {
-  const {[MAIN]: __main__} = main;
+  const { [MAIN]: __main__ } = main;
 
   const proxies = new Map;
 
@@ -99,7 +111,7 @@ export default (main, MAIN, THREAD) => {
     [APPLY]: (target, thisArg, args) => result(APPLY, target, argument(thisArg), args.map(argument)),
     [CONSTRUCT]: (target, args) => result(CONSTRUCT, target, args.map(argument)),
     [DEFINE_PROPERTY]: (target, name, descriptor) => {
-      const {get, set, value} = descriptor;
+      const { get, set, value } = descriptor;
       if (typeof get === FUNCTION) descriptor.get = argument(get);
       if (typeof set === FUNCTION) descriptor.set = argument(set);
       if (typeof value === FUNCTION) descriptor.value = argument(value);
@@ -132,10 +144,20 @@ export default (main, MAIN, THREAD) => {
     }
   };
 
+  const window = new Proxy([OBJECT, null], proxyHandler);
+
+  // this is needed to avoid confusion when new Proxy([type, value])
+  // passes through `isArray` check, as that would return always true
+  // by specs and there's no Proxy trap to avoid it.
+  const remoteArray = window.Array[isArray];
+  defineProperty(Array, isArray, {
+    value: ref => isWindowProxy(ref) ? remoteArray(ref) : localArray(ref)
+  });
+
   return {
+    window,
+    isWindowProxy,
     proxy: main,
-    window: new Proxy([OBJECT, null], proxyHandler),
-    isWindowProxy: value => typeof value === OBJECT && !!value && __proxied__ in value,
     // TODO: remove this stuff ASAP
     get global() {
       console.warn('Deprecated: please access `window` field instead');

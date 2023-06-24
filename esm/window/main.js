@@ -1,4 +1,5 @@
 import {
+  TypedArray,
   defineProperty,
   getOwnPropertyDescriptor,
   getPrototypeOf,
@@ -92,9 +93,15 @@ export default (thread, MAIN, THREAD) => {
   const target = ([type, value]) => {
     switch (type) {
       case OBJECT:
-        return value == null ? globalThis : (
-          typeof value === NUMBER ? values.get(value) : value
-        );
+        if (value == null)
+          return globalThis;
+        if (typeof value === NUMBER)
+          return values.get(value);
+        if (!(value instanceof TypedArray)) {
+          for (const key in value)
+            value[key] = target(value[key]);
+        }
+        return value;
       case FUNCTION:
         if (typeof value === STRING) {
           if (!values.has(value)) {
