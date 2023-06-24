@@ -1,4 +1,5 @@
 import {
+  TypedArray,
   augment,
   defineProperty,
   entry,
@@ -61,12 +62,16 @@ const argument = asEntry(
       }
       return entry(type, ids.get(value));
     }
+    if (!(value instanceof TypedArray)) {
+      for(const key in value)
+        value[key] = argument(value[key]);
+    }
     return entry(type, value);
   }
 );
 
 export default (main, MAIN, THREAD) => {
-  const {[MAIN]: __main__} = main;
+  const { [MAIN]: __main__ } = main;
 
   const proxies = new Map;
 
@@ -106,7 +111,7 @@ export default (main, MAIN, THREAD) => {
     [APPLY]: (target, thisArg, args) => result(APPLY, target, argument(thisArg), args.map(argument)),
     [CONSTRUCT]: (target, args) => result(CONSTRUCT, target, args.map(argument)),
     [DEFINE_PROPERTY]: (target, name, descriptor) => {
-      const {get, set, value} = descriptor;
+      const { get, set, value } = descriptor;
       if (typeof get === FUNCTION) descriptor.get = argument(get);
       if (typeof set === FUNCTION) descriptor.set = argument(set);
       if (typeof value === FUNCTION) descriptor.value = argument(value);

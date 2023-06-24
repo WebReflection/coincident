@@ -22,6 +22,8 @@ const {
   setPrototypeOf
 } = Reflect;
 
+export const TypedArray = getPrototypeOf(Int8Array);
+
 export {
   defineProperty,
   getOwnPropertyDescriptor,
