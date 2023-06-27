@@ -28,8 +28,8 @@
     "@rollup/plugin-terser": "^0.4.3",
     "ascjs": "^5.0.1",
     "c8": "^8.0.0",
-    "rollup": "^3.25.1",
-    "static-handler": "^0.4.1",
+    "rollup": "^3.25.3",
+    "static-handler": "^0.4.2",
     "uhtml": "^3.2.1"
   },
   "module": "./esm/index.js",
