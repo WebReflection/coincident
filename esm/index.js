@@ -42,6 +42,14 @@ const coincident = (self, {parse, stringify} = JSON) => {
     const post = (transfer, ...args) => self.postMessage({[CHANNEL]: args}, {transfer});
 
     context.set(self, new Proxy(new Map, {
+      // there is very little point in checking prop in proxy for this very specific case
+      // and I don't want to orchestrate a whole roundtrip neither, as stuff would fail
+      // regardless if from Worker we access non existent Main callback, and vice-versa.
+      // This is here mostly to guarantee that if such check is performed, at least the
+      // get trap goes through and then it's up to developers guarantee they are accessing
+      // stuff that actually exists elsewhere.
+      has: () => true,
+
       // worker related: get any utility that should be available on the main thread
       get: (_, action) => action === 'then' ? null : ((...args) => {
         // transaction id
