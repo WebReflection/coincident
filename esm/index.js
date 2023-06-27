@@ -48,7 +48,7 @@ const coincident = (self, {parse, stringify} = JSON) => {
       // This is here mostly to guarantee that if such check is performed, at least the
       // get trap goes through and then it's up to developers guarantee they are accessing
       // stuff that actually exists elsewhere.
-      has: () => true,
+      has: (_, action) => typeof action === 'string' && !action.startsWith('_'),
 
       // worker related: get any utility that should be available on the main thread
       get: (_, action) => action === 'then' ? null : ((...args) => {
