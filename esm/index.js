@@ -13,6 +13,7 @@ const {BYTES_PER_ELEMENT: UI16_BYTES} = Uint16Array;
 const {isArray} = Array;
 const {notify, wait, waitAsync} = Atomics;
 const {fromCharCode} = String;
+const {create} = Object;
 
 // automatically uses sync wait (worker -> main)
 // or fallback to async wait (main -> worker)
@@ -28,6 +29,7 @@ const context = new WeakMap;
 
 // used to generate a unique `id` per each worker `postMessage` "transaction"
 let uid = 0;
+let allowedAction = false;
 
 /**
  * Create once a `Proxy` able to orchestrate synchronous `postMessage` out of the box.
@@ -41,7 +43,7 @@ const coincident = (self, {parse, stringify} = JSON) => {
     // ensure the CHANNEL and data are posted correctly
     const post = (transfer, ...args) => self.postMessage({[CHANNEL]: args}, {transfer});
 
-    context.set(self, new Proxy(new Map, {
+    context.set(self, new Proxy(create(null), {
       // worker related: get any utility that should be available on the main thread
       get: (_, action) => action === 'then' ? null : ((...args) => {
         // transaction id
@@ -85,7 +87,9 @@ const coincident = (self, {parse, stringify} = JSON) => {
       // main thread related: react to any utility a worker is asking for
       set(actions, action, callback) {
         // lazy event listener and logic handling, triggered once by setters actions
-        if (!actions.size) {
+        if (!allowedAction) {
+          // flag self as already augmented with actions
+          allowedAction = true;
           // maps results by `id` as they are asked for
           const results = new Map;
           // add the event listener once (first defined setter, all others work the same)
@@ -99,9 +103,10 @@ const coincident = (self, {parse, stringify} = JSON) => {
               // action available: it must be defined/known on the main thread
               if (rest.length) {
                 const [action, args] = rest;
-                if (actions.has(action)) {
+                if (action in actions) {
                   // await for result either sync or async and serialize it
-                  const result = stringify(await actions.get(action)(...args));
+                  const callback = actions[action];
+                  const result = stringify(await callback(...args));
                   if (result) {
                     // store the result for "the very next" event listener call
                     results.set(id, result);
@@ -129,7 +134,8 @@ const coincident = (self, {parse, stringify} = JSON) => {
           });
         }
         // store this action callback allowing the setter in the process
-        return !!actions.set(action, callback);
+        actions[action] = callback;
+        return allowedAction;
       }
     }));
   }

@@ -4,6 +4,7 @@
     <title>uhtml dbmonster</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="dbmonster.css">
+    <script src="../../coi-serviceworker.js"></script>
     <script type="module">
       import coincident from '../../uhtml.js';
       coincident(new Worker('./dbmonster.js', {type: 'module'}));
