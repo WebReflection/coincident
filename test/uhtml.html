@@ -3,8 +3,9 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <script src="../coi-serviceworker.js"></script>
     <script type="module">
-    import * as JSON from '../node_modules/@ungap/structured-clone/esm/json.js';
+    // import * as JSON from '../node_modules/@ungap/structured-clone/esm/json.js';
     import coincident from '../uhtml.js';
     coincident(new Worker('./uhtml.js', {type: 'module'}), JSON);
     </script>

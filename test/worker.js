@@ -1,6 +1,6 @@
-import coincident from '../es.js';
+import coincident from '../window.js';
 
-const until = coincident(self);
+const until = coincident(self).proxy;
 
 console.log('asking for an input');
 // pauses in a non blocking way the worker until the answer has been received

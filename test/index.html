@@ -3,13 +3,14 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
+    <script src="../coi-serviceworker.js"></script>
     <script type="module">
-    import coincident from '../esm/index.js';
+    import coincident from '../window.js';
     const worker = new Worker('./worker.js', {type: 'module'});
     // sync way VS promise based (more Webbish)
     // add a slash in front of the next line to see the form
     //**/coincident(worker).input = value => prompt(value);/*
-    coincident(worker).input = placeholder => new Promise(resolve => {
+    coincident(worker).proxy.input = placeholder => new Promise(resolve => {
       const [user, submit] = document.querySelectorAll('input');
       submit.addEventListener('click', event => {
         event.preventDefault();
