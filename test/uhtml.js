@@ -1,4 +1,4 @@
-import * as JSON from '../node_modules/@ungap/structured-clone/esm/json.js';
+// import * as JSON from '../node_modules/@ungap/structured-clone/esm/json.js';
 import coincident from '../uhtml.js';
 
 const {window, uhtml} = coincident(self, JSON);
