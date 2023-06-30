@@ -4,13 +4,14 @@
   "description": "An Atomics based Proxy to simplify, and synchronize, Worker related tasks",
   "main": "./cjs/index.js",
   "scripts": {
-    "build": "node rollup/channel.cjs && npm run cjs && npm run rollup:es && npm run rollup:window && npm run rollup:structured && npm run rollup:uhtml && npm run test",
+    "build": "node rollup/channel.cjs && npm run cjs && npm run rollup:es && npm run rollup:window && npm run rollup:structured && npm run rollup:uhtml && npm run test:integration && npm run size",
     "cjs": "ascjs --no-default esm cjs",
     "rollup:es": "rollup --config rollup/es.config.js",
     "rollup:window": "rollup --config rollup/window.config.js",
     "rollup:structured": "rollup --config rollup/structured.config.js",
     "rollup:uhtml": "rollup --config rollup/uhtml.config.js",
     "test": "c8 node test/index.js",
+    "test:integration": "playwright test test/",
     "server": "npx static-handler --cors --coop --coep --corp .",
     "size": "echo -e \"\\x1b[1mfile        size\\x1b[0m\"; echo \"es           $(cat es.js | brotli | wc -c)\"; echo \"structured  $(cat structured.js | brotli | wc -c)\"; echo \"window      $(cat window.js | brotli | wc -c)\"; echo \"uhtml       $(cat uhtml.js | brotli | wc -c)\"",
     "coverage": "mkdir -p ./coverage; c8 report --reporter=text-lcov > ./coverage/lcov.info"
@@ -24,8 +25,10 @@
   "author": "Andrea Giammarchi",
   "license": "ISC",
   "devDependencies": {
+    "@playwright/test": "^1.35.1",
     "@rollup/plugin-node-resolve": "^15.1.0",
     "@rollup/plugin-terser": "^0.4.3",
+    "@ungap/with-resolvers": "^0.1.0",
     "ascjs": "^6.0.2",
     "c8": "^8.0.0",
     "rollup": "^3.26.0",
