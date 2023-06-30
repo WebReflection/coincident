@@ -1,5 +1,7 @@
 # coincident
 
+[![build](https://github.com/WebReflection/coincident/actions/workflows/node.js.yml/badge.svg)](https://github.com/WebReflection/coincident/actions/workflows/node.js.yml)
+
 <sup>**Social Media Photo by [bady abbas](https://unsplash.com/@bady) on [Unsplash](https://unsplash.com/)**</sup>
 
 An [Atomics](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Atomics) based [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) to simplify, and synchronize, [Worker](https://developer.mozilla.org/en-US/docs/Web/API/Worker) related tasks.
