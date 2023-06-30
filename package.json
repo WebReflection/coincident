@@ -26,9 +26,9 @@
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^15.1.0",
     "@rollup/plugin-terser": "^0.4.3",
-    "ascjs": "^5.0.1",
+    "ascjs": "^6.0.2",
     "c8": "^8.0.0",
-    "rollup": "^3.25.3",
+    "rollup": "^3.26.0",
     "static-handler": "^0.4.2",
     "uhtml": "^3.2.1"
   },
@@ -50,6 +50,10 @@
     "./structured": {
       "import": "./esm/structured.js",
       "default": "./cjs/structured.js"
+    },
+    "./json": {
+      "import": "./esm/json.js",
+      "default": "./cjs/json.js"
     },
     "./uhtml": {
       "import": "./esm/uhtml.js",

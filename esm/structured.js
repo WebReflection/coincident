@@ -1,4 +1,4 @@
-import * as JSON from '@ungap/structured-clone/json';
+import JSON from './json.js';
 import $coincident from './index.js';
 
 /**
