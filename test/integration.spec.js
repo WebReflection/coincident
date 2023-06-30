@@ -4,7 +4,7 @@ const { scripts } = require(join(__dirname, '..', 'package.json'));
 const { test, expect } = require('@playwright/test');
 
 // amount of ms to be sure the server is running
-const BOOT_DELAY = 500;
+const WORKER_DELAY = 50;
 
 const pages = new WeakMap;
 const server = {
@@ -13,7 +13,14 @@ const server = {
 };
 
 test.beforeAll(() => {
-  server.process = require('child_process').exec(scripts.server);
+  const [command, ...args] = scripts.server.split(/\s+/);
+  server.process = require('child_process').spawn(command, args, {
+    cwd: join(__dirname, '..'),
+  });
+  server.process.stdout.on('data', server.resolve);
+  // this is to ignore dangling server around
+  // (tests will fail if not pointing at the right localhost)
+  server.process.stderr.on('data', server.resolve);
 });
 
 test.afterAll(() => {
@@ -23,19 +30,14 @@ test.afterAll(() => {
 test.beforeEach(async ({ page }) => {
   const {resolve, promise} = Promise.withResolvers();
   page.once('worker', worker => {
-    // don't wait for explicitly closed workers
-    worker.once('close', resolve);
     // give the worker enough time to be parsed and do stuff
-    setTimeout(resolve, BOOT_DELAY / 4);
+    setTimeout(resolve, WORKER_DELAY);
   });
   pages.set(page, promise);
   await server.promise;
-  // no worker case
-  setTimeout(resolve, BOOT_DELAY / 2);
+  // no worker case (wait twice to be sure)
+  setTimeout(resolve, WORKER_DELAY * 2);
 });
-
-setTimeout(server.resolve, BOOT_DELAY);
-
 
 test('has title', async ({ page }) => {
   await page.goto('http://localhost:8080/test/integration/');
