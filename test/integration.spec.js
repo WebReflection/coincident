@@ -13,12 +13,7 @@ const server = {
 };
 
 test.beforeAll(() => {
-  server.process = require('child_process').exec(scripts.server, error => {
-    if (error && error.signal !== 'SIGTERM') {
-      server.reject(error);
-      throw error;
-    }
-  });
+  server.process = require('child_process').exec(scripts.server);
 });
 
 test.afterAll(() => {
