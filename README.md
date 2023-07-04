@@ -191,3 +191,102 @@ render(document.body, html`
 ```
 
 See [test/uhtml.js](./test/uhtml.js) page or test it locally via `http://localhost:8080/test/uhtml.html` after `npm run server`.
+
+
+### coincident/server
+
+<sup><sub>⚠️ **WARNING - THIS EXPORT SHOULD NOT BE PUBLICLY AVAILABLE**</sub></sup>
+
+This export, automatically based on `structured` export to allow passing more complex data around, allows a *Worker* to drive not just the *main* thread (UI/DOM/global page namespace) but also a *server* such as *NodeJS* or *Bun* (both successfully tested) and likely more, as long as a *WebSocketServer* like reference is passed along while creating the connection.
+
+
+**HTML example** - see [test/server/index.html](./test/server/index.html)
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>body{font-family:Arial, Helvetica, sans-serif}</style>
+    <script type="module">
+      // import the `/server` export
+      import coincident from 'coincident/server';
+      // define the worker super-chard with main/server power
+      const w = new Worker('./worker.js', {type: 'module'});
+      // pass along the socket to use for such interaction
+      const ws = new WebSocket('ws://localhost:8080/');
+      // retrieve usual `/window` utilities/helpers and move on
+      const {proxy, window, isWindowProxy} = coincident(w, ws);
+    </script>
+</head>
+</html>
+```
+
+**Worker example** - see [test/server/worker.js](./test/server/worker.js)
+```js
+import coincident from 'coincident/server';
+
+const {
+  proxy,            // the main thread (UI/DOM) proxy
+  window,           // the window reference
+  isWindowProxy,    // the window introspection helper
+  server,           // the server reference
+  isServerProxy,    // the server introspection helper
+} = coincident(self);
+
+// deal directly with the server modules out of the box
+const os = server.require('os');
+
+// deal directly with the main UI/DOM thread out of the box
+window.document.body.innerHTML = `
+  <h1>coincident/server</h1>
+  <h2>Platform Info</h2>
+  <ul>
+    <li>Platform: ${os.platform()}</li>
+    <li>Arch: ${os.arch()}</li>
+    <li>CPUS: ${os.cpus().length}</li>
+    <li>RAM: ${os.totalmem()}</li>
+    <li>Free: ${os.freemem()}</li>
+  </ul>
+`;
+
+```
+
+**NodeJS / Bun example** - see [test/server/main.cjs](./test/server/main.cjs)
+```js
+const {createServer} = require('http');
+const {join} = require('path');
+const {WebSocketServer} = require('ws');
+
+// static file server utility + headers for SharedArrayBuffer
+const staticHandler = require('static-handler');
+const handler = staticHandler(join(__dirname, '..', '..'), {
+  'Access-Control-Allow-Origin': '*',
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  'Cross-Origin-Embedder-Policy': 'require-corp',
+  'Cross-Origin-Resource-Policy': 'cross-origin'
+});
+
+const server = createServer(handler);
+
+// require the coincident export
+const coincident = require('coincident/server');
+
+// pass along the wss to instrument with listeners
+// and a list of globals utilities to make available
+// whenever the Worker tries to reach these
+coincident(new WebSocketServer({server}), {require});
+
+// bootstrap the server and that's it!
+server.listen(8080, () => {
+  console.log(`http://localhost:8080/test/server/`);
+});
+```
+
+The main goal of this export is **IoT** related projects, *KIOSK* like project, *Electron* like project, *Tauri* integration, and so on ... there's the possibility to fully orchestrate from a worker listeners on the page that result into *Server* operations and so on and so forth, so please be aware while this is an **achievement unlocked** from my side, it's also potentially dangerous if used in any open space where evil attackers can try to operate Server side operations on "*your*" behalf, as if it was the *Worker* itself asking for such operations.
+
+That being said, in Apps where no foreign code is allowed, this export unlocks an infinite amount of potentials for any sort of project.
+
+Alternatively, please consider strict *CSP* rules to be sure no code evaluation can arrive from a console, from foreign injected files, from users' input, and so on.
+
+Thanks for trying this feature out as no other projects (to date) can do in a cross platform, cross browser, cross environment way what this module currently offer.

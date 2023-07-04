@@ -1,6 +1,6 @@
 /*! (c) Andrea Giammarchi - ISC */
 
-import CHANNEL from './channel.js';
+import {CHANNEL} from './channel.js';
 import waitAsyncFallback from './fallback.js';
 
 // just minifier friendly for Blob Workers' cases
