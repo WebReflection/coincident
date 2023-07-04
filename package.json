@@ -3,6 +3,7 @@
   "version": "0.10.0",
   "description": "An Atomics based Proxy to simplify, and synchronize, Worker related tasks",
   "main": "./cjs/index.js",
+  "types": "./types/index.d.ts",
   "scripts": {
     "build": "node rollup/channel.cjs && npm run cjs && npm run rollup:es && npm run rollup:window && npm run rollup:structured && npm run rollup:uhtml && npm run rollup:server && npm run test:integration && npm run size",
     "cjs": "ascjs --no-default esm cjs",
@@ -14,6 +15,7 @@
     "test": "c8 node test/index.js",
     "test:integration": "playwright test test/",
     "test:server": "node test/server/main.cjs",
+    "ts": "tsc -p .",
     "server": "npx static-handler --cors --coop --coep --corp .",
     "size": "echo -e \"\\x1b[1mfile        size\\x1b[0m\"; echo \"es           $(cat es.js | brotli | wc -c)\"; echo \"structured  $(cat structured.js | brotli | wc -c)\"; echo \"window      $(cat window.js | brotli | wc -c)\"; echo \"server      $(cat server.js | brotli | wc -c)\"; echo \"uhtml       $(cat uhtml.js | brotli | wc -c)\";",
     "coverage": "mkdir -p ./coverage; c8 report --reporter=text-lcov > ./coverage/lcov.info"
@@ -35,36 +37,39 @@
     "c8": "^8.0.0",
     "rollup": "^3.26.0",
     "static-handler": "^0.4.2",
+    "typescript": "^5.1.6",
     "uhtml": "^3.2.1"
   },
   "module": "./esm/index.js",
   "type": "module",
   "exports": {
     ".": {
+      "types": "./types/index.d.ts",
       "import": "./esm/index.js",
       "default": "./cjs/index.js"
     },
-    "./global": {
-      "import": "./esm/window.js",
-      "default": "./cjs/window.js"
-    },
     "./window": {
+      "types": "./types/window.d.ts",
       "import": "./esm/window.js",
       "default": "./cjs/window.js"
     },
     "./server": {
+      "types": "./types/server.d.ts",
       "import": "./esm/server.js",
       "default": "./cjs/server.js"
     },
     "./structured": {
+      "types": "./types/structured.d.ts",
       "import": "./esm/structured.js",
       "default": "./cjs/structured.js"
     },
     "./json": {
+      "types": "./types/json.d.ts",
       "import": "./esm/json.js",
       "default": "./cjs/json.js"
     },
     "./uhtml": {
+      "types": "./types/window.d.ts",
       "import": "./esm/uhtml.js",
       "default": "./cjs/uhtml.js"
     },

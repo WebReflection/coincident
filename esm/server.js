@@ -15,7 +15,38 @@ const {parse, stringify} = JSON;
 const isServer = !!globalThis.process;
 const proxies = new WeakMap;
 
+/**
+ * @typedef {object} Coincident
+ * @property {ProxyHandler<globalThis>} proxy
+ * @property {ProxyHandler<Window>} window
+ * @property {(value: any) => boolean} isWindowProxy
+ */
+
+/**
+ * @typedef {object & Coincident} CoincidentWorker
+ * @property {ProxyHandler<globalThis>} proxy
+ * @property {ProxyHandler<Window>} window
+ * @property {(value: any) => boolean} isWindowProxy
+ * @property {ProxyHandler<NodeJS>} server
+ * @property {(value: any) => boolean} isServerProxy
+ */
+
+/**
+ * @callback CoincidentServer
+ * @param {WebSocketServer} wss the WebSocketServer to use to handle Worker/Server calls
+ * @param {object} [globals] optional globals to expose through the Worker via the proxy
+ * @returns {WebSocketServer}
+ */
+
+/**
+ * @callback CoincidentWeb
+ * @param {globalThis | Worker} self either the main thread (Worker)or a worker (in main thread UI)
+ * @param  {WebSocket} [ws] the optional WebSocket to use when `self` is `globalThis` 
+ * @returns {Coincident | CoincidentWorker}
+ */
+
 const coincident = isServer ?
+  /** @type {CoincidentServer} */
   (wss, globals) => wss.on('connection', ws => {
     const util = serverMain(
       {[SERVER_THREAD]: (...args) => {
@@ -30,11 +61,13 @@ const coincident = isServer ?
       ws.send(stringify(__main__(...parse(data))));
     });
   }) :
-  (self, ...args) => {
+
+  /** @type {CoincidentWeb} */
+  (self, ws) => {
     const proxy = $coincident(self);
     if (!proxies.has(proxy)) {
       const util = self instanceof Worker ? mainBridge : threadBridge;
-      proxies.set(proxy, util(proxy, MAIN, THREAD, ...args));
+      proxies.set(proxy, util(proxy, MAIN, THREAD, ws));
     }
     return proxies.get(proxy);
   }

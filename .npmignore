@@ -9,3 +9,4 @@ rollup/
 test/
 index.html
 favicon.ico
+tsconfig.json
