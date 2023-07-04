@@ -4,16 +4,18 @@
   "description": "An Atomics based Proxy to simplify, and synchronize, Worker related tasks",
   "main": "./cjs/index.js",
   "scripts": {
-    "build": "node rollup/channel.cjs && npm run cjs && npm run rollup:es && npm run rollup:window && npm run rollup:structured && npm run rollup:uhtml && npm run test:integration && npm run size",
+    "build": "node rollup/channel.cjs && npm run cjs && npm run rollup:es && npm run rollup:window && npm run rollup:structured && npm run rollup:uhtml && npm run rollup:server && npm run test:integration && npm run size",
     "cjs": "ascjs --no-default esm cjs",
     "rollup:es": "rollup --config rollup/es.config.js",
-    "rollup:window": "rollup --config rollup/window.config.js",
+    "rollup:server": "rollup --config rollup/server.config.js",
     "rollup:structured": "rollup --config rollup/structured.config.js",
     "rollup:uhtml": "rollup --config rollup/uhtml.config.js",
+    "rollup:window": "rollup --config rollup/window.config.js",
     "test": "c8 node test/index.js",
     "test:integration": "playwright test test/",
+    "test:server": "node test/server/main.cjs",
     "server": "npx static-handler --cors --coop --coep --corp .",
-    "size": "echo -e \"\\x1b[1mfile        size\\x1b[0m\"; echo \"es           $(cat es.js | brotli | wc -c)\"; echo \"structured  $(cat structured.js | brotli | wc -c)\"; echo \"window      $(cat window.js | brotli | wc -c)\"; echo \"uhtml       $(cat uhtml.js | brotli | wc -c)\"",
+    "size": "echo -e \"\\x1b[1mfile        size\\x1b[0m\"; echo \"es           $(cat es.js | brotli | wc -c)\"; echo \"structured  $(cat structured.js | brotli | wc -c)\"; echo \"window      $(cat window.js | brotli | wc -c)\"; echo \"server      $(cat server.js | brotli | wc -c)\"; echo \"uhtml       $(cat uhtml.js | brotli | wc -c)\";",
     "coverage": "mkdir -p ./coverage; c8 report --reporter=text-lcov > ./coverage/lcov.info"
   },
   "keywords": [
@@ -49,6 +51,10 @@
     "./window": {
       "import": "./esm/window.js",
       "default": "./cjs/window.js"
+    },
+    "./server": {
+      "import": "./esm/server.js",
+      "default": "./cjs/server.js"
     },
     "./structured": {
       "import": "./esm/structured.js",

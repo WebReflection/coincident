@@ -1,3 +1,3 @@
 import main from '../shared/main.js';
 
-export default main('Window', true);
+export default main('Server', false);

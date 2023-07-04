@@ -22,9 +22,15 @@ const {
   setPrototypeOf
 } = Reflect;
 
+const {assign, create} = Object;
+
 export const TypedArray = getPrototypeOf(Int8Array);
 
+export const isArray = 'isArray';
+
 export {
+  assign,
+  create,
   defineProperty,
   getOwnPropertyDescriptor,
   getPrototypeOf,
@@ -79,3 +85,7 @@ export const symbol = value => {
       return symbol;
   }
 };
+
+export function Bound() {
+  return this;
+}

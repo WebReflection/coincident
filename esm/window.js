@@ -1,10 +1,7 @@
-import CHANNEL from './channel.js';
+import {MAIN, THREAD} from './channel.js';
 import $coincident from './index.js';
 import main from './window/main.js';
 import thread from './window/thread.js';
-
-const MAIN = CHANNEL + 'M';
-const THREAD = CHANNEL + 'T';
 
 const proxies = new WeakMap;
 
