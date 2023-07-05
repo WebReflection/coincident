@@ -80,7 +80,6 @@ const coincident = isServer ?
       ws
         .on('close', () => {
           for (const [_, resolve] of resolvers) resolve();
-          resolvers.clear();
         })
         .on('message', buffer => {
           const {id, result} = parseData(String(buffer));
@@ -122,7 +121,6 @@ const mainBridge = (self, thread, MAIN, THREAD, ws) => {
       resolve = $;
       ws.send(stringify(args));
     });
-    ws.send(stringify([SERVER_MAIN, SERVER_THREAD]));
     ws.addEventListener('message', () => {
       ws.addEventListener('message', async ({data}) => {
         const {id, result} = parseData(data);
@@ -138,6 +136,7 @@ const mainBridge = (self, thread, MAIN, THREAD, ws) => {
       });
       Atomics.notify(i32, 0);
     }, {once: true});
+    ws.send(stringify([SERVER_MAIN, SERVER_THREAD]));
   }, {once: true});
   return main(thread, MAIN, THREAD);
 };
