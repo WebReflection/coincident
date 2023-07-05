@@ -5,7 +5,7 @@ export default {
   input: './esm/server.js',
   plugins: [
     nodeResolve(),
-    // terser()
+    terser()
   ],
   output: {
     esModule: true,

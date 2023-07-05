@@ -8,7 +8,9 @@ const {
   isServerProxy,    // the server introspection helper
 } = coincident(self);
 
+console.log('server get');
 const os = await server.import('os');
+console.log('server got');
 
 console.time('Server');
 const html = `

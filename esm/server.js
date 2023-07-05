@@ -9,9 +9,6 @@ import thread from './window/thread.js';
 import serverMain from './server/main.js';
 import serverThread from './server/thread.js';
 
-const SERVER_MAIN = 'S' + MAIN;
-const SERVER_THREAD = 'S' + THREAD;
-
 const {parse, stringify} = JSON;
 
 const isServer = !!globalThis.process;
@@ -58,31 +55,30 @@ const parseData = data => {
 
 const coincident = isServer ?
   /** @type {CoincidentServer} */
-  (wss, globals) => {
-    let id = 0, ws = null;
-    const resolvers = new Map;
-    const util = serverMain(
-      {[SERVER_THREAD]: async (trap, ...args) => {
-        const data = stringify([trap, ...args]);
-        if (trap === APPLY) {
-          const {promise, resolve} = Promise.withResolvers();
-          const uid = String(id++);
-          resolvers.set(uid, resolve);
-          ws.send('!' + uid + data);
-          return await promise;
-        }
-        ws.send('!' + data);
-      }},
-      SERVER_MAIN,
-      SERVER_THREAD,
-      globals
-    );
-    const __main__ = util.proxy[SERVER_MAIN];
-    return wss.on('connection', $ws => {
-      if (ws !== null) return $ws.close();
-      ws = $ws
+  (wss, globals) => wss.on('connection', ws => {
+    ws.once('message', buffer => {
+      let id = 0;
+      const [SERVER_MAIN, SERVER_THREAD] = parse(buffer);
+      const resolvers = new Map;
+      const util = serverMain(
+        {[SERVER_THREAD]: async (trap, ...args) => {
+          const data = stringify([trap, ...args]);
+          if (trap === APPLY) {
+            const {promise, resolve} = Promise.withResolvers();
+            const uid = String(id++);
+            resolvers.set(uid, resolve);
+            ws.send('!' + uid + data);
+            return await promise;
+          }
+          ws.send('!' + data);
+        }},
+        SERVER_MAIN,
+        SERVER_THREAD,
+        globals
+      );
+      const __main__ = util.proxy[SERVER_MAIN];
+      ws
         .on('close', () => {
-          ws = null;
           for (const [_, resolve] of resolvers) resolve();
           resolvers.clear();
         })
@@ -97,14 +93,14 @@ const coincident = isServer ?
             ws.send(stringify(__main__(...result)));
         });
     });
-  } :
+  }) :
 
   /** @type {CoincidentWeb} */
   (self, ws) => {
     const proxy = $coincident(self);
     if (!proxies.has(proxy)) {
       const util = self instanceof Worker ? mainBridge : threadBridge;
-      proxies.set(proxy, util(proxy, MAIN, THREAD, ws));
+      proxies.set(proxy, util(self, proxy, MAIN, THREAD, ws));
     }
     return proxies.get(proxy);
   }
@@ -115,29 +111,45 @@ if (!isServer)
 
 export default coincident;
 
-const mainBridge = (thread, MAIN, THREAD, ws) => {
-  let resolve;
-  const {[SERVER_THREAD]: __thread__} = thread;
-  ws.addEventListener('message', async ({data}) => {
-    const {id, result} = parseData(data);
-    if (id != null) {
-      const invoke = __thread__(...result);
-      if (id) {
-        const out = await invoke;
-        ws.send('!' + id + (out === void 0 ? '' : stringify(out)));
+const mainBridge = (self, thread, MAIN, THREAD, ws) => {
+  self.addEventListener('message', ({data: i32}) => {
+    let resolve;
+    const S = crypto.randomUUID();
+    const SERVER_MAIN = 'MS' + S;
+    const SERVER_THREAD = 'TS' + S;
+    for (let i = 0; i < S.length; i++)
+      i32[i] = S.charCodeAt(i);
+    Atomics.notify(i32, 0);
+    const {[SERVER_THREAD]: __thread__} = thread;
+    thread[SERVER_MAIN] = (...args) => new Promise($ => {
+      resolve = $;
+      ws.send(stringify(args));
+    });
+    ws.send(stringify([SERVER_MAIN, SERVER_THREAD]));
+    ws.addEventListener('message', async ({data}) => {
+      const {id, result} = parseData(data);
+      if (id != null) {
+        const invoke = __thread__(...result);
+        if (id) {
+          const out = await invoke;
+          ws.send('!' + id + (out === void 0 ? '' : stringify(out)));
+        }
       }
-    }
-    else
-      resolve = resolve(result);
-  });
-  thread[SERVER_MAIN] = (...args) => new Promise($ => {
-    resolve = $;
-    ws.send(stringify(args));
-  });
+      else
+        resolve = resolve(result);
+    });
+  }, {once: true});
   return main(thread, MAIN, THREAD);
 };
 
-const threadBridge = (proxy, MAIN, THREAD) => assign(
-  serverThread(proxy, SERVER_MAIN, SERVER_THREAD),
-  thread(proxy, MAIN, THREAD)
-);
+const threadBridge = (self, proxy, MAIN, THREAD) => {
+  const sb = new SharedArrayBuffer(crypto.randomUUID().length * 4);
+  const i32 = new Int32Array(sb);
+  self.postMessage(i32);
+  Atomics.wait(i32);
+  let S = String.fromCharCode(...i32);
+  return assign(
+    serverThread(proxy, 'MS' + S, 'TS' + S),
+    thread(proxy, MAIN, THREAD)
+  );
+};

@@ -44,9 +44,6 @@ import {
 } from './traps.js';
 
 export default (name, patch) => {
-  let id = 0;
-  const ids = new Map;
-  const values = new Map;
   const eventsHandler = patch && new WeakMap;
 
   // patch once main UI tread
@@ -66,35 +63,39 @@ export default (name, patch) => {
       }
     });
   }
-  
+
   const handleEvent = patch && (event => {
     const {currentTarget, target, type} = event;
     for (const method of eventsHandler.get(currentTarget || target)?.get(type) || [])
       event[method]();
   });
-  
-  const result = asEntry((type, value) => {
-    if (!ids.has(value)) {
-      let sid;
-      // a bit apocalyptic scenario but if this main runs forever
-      // and the id does a whole int32 roundtrip we might have still
-      // some reference danglign around
-      while (values.has(sid = id++));
-      ids.set(value, sid);
-      values.set(sid, value);
-    }
-    return entry(type, ids.get(value));
-  });
-  
+
   return (thread, MAIN, THREAD, ...args) => {
+    let id = 0;
+    const ids = new Map;
+    const values = new Map;
+
     const {[THREAD]: __thread__} = thread;
 
     const global = args.length ? assign(create(globalThis), ...args) : globalThis;
-  
+
+    const result = asEntry((type, value) => {
+      if (!ids.has(value)) {
+        let sid;
+        // a bit apocalyptic scenario but if this main runs forever
+        // and the id does a whole int32 roundtrip we might have still
+        // some reference danglign around
+        while (values.has(sid = id++));
+        ids.set(value, sid);
+        values.set(sid, value);
+      }
+      return entry(type, ids.get(value));
+    });
+
     const registry = new FinalizationRegistry(id => {
       __thread__(DELETE, entry(STRING, id));
     });
-  
+
     const target = ([type, value]) => {
       switch (type) {
         case OBJECT:
@@ -131,7 +132,7 @@ export default (name, patch) => {
       }
       return value;
     };
-  
+
     const trapsHandler = {
       [APPLY]: (target, thisArg, args) => result(target.apply(thisArg, args)),
       [CONSTRUCT]: (target, args) => result(new target(...args)),
@@ -154,7 +155,7 @@ export default (name, patch) => {
         values.delete(id);
       }
     };
-  
+
     thread[MAIN] = (trap, entry, ...args) => {
       switch (trap) {
         case APPLY:
@@ -177,10 +178,9 @@ export default (name, patch) => {
           args = args.map(target);
           break;
       }
-  
       return trapsHandler[trap](target(entry), ...args);
     };
-  
+
     return {
       proxy: thread,
       [name.toLowerCase()]: global,
