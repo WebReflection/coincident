@@ -10,7 +10,8 @@ const {
 
 const os = server.require('os');
 
-window.document.body.innerHTML = `
+console.time('Server');
+const html = `
   <h1>coincident/server</h1>
   <h2>Platform Info</h2>
   <ul>
@@ -21,3 +22,10 @@ window.document.body.innerHTML = `
     <li>Free: ${os.freemem()}</li>
   </ul>
 `;
+console.timeEnd('Server');
+
+console.time('Main');
+window.document.body.innerHTML = html;
+console.timeEnd('Main');
+
+server.setTimeout(() => { console.log('OK'); }, 1000);

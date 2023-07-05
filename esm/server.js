@@ -1,4 +1,6 @@
+import '@ungap/with-resolvers';
 import {MAIN, THREAD} from './channel.js';
+import {APPLY} from './shared/traps.js';
 import {assign} from './shared/utils.js';
 import $coincident from './structured.js';
 import JSON from './json.js';
@@ -45,22 +47,55 @@ const proxies = new WeakMap;
  * @returns {Coincident | CoincidentWorker}
  */
 
+const parseData = data => {
+  let id = '';
+  if (/^!(-?\d+)/.test(data)) {
+    id = RegExp.$1;
+    data = data.slice(1 + id.length);
+  }
+  return {id, result: data ? parse(data) : void 0};
+};
+
 const coincident = isServer ?
   /** @type {CoincidentServer} */
-  (wss, globals) => wss.on('connection', ws => {
+  (wss, globals) => {
+    let id = 0, ws;
+    const resolvers = new Map;
     const util = serverMain(
-      {[SERVER_THREAD]: (...args) => {
-        ws.send('!' + stringify(args));
+      {[SERVER_THREAD]: async (trap, ...args) => {
+        const data = stringify([trap, ...args]);
+        if (trap === APPLY) {
+          const {promise, resolve} = Promise.withResolvers();
+          const uid = String(id++);
+          resolvers.set(uid, resolve);
+          ws.send('!' + uid + data);
+          return await promise;
+        }
+        ws.send('!' + data);
       }},
       SERVER_MAIN,
       SERVER_THREAD,
       globals
     );
     const __main__ = util.proxy[SERVER_MAIN];
-    ws.on('message', data => {
-      ws.send(stringify(__main__(...parse(data))));
+    return wss.on('connection', $ws => {
+      ws = $ws
+        .on('close', () => {
+          for (const [_, resolve] of resolvers) resolve();
+          resolvers.clear();
+        })
+        .on('message', buffer => {
+          const {id, result} = parseData(String(buffer));
+          if (id) {
+            const resolve = resolvers.get(id);
+            resolvers.delete(id);
+            resolve(result);
+          }
+          else
+            ws.send(stringify(__main__(...result)));
+        });
     });
-  }) :
+  } :
 
   /** @type {CoincidentWeb} */
   (self, ws) => {
@@ -79,12 +114,16 @@ if (!isServer)
 export default coincident;
 
 const mainBridge = (thread, MAIN, THREAD, ws) => {
-  const {[SERVER_THREAD]: __thread__} = thread;
   let resolve;
+  const {[SERVER_THREAD]: __thread__} = thread;
   ws.addEventListener('message', async ({data}) => {
-    const isThread = data.startsWith('!');
-    const result = parse(isThread ? data.slice(1) : data);
-    isThread ? __thread__(...result) : (resolve = resolve(result));
+    const {id, result} = parseData(data);
+    if (id) {
+      const out = await __thread__(...result);
+      ws.send('!' + id + (out === void 0 ? '' : stringify(out)));
+    }
+    else
+      resolve = resolve(result);
   });
   thread[SERVER_MAIN] = (...args) => new Promise($ => {
     resolve = $;

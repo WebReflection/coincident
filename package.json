@@ -78,5 +78,8 @@
   "unpkg": "es.js",
   "dependencies": {
     "@ungap/structured-clone": "^1.2.0"
+  },
+  "optionalDependencies": {
+    "ws": "^8.13.0"
   }
 }
