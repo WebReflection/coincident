@@ -290,3 +290,15 @@ That being said, in Apps where no foreign code is allowed, this export unlocks a
 Alternatively, please consider strict *CSP* rules to be sure no code evaluation can arrive from a console, from foreign injected files, from users' input, and so on.
 
 Thanks for trying this feature out as no other projects (to date) can do in a cross platform, cross browser, cross environment way what this module currently offer.
+
+### Local Only
+
+If worried about possible foreign scripts doing weird things it is possible to use these headers instead so that only local files would be able to execute any content.
+
+```js
+{
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  'Cross-Origin-Embedder-Policy': 'require-corp',
+  'Cross-Origin-Resource-Policy': 'same-origin'
+}
+```
