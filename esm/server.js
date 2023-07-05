@@ -59,7 +59,7 @@ const parseData = data => {
 const coincident = isServer ?
   /** @type {CoincidentServer} */
   (wss, globals) => {
-    let id = 0, ws;
+    let id = 0, ws = null;
     const resolvers = new Map;
     const util = serverMain(
       {[SERVER_THREAD]: async (trap, ...args) => {
@@ -79,8 +79,10 @@ const coincident = isServer ?
     );
     const __main__ = util.proxy[SERVER_MAIN];
     return wss.on('connection', $ws => {
+      if (ws !== null) return $ws.close();
       ws = $ws
         .on('close', () => {
+          ws = null;
           for (const [_, resolve] of resolvers) resolve();
           resolvers.clear();
         })
