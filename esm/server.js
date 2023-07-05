@@ -48,8 +48,8 @@ const proxies = new WeakMap;
  */
 
 const parseData = data => {
-  let id = '';
-  if (/^!(-?\d+)/.test(data)) {
+  let id;
+  if (/^!(-?\d+)?/.test(data)) {
     id = RegExp.$1;
     data = data.slice(1 + id.length);
   }
@@ -120,9 +120,12 @@ const mainBridge = (thread, MAIN, THREAD, ws) => {
   const {[SERVER_THREAD]: __thread__} = thread;
   ws.addEventListener('message', async ({data}) => {
     const {id, result} = parseData(data);
-    if (id) {
-      const out = await __thread__(...result);
-      ws.send('!' + id + (out === void 0 ? '' : stringify(out)));
+    if (id != null) {
+      const invoke = __thread__(...result);
+      if (id) {
+        const out = await invoke;
+        ws.send('!' + id + (out === void 0 ? '' : stringify(out)));
+      }
     }
     else
       resolve = resolve(result);

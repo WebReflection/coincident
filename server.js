@@ -1,2 +1,951 @@
-Promise.withResolvers||(Promise.withResolvers=function(){var e,t,n=new this((function(n,r){e=n,t=r}));return{resolve:e,reject:t,promise:n}});const e="dd67b064-38ec-4019-a8a9-8c434dcd2ae8",t="M"+e,n="T"+e,r="apply",s="construct",o="defineProperty",a="deleteProperty",c="get",i="getOwnPropertyDescriptor",u="getPrototypeOf",l="has",f="isExtensible",p="ownKeys",g="preventExtensions",y="set",w="setPrototypeOf",h="delete",d="object",m="function",b="number",v="string",E="undefined",S="symbol",{defineProperty:M,getOwnPropertyDescriptor:P,getPrototypeOf:k,isExtensible:A,ownKeys:O,preventExtensions:x,set:T,setPrototypeOf:R}=Reflect,{assign:j,create:W}=Object,B=k(Int8Array),_="isArray",I=(e,t)=>{const{get:n,set:r,value:s}=e;return n&&(e.get=t(n)),r&&(e.set=t(r)),s&&(e.value=t(s)),e},L=(e,t)=>[e,t],C=e=>t=>{const n=typeof t;switch(n){case d:if(null==t)return L("null",t);case m:return e(n,t);case"boolean":case b:case v:case E:case"bigint":return L(n,t);case S:if(D.has(t))return L(n,D.get(t))}throw new Error(`Unable to handle this ${n} type`)},D=new Map(O(Symbol).filter((e=>typeof Symbol[e]===S)).map((e=>[Symbol[e],e]))),N=e=>{for(const[t,n]of D)if(n===e)return t};function z(){return this}const $="object"==typeof self?self:globalThis,J=e=>((e,t)=>{const n=(t,n)=>(e.set(n,t),t),r=s=>{if(e.has(s))return e.get(s);const[o,a]=t[s];switch(o){case 0:case-1:return n(a,s);case 1:{const e=n([],s);for(const t of a)e.push(r(t));return e}case 2:{const e=n({},s);for(const[t,n]of a)e[r(t)]=r(n);return e}case 3:return n(new Date(a),s);case 4:{const{source:e,flags:t}=a;return n(new RegExp(e,t),s)}case 5:{const e=n(new Map,s);for(const[t,n]of a)e.set(r(t),r(n));return e}case 6:{const e=n(new Set,s);for(const t of a)e.add(r(t));return e}case 7:{const{name:e,message:t}=a;return n(new $[e](t),s)}case 8:return n(BigInt(a),s);case"BigInt":return n(Object(BigInt(a)),s)}return n(new $[o](a),s)};return r})(new Map,e)(0),U="",{toString:F}={},{keys:K}=Object,Y=e=>{const t=typeof e;if("object"!==t||!e)return[0,t];const n=F.call(e).slice(8,-1);switch(n){case"Array":return[1,U];case"Object":return[2,U];case"Date":return[3,U];case"RegExp":return[4,U];case"Map":return[5,U];case"Set":return[6,U]}return n.includes("Array")?[1,n]:n.includes("Error")?[7,n]:[2,n]},q=([e,t])=>0===e&&("function"===t||"symbol"===t),G=(e,{json:t,lossy:n}={})=>{const r=[];return((e,t,n,r)=>{const s=(e,t)=>{const s=r.push(e)-1;return n.set(t,s),s},o=r=>{if(n.has(r))return n.get(r);let[a,c]=Y(r);switch(a){case 0:{let t=r;switch(c){case"bigint":a=8,t=r.toString();break;case"function":case"symbol":if(e)throw new TypeError("unable to serialize "+c);t=null;break;case"undefined":return s([-1],r)}return s([a,t],r)}case 1:{if(c)return s([c,[...r]],r);const e=[],t=s([a,e],r);for(const t of r)e.push(o(t));return t}case 2:{if(c)switch(c){case"BigInt":return s([c,r.toString()],r);case"Boolean":case"Number":case"String":return s([c,r.valueOf()],r)}if(t&&"toJSON"in r)return o(r.toJSON());const n=[],i=s([a,n],r);for(const t of K(r))!e&&q(Y(r[t]))||n.push([o(t),o(r[t])]);return i}case 3:return s([a,r.toISOString()],r);case 4:{const{source:e,flags:t}=r;return s([a,{source:e,flags:t}],r)}case 5:{const t=[],n=s([a,t],r);for(const[n,s]of r)(e||!q(Y(n))&&!q(Y(s)))&&t.push([o(n),o(s)]);return n}case 6:{const t=[],n=s([a,t],r);for(const n of r)!e&&q(Y(n))||t.push(o(n));return n}}const{message:i}=r;return s([a,{name:c,message:i}],r)};return o})(!(t||n),!!t,new Map,r)(e),r},{parse:H,stringify:Q}=JSON,V={json:!0,lossy:!0};var X=Object.freeze({__proto__:null,parse:e=>J(H(e)),stringify:e=>Q(G(e,V))}),Z=e=>({value:new Promise((t=>{let n=new Worker("data:application/javascript,onmessage%3D(%7Bdata%3Ab%7D)%3D%3E(Atomics.wait(b%2C0)%2CpostMessage(0))");n.onmessage=t,n.postMessage(e)}))})
-/*! (c) Andrea Giammarchi - ISC */;const{Int32Array:ee,Map:te,SharedArrayBuffer:ne,Uint16Array:re}=globalThis,{BYTES_PER_ELEMENT:se}=ee,{BYTES_PER_ELEMENT:oe}=re,{isArray:ae}=Array,{notify:ce,wait:ie,waitAsync:ue}=Atomics,{fromCharCode:le}=String,fe=(e,t)=>e?(ue||Z)(t,0):(ie(t,0),{value:{then:e=>e()}}),pe=new WeakSet,ge=new WeakMap;let ye=0;const we=(t,{parse:n,stringify:r}=JSON)=>{if(!ge.has(t)){const s=(n,...r)=>t.postMessage({[e]:r},{transfer:n});ge.set(t,new Proxy(new te,{has:(e,t)=>"string"==typeof t&&!t.startsWith("_"),get:(e,r)=>"then"===r?null:(...e)=>{const o=ye++;let a=new ee(new ne(se)),c=[];pe.has(e.at(-1)||c)&&pe.delete(c=e.pop()),s(c,o,a,r,e);const i=t instanceof Worker;return fe(i,a).value.then((()=>{const e=a[0];if(!e)return;const t=oe*e;return a=new ee(new ne(t+t%se)),s([],o,a),fe(i,a).value.then((()=>n(le(...new re(a.buffer).slice(0,e)))))}))},set(n,s,o){if(!n.size){const s=new te;t.addEventListener("message",(async t=>{const o=t.data?.[e];if(ae(o)){t.stopImmediatePropagation();const[e,a,...c]=o;if(c.length){const[t,o]=c;if(!n.has(t))throw new Error(`Unsupported action: ${t}`);{const c=r(await n.get(t)(...o));c&&(s.set(e,c),a[0]=c.length)}}else{const t=s.get(e);s.delete(e);for(let e=new re(a.buffer),n=0;n<t.length;n++)e[n]=t.charCodeAt(n)}ce(a,0)}}))}return!!n.set(s,o)}}))}return ge.get(t)},he=e=>we(e,X);he.transfer=we.transfer=(...e)=>(pe.add(e),e);var de=(e,t)=>{let n=0;const _=new Map,D=new Map,z=t&&new WeakMap;if(t){const{addEventListener:e}=EventTarget.prototype;M(EventTarget.prototype,"addEventListener",{value(t,n,...r){return r.at(0)?.invoke&&(z.has(this)||z.set(this,new Map),z.get(this).set(t,[].concat(r[0].invoke)),delete r[0].invoke),e.call(this,t,n,...r)}})}const $=t&&(e=>{const{currentTarget:t,target:n,type:r}=e;for(const s of z.get(t||n)?.get(r)||[])e[s]()}),J=C(((e,t)=>{if(!_.has(t)){let e;for(;D.has(e=n++););_.set(t,e),D.set(e,t)}return L(e,_.get(t))}));return(n,C,z,...U)=>{const{[z]:F}=n,K=U.length?j(W(globalThis),...U):globalThis,Y=new FinalizationRegistry((e=>{F(h,L(v,e))})),q=([e,n])=>{switch(e){case d:if(null==n)return K;if(typeof n===b)return D.get(n);if(!(n instanceof B))for(const e in n)n[e]=q(n[e]);return n;case m:if(typeof n===v){if(!D.has(n)){const e=function(...e){return t&&e.at(0)instanceof Event&&$(...e),F(r,L(m,n),J(this),e.map(J))},s=new WeakRef(e);D.set(n,s),Y.register(e,n,s)}return D.get(n).deref()}return D.get(n);case S:return N(n)}return n},G={[r]:(e,t,n)=>J(e.apply(t,n)),[s]:(e,t)=>J(new e(...t)),[o]:(e,t,n)=>J(M(e,t,n)),[a]:(e,t)=>J(delete e[t]),[u]:e=>J(k(e)),[c]:(e,t)=>J(e[t]),[i]:(e,t)=>{const n=P(e,t);return n?L(d,I(n,J)):L(E,n)},[l]:(e,t)=>J(t in e),[f]:e=>J(A(e)),[p]:e=>L(d,O(e).map(J)),[g]:e=>J(x(e)),[y]:(e,t,n)=>J(T(e,t,n)),[w]:(e,t)=>J(R(e,t)),[h](e){_.delete(D.get(e)),D.delete(e)}};return n[C]=(e,t,...n)=>{switch(e){case r:n[0]=q(n[0]),n[1]=n[1].map(q);break;case s:n[0]=n[0].map(q);break;case o:{const[e,t]=n;n[0]=q(e);const{get:r,set:s,value:o}=t;r&&(t.get=q(r)),s&&(t.set=q(s)),o&&(t.value=q(o));break}default:n=n.map(q)}return G[e](q(t),...n)},{proxy:n,[e.toLowerCase()]:K,[`is${e}Proxy`]:()=>!1}}},me=de("Window",!0),be=e=>{let t=0;const n=new Map,E=new Map,P=Symbol(),k=e=>typeof e===m?e():e,A=e=>typeof e===d&&!!e&&P in e,O=Array[_],x=C(((e,r)=>{if(P in r)return k(r[P]);if(e===m){if(!E.has(r)){let e;for(;E.has(e=String(t++)););n.set(r,e),E.set(e,r)}return L(e,n.get(r))}if(!(r instanceof B))for(const e in r)r[e]=x(r[e]);return L(e,r)}));return(t,T,R)=>{const{[T]:j}=t,W=new Map,B=new FinalizationRegistry((e=>{W.delete(e),j(h,x(e))})),L=e=>{const[t,n]=e;if(!W.has(n)){const r=t===m?z.bind(e):e,s=new Proxy(r,$),o=new WeakRef(s);W.set(n,o),B.register(s,n,o)}return W.get(n).deref()},C=e=>{const[t,n]=e;switch(t){case d:return typeof n===b?L(e):n;case m:return typeof n===v?E.get(n):L(e);case S:return N(n)}return n},D=(e,t,...n)=>C(j(e,k(t),...n)),$={[r]:(e,t,n)=>D(r,e,x(t),n.map(x)),[s]:(e,t)=>D(s,e,t.map(x)),[o]:(e,t,n)=>{const{get:r,set:s,value:a}=n;return typeof r===m&&(n.get=x(r)),typeof s===m&&(n.set=x(s)),typeof a===m&&(n.value=x(a)),D(o,e,x(t),n)},[a]:(e,t)=>D(a,e,x(t)),[u]:e=>D(u,e),[c]:(e,t)=>t===P?e:D(c,e,x(t)),[i]:(e,t)=>{const n=D(i,e,x(t));return n&&I(n,C)},[l]:(e,t)=>t===P||D(l,e,x(t)),[f]:e=>D(f,e),[p]:e=>D(p,e).map(C),[g]:e=>D(g,e),[y]:(e,t,n)=>D(y,e,x(t),x(n)),[w]:(e,t)=>D(w,e,x(t))};t[R]=(e,t,s,o)=>{switch(e){case r:return C(t).apply(C(s),o.map(C));case h:{const e=C(t);n.delete(E.get(e)),E.delete(e)}}};const J=new Proxy([d,null],$),U=J.Array[_];return M(Array,_,{value:e=>A(e)?U(e):O(e)}),{[e.toLowerCase()]:J,[`is${e}Proxy`]:A,proxy:t}}},ve=be("Window"),Ee=de("Server",!1),Se=be("Server");const Me="S"+t,Pe="S"+n,{parse:ke,stringify:Ae}=X,Oe=!!globalThis.process,xe=new WeakMap,Te=e=>{let t="";return/^!(-?\d+)/.test(e)&&(t=RegExp.$1,e=e.slice(1+t.length)),{id:t,result:e?ke(e):void 0}},Re=Oe?(e,t)=>{let n=0,s=null;const o=new Map,a=Ee({[Pe]:async(e,...t)=>{const a=Ae([e,...t]);if(e===r){const{promise:e,resolve:t}=Promise.withResolvers(),r=String(n++);return o.set(r,t),s.send("!"+r+a),await e}s.send("!"+a)}},Me,Pe,t),c=a.proxy[Me];return e.on("connection",(e=>{if(null!==s)return e.close();s=e.on("close",(()=>{s=null;for(const[e,t]of o)t();o.clear()})).on("message",(e=>{const{id:t,result:n}=Te(String(e));if(t){const e=o.get(t);o.delete(t),e(n)}else s.send(Ae(c(...n)))}))}))}:(e,r)=>{const s=he(e);if(!xe.has(s)){const o=e instanceof Worker?je:We;xe.set(s,o(s,t,n,r))}return xe.get(s)};Oe||(Re.transfer=he.transfer);const je=(e,t,n,r)=>{let s;const{[Pe]:o}=e;return r.addEventListener("message",(async({data:e})=>{const{id:t,result:n}=Te(e);if(t){const e=await o(...n);r.send("!"+t+(void 0===e?"":Ae(e)))}else s=s(n)})),e[Me]=(...e)=>new Promise((t=>{s=t,r.send(Ae(e))})),me(e,t,n)},We=(e,t,n)=>j(Se(e,Me,Pe),ve(e,t,n));export{Re as default};
+Promise.withResolvers || (Promise.withResolvers = function withResolvers() {
+  var a, b, c = new this(function (resolve, reject) {
+    a = resolve;
+    b = reject;
+  });
+  return {resolve: a, reject: b, promise: c};
+});
+
+// ⚠️ AUTOMATICALLY GENERATED - DO NOT CHANGE
+const CHANNEL = '8569d938-ee44-4a9c-88e5-268e851ce66f';
+
+const MAIN = 'M' + CHANNEL;
+const THREAD = 'T' + CHANNEL;
+
+const APPLY                        = 'apply';
+const CONSTRUCT                    = 'construct';
+const DEFINE_PROPERTY              = 'defineProperty';
+const DELETE_PROPERTY              = 'deleteProperty';
+const GET                          = 'get';
+const GET_OWN_PROPERTY_DESCRIPTOR  = 'getOwnPropertyDescriptor';
+const GET_PROTOTYPE_OF             = 'getPrototypeOf';
+const HAS                          = 'has';
+const IS_EXTENSIBLE                = 'isExtensible';
+const OWN_KEYS                     = 'ownKeys';
+const PREVENT_EXTENSION            = 'preventExtensions';
+const SET$1                          = 'set';
+const SET_PROTOTYPE_OF             = 'setPrototypeOf';
+const DELETE                       = 'delete';
+
+const OBJECT$1    = 'object';
+const FUNCTION  = 'function';
+const BOOLEAN   = 'boolean';
+const NUMBER    = 'number';
+const STRING    = 'string';
+const UNDEFINED = 'undefined';
+const BIGINT$1    = 'bigint';
+const SYMBOL    = 'symbol';
+const NULL      = 'null';
+
+const {
+  defineProperty,
+  getOwnPropertyDescriptor,
+  getPrototypeOf,
+  isExtensible,
+  ownKeys,
+  preventExtensions,
+  set,
+  setPrototypeOf
+} = Reflect;
+
+const {assign, create} = Object;
+
+const TypedArray = getPrototypeOf(Int8Array);
+
+const isArray$1 = 'isArray';
+
+const augment = (descriptor, how) => {
+  const {get, set, value} = descriptor;
+  if (get) descriptor.get = how(get);
+  if (set) descriptor.set = how(set);
+  if (value) descriptor.value = how(value);
+  return descriptor;
+};
+
+const entry = (type, value) => [type, value];
+
+const asEntry = transform => value => {
+  const type = typeof value;
+  switch (type) {
+    case OBJECT$1:
+    if (value == null)
+      return entry(NULL, value);
+    case FUNCTION:
+      return transform(type, value);
+    case BOOLEAN:
+    case NUMBER:
+    case STRING:
+    case UNDEFINED:
+    case BIGINT$1:
+      return entry(type, value);
+    case SYMBOL: {
+      if (symbols.has(value))
+        return entry(type, symbols.get(value));
+    }
+  }
+  throw new Error(`Unable to handle this ${type} type`);
+};
+
+const symbols = new Map(
+  ownKeys(Symbol)
+    .filter(s => typeof Symbol[s] === SYMBOL)
+    .map(s => [Symbol[s], s])
+);
+  
+const symbol = value => {
+  for (const [symbol, name] of symbols) {
+    if (name === value)
+      return symbol;
+  }
+};
+
+function Bound() {
+  return this;
+}
+
+const VOID       = -1;
+const PRIMITIVE  = 0;
+const ARRAY      = 1;
+const OBJECT     = 2;
+const DATE       = 3;
+const REGEXP     = 4;
+const MAP        = 5;
+const SET        = 6;
+const ERROR      = 7;
+const BIGINT     = 8;
+// export const SYMBOL = 9;
+
+const env = typeof self === 'object' ? self : globalThis;
+
+const deserializer = ($, _) => {
+  const as = (out, index) => {
+    $.set(index, out);
+    return out;
+  };
+
+  const unpair = index => {
+    if ($.has(index))
+      return $.get(index);
+
+    const [type, value] = _[index];
+    switch (type) {
+      case PRIMITIVE:
+      case VOID:
+        return as(value, index);
+      case ARRAY: {
+        const arr = as([], index);
+        for (const index of value)
+          arr.push(unpair(index));
+        return arr;
+      }
+      case OBJECT: {
+        const object = as({}, index);
+        for (const [key, index] of value)
+          object[unpair(key)] = unpair(index);
+        return object;
+      }
+      case DATE:
+        return as(new Date(value), index);
+      case REGEXP: {
+        const {source, flags} = value;
+        return as(new RegExp(source, flags), index);
+      }
+      case MAP: {
+        const map = as(new Map, index);
+        for (const [key, index] of value)
+          map.set(unpair(key), unpair(index));
+        return map;
+      }
+      case SET: {
+        const set = as(new Set, index);
+        for (const index of value)
+          set.add(unpair(index));
+        return set;
+      }
+      case ERROR: {
+        const {name, message} = value;
+        return as(new env[name](message), index);
+      }
+      case BIGINT:
+        return as(BigInt(value), index);
+      case 'BigInt':
+        return as(Object(BigInt(value)), index);
+    }
+    return as(new env[type](value), index);
+  };
+
+  return unpair;
+};
+
+/**
+ * @typedef {Array<string,any>} Record a type representation
+ */
+
+/**
+ * Returns a deserialized value from a serialized array of Records.
+ * @param {Record[]} serialized a previously serialized value.
+ * @returns {any}
+ */
+const deserialize = serialized => deserializer(new Map, serialized)(0);
+
+const EMPTY = '';
+
+const {toString} = {};
+const {keys} = Object;
+
+const typeOf = value => {
+  const type = typeof value;
+  if (type !== 'object' || !value)
+    return [PRIMITIVE, type];
+
+  const asString = toString.call(value).slice(8, -1);
+  switch (asString) {
+    case 'Array':
+      return [ARRAY, EMPTY];
+    case 'Object':
+      return [OBJECT, EMPTY];
+    case 'Date':
+      return [DATE, EMPTY];
+    case 'RegExp':
+      return [REGEXP, EMPTY];
+    case 'Map':
+      return [MAP, EMPTY];
+    case 'Set':
+      return [SET, EMPTY];
+  }
+
+  if (asString.includes('Array'))
+    return [ARRAY, asString];
+
+  if (asString.includes('Error'))
+    return [ERROR, asString];
+
+  return [OBJECT, asString];
+};
+
+const shouldSkip = ([TYPE, type]) => (
+  TYPE === PRIMITIVE &&
+  (type === 'function' || type === 'symbol')
+);
+
+const serializer = (strict, json, $, _) => {
+
+  const as = (out, value) => {
+    const index = _.push(out) - 1;
+    $.set(value, index);
+    return index;
+  };
+
+  const pair = value => {
+    if ($.has(value))
+      return $.get(value);
+
+    let [TYPE, type] = typeOf(value);
+    switch (TYPE) {
+      case PRIMITIVE: {
+        let entry = value;
+        switch (type) {
+          case 'bigint':
+            TYPE = BIGINT;
+            entry = value.toString();
+            break;
+          case 'function':
+          case 'symbol':
+            if (strict)
+              throw new TypeError('unable to serialize ' + type);
+            entry = null;
+            break;
+          case 'undefined':
+            return as([VOID], value);
+        }
+        return as([TYPE, entry], value);
+      }
+      case ARRAY: {
+        if (type)
+          return as([type, [...value]], value);
+  
+        const arr = [];
+        const index = as([TYPE, arr], value);
+        for (const entry of value)
+          arr.push(pair(entry));
+        return index;
+      }
+      case OBJECT: {
+        if (type) {
+          switch (type) {
+            case 'BigInt':
+              return as([type, value.toString()], value);
+            case 'Boolean':
+            case 'Number':
+            case 'String':
+              return as([type, value.valueOf()], value);
+          }
+        }
+
+        if (json && ('toJSON' in value))
+          return pair(value.toJSON());
+
+        const entries = [];
+        const index = as([TYPE, entries], value);
+        for (const key of keys(value)) {
+          if (strict || !shouldSkip(typeOf(value[key])))
+            entries.push([pair(key), pair(value[key])]);
+        }
+        return index;
+      }
+      case DATE:
+        return as([TYPE, value.toISOString()], value);
+      case REGEXP: {
+        const {source, flags} = value;
+        return as([TYPE, {source, flags}], value);
+      }
+      case MAP: {
+        const entries = [];
+        const index = as([TYPE, entries], value);
+        for (const [key, entry] of value) {
+          if (strict || !(shouldSkip(typeOf(key)) || shouldSkip(typeOf(entry))))
+            entries.push([pair(key), pair(entry)]);
+        }
+        return index;
+      }
+      case SET: {
+        const entries = [];
+        const index = as([TYPE, entries], value);
+        for (const entry of value) {
+          if (strict || !shouldSkip(typeOf(entry)))
+            entries.push(pair(entry));
+        }
+        return index;
+      }
+    }
+
+    const {message} = value;
+    return as([TYPE, {name: type, message}], value);
+  };
+
+  return pair;
+};
+
+/**
+ * @typedef {Array<string,any>} Record a type representation
+ */
+
+/**
+ * Returns an array of serialized Records.
+ * @param {any} value a serializable value.
+ * @param {{json?: boolean, lossy?: boolean}?} options an object with a `lossy` or `json` property that,
+ *  if `true`, will not throw errors on incompatible types, and behave more
+ *  like JSON stringify would behave. Symbol and Function will be discarded.
+ * @returns {Record[]}
+ */
+ const serialize = (value, {json, lossy} = {}) => {
+  const _ = [];
+  return serializer(!(json || lossy), !!json, new Map, _)(value), _;
+};
+
+/*! (c) Andrea Giammarchi - ISC */
+
+
+const {parse: $parse, stringify: $stringify} = JSON;
+const options = {json: true, lossy: true};
+
+/**
+ * Revive a previously stringified structured clone.
+ * @param {string} str previously stringified data as string.
+ * @returns {any} whatever was previously stringified as clone.
+ */
+const parse$1 = str => deserialize($parse(str));
+
+/**
+ * Represent a structured clone value as string.
+ * @param {any} any some clone-able value to stringify.
+ * @returns {string} the value stringified.
+ */
+const stringify$1 = any => $stringify(serialize(any, options));
+
+var JSON$1 = /*#__PURE__*/Object.freeze({
+  __proto__: null,
+  parse: parse$1,
+  stringify: stringify$1
+});
+
+// encodeURIComponent('onmessage=({data:b})=>(Atomics.wait(b,0),postMessage(0))')
+
+var waitAsyncFallback = buffer => ({
+  value: new Promise(onmessage => {
+    let w = new Worker('data:application/javascript,onmessage%3D(%7Bdata%3Ab%7D)%3D%3E(Atomics.wait(b%2C0)%2CpostMessage(0))');
+    w.onmessage = onmessage;
+    w.postMessage(buffer);
+  })
+});
+
+/*! (c) Andrea Giammarchi - ISC */
+
+
+// just minifier friendly for Blob Workers' cases
+const {Int32Array, Map: Map$1, SharedArrayBuffer, Uint16Array} = globalThis;
+
+// common constants / utilities for repeated operations
+const {BYTES_PER_ELEMENT: I32_BYTES} = Int32Array;
+const {BYTES_PER_ELEMENT: UI16_BYTES} = Uint16Array;
+
+const {isArray} = Array;
+const {notify, wait, waitAsync} = Atomics;
+const {fromCharCode} = String;
+
+// automatically uses sync wait (worker -> main)
+// or fallback to async wait (main -> worker)
+const waitFor = (isAsync, sb) => isAsync ?
+                  (waitAsync || waitAsyncFallback)(sb, 0) :
+                  (wait(sb, 0), {value: {then: fn => fn()}});
+
+// retain buffers to transfer
+const buffers = new WeakSet;
+
+// retain either main threads or workers global context
+const context = new WeakMap;
+
+// used to generate a unique `id` per each worker `postMessage` "transaction"
+let uid = 0;
+
+/**
+ * Create once a `Proxy` able to orchestrate synchronous `postMessage` out of the box.
+ * @param {globalThis | Worker} self the context in which code should run
+ * @param {{parse: (serialized: string) => any, stringify: (serializable: any) => string}} [JSON] an optional `JSON` like interface to `parse` or `stringify` content
+ * @returns {ProxyHandler<globalThis> | ProxyHandler<Worker>}
+ */
+const coincident$2 = (self, {parse, stringify} = JSON) => {
+  // create a Proxy once for the given context (globalThis or Worker instance)
+  if (!context.has(self)) {
+    // ensure the CHANNEL and data are posted correctly
+    const post = (transfer, ...args) => self.postMessage({[CHANNEL]: args}, {transfer});
+
+    context.set(self, new Proxy(new Map$1, {
+      // there is very little point in checking prop in proxy for this very specific case
+      // and I don't want to orchestrate a whole roundtrip neither, as stuff would fail
+      // regardless if from Worker we access non existent Main callback, and vice-versa.
+      // This is here mostly to guarantee that if such check is performed, at least the
+      // get trap goes through and then it's up to developers guarantee they are accessing
+      // stuff that actually exists elsewhere.
+      has: (_, action) => typeof action === 'string' && !action.startsWith('_'),
+
+      // worker related: get any utility that should be available on the main thread
+      get: (_, action) => action === 'then' ? null : ((...args) => {
+        // transaction id
+        const id = uid++;
+
+        // first contact: just ask for how big the buffer should be
+        let sb = new Int32Array(new SharedArrayBuffer(I32_BYTES));
+
+        // if a transfer list has been passed, drop it from args
+        let transfer = [];
+        if (buffers.has(args.at(-1) || transfer))
+          buffers.delete(transfer = args.pop());
+
+        // ask for invoke with arguments and wait for it
+        post(transfer, id, sb, action, args);
+
+        // helps deciding how to wait for results
+        const isAsync = self instanceof Worker;
+        return waitFor(isAsync, sb).value.then(() => {
+          // commit transaction using the returned / needed buffer length
+          const length = sb[0];
+
+          // filter undefined results
+          if (!length) return;
+
+          // calculate the needed ui16 bytes length to store the result string
+          const bytes = UI16_BYTES * length;
+
+          // round up to the next amount of bytes divided by 4 to allow i32 operations
+          sb = new Int32Array(new SharedArrayBuffer(bytes + (bytes % I32_BYTES)));
+
+          // ask for results and wait for it
+          post([], id, sb);
+          return waitFor(isAsync, sb).value.then(
+            // transform the shared buffer into a string and return it parsed
+            () => parse(fromCharCode(...new Uint16Array(sb.buffer).slice(0, length)))
+          );
+        });
+      }),
+
+      // main thread related: react to any utility a worker is asking for
+      set(actions, action, callback) {
+        // lazy event listener and logic handling, triggered once by setters actions
+        if (!actions.size) {
+          // maps results by `id` as they are asked for
+          const results = new Map$1;
+          // add the event listener once (first defined setter, all others work the same)
+          self.addEventListener('message', async (event) => {
+            // grub the very same library CHANNEL; ignore otherwise
+            const details = event.data?.[CHANNEL];
+            if (isArray(details)) {
+              // if early enough, avoid leaking data to other listeners
+              event.stopImmediatePropagation();
+              const [id, sb, ...rest] = details;
+              // action available: it must be defined/known on the main thread
+              if (rest.length) {
+                const [action, args] = rest;
+                if (actions.has(action)) {
+                  // await for result either sync or async and serialize it
+                  const result = stringify(await actions.get(action)(...args));
+                  if (result) {
+                    // store the result for "the very next" event listener call
+                    results.set(id, result);
+                    // communicate the required SharedArrayBuffer length out of the
+                    // resulting serialized string
+                    sb[0] = result.length;
+                  }
+                }
+                // unknown action should be notified as missing on the main thread
+                else {
+                  throw new Error(`Unsupported action: ${action}`);
+                }
+              }
+              // no action means: get results out of the well known `id`
+              else {
+                const result = results.get(id);
+                results.delete(id);
+                // populate the SaredArrayBuffer with utf-16 chars code
+                for (let ui16a = new Uint16Array(sb.buffer), i = 0; i < result.length; i++)
+                  ui16a[i] = result.charCodeAt(i);
+              }
+              // release te worker waiting either the length or the result
+              notify(sb, 0);
+            }
+          });
+        }
+        // store this action callback allowing the setter in the process
+        return !!actions.set(action, callback);
+      }
+    }));
+  }
+  return context.get(self);
+};
+
+coincident$2.transfer = (...args) => (buffers.add(args), args);
+
+/**
+ * Create once a `Proxy` able to orchestrate synchronous `postMessage` out of the box.
+ * @param {globalThis | Worker} self the context in which code should run
+ * @returns {ProxyHandler<globalThis> | ProxyHandler<Worker>}
+ */
+const coincident$1 = self => coincident$2(self, JSON$1);
+
+coincident$1.transfer = coincident$2.transfer;
+
+var main$1 = (name, patch) => {
+  let id = 0;
+  const ids = new Map;
+  const values = new Map;
+  const eventsHandler = patch && new WeakMap;
+
+  // patch once main UI tread
+  if (patch) {
+    const {addEventListener} = EventTarget.prototype;
+    // this should never be on the way as it's extremely light and fast
+    // but it's necessary to allow "preventDefault" or other event invokes at distance
+    defineProperty(EventTarget.prototype, 'addEventListener', {
+      value(type, listener, ...options) {
+        if (options.at(0)?.invoke) {
+          if (!eventsHandler.has(this))
+            eventsHandler.set(this, new Map);
+          eventsHandler.get(this).set(type, [].concat(options[0].invoke));
+          delete options[0].invoke;
+        }
+        return addEventListener.call(this, type, listener, ...options);
+      }
+    });
+  }
+  
+  const handleEvent = patch && (event => {
+    const {currentTarget, target, type} = event;
+    for (const method of eventsHandler.get(currentTarget || target)?.get(type) || [])
+      event[method]();
+  });
+  
+  const result = asEntry((type, value) => {
+    if (!ids.has(value)) {
+      let sid;
+      // a bit apocalyptic scenario but if this main runs forever
+      // and the id does a whole int32 roundtrip we might have still
+      // some reference danglign around
+      while (values.has(sid = id++));
+      ids.set(value, sid);
+      values.set(sid, value);
+    }
+    return entry(type, ids.get(value));
+  });
+  
+  return (thread, MAIN, THREAD, ...args) => {
+    const {[THREAD]: __thread__} = thread;
+
+    const global = args.length ? assign(create(globalThis), ...args) : globalThis;
+  
+    const registry = new FinalizationRegistry(id => {
+      __thread__(DELETE, entry(STRING, id));
+    });
+  
+    const target = ([type, value]) => {
+      switch (type) {
+        case OBJECT$1:
+          if (value == null)
+            return global;
+          if (typeof value === NUMBER)
+            return values.get(value);
+          if (!(value instanceof TypedArray)) {
+            for (const key in value)
+              value[key] = target(value[key]);
+          }
+          return value;
+        case FUNCTION:
+          if (typeof value === STRING) {
+            if (!values.has(value)) {
+              const cb = function (...args) {
+                if (patch && args.at(0) instanceof Event) handleEvent(...args);
+                return __thread__(
+                  APPLY,
+                  entry(FUNCTION, value),
+                  result(this),
+                  args.map(result)
+                );
+              };
+              const ref = new WeakRef(cb);
+              values.set(value, ref);
+              registry.register(cb, value, ref);
+            }
+            return values.get(value).deref();
+          }
+          return values.get(value);
+        case SYMBOL:
+          return symbol(value);
+      }
+      return value;
+    };
+  
+    const trapsHandler = {
+      [APPLY]: (target, thisArg, args) => result(target.apply(thisArg, args)),
+      [CONSTRUCT]: (target, args) => result(new target(...args)),
+      [DEFINE_PROPERTY]: (target, name, descriptor) => result(defineProperty(target, name, descriptor)),
+      [DELETE_PROPERTY]: (target, name) => result(delete target[name]),
+      [GET_PROTOTYPE_OF]: target => result(getPrototypeOf(target)),
+      [GET]: (target, name) => result(target[name]),
+      [GET_OWN_PROPERTY_DESCRIPTOR]: (target, name) => {
+        const descriptor = getOwnPropertyDescriptor(target, name);
+        return descriptor ? entry(OBJECT$1, augment(descriptor, result)) : entry(UNDEFINED, descriptor);
+      },
+      [HAS]: (target, name) => result(name in target),
+      [IS_EXTENSIBLE]: target => result(isExtensible(target)),
+      [OWN_KEYS]: target => entry(OBJECT$1, ownKeys(target).map(result)),
+      [PREVENT_EXTENSION]: target => result(preventExtensions(target)),
+      [SET$1]: (target, name, value) => result(set(target, name, value)),
+      [SET_PROTOTYPE_OF]: (target, proto) => result(setPrototypeOf(target, proto)),
+      [DELETE](id) {
+        ids.delete(values.get(id));
+        values.delete(id);
+      }
+    };
+  
+    thread[MAIN] = (trap, entry, ...args) => {
+      switch (trap) {
+        case APPLY:
+          args[0] = target(args[0]);
+          args[1] = args[1].map(target);
+          break;
+        case CONSTRUCT:
+          args[0] = args[0].map(target);
+          break;
+        case DEFINE_PROPERTY: {
+          const [name, descriptor] = args;
+          args[0] = target(name);
+          const {get, set, value} = descriptor;
+          if (get) descriptor.get = target(get);
+          if (set) descriptor.set = target(set);
+          if (value) descriptor.value = target(value);
+          break;
+        }
+        default:
+          args = args.map(target);
+          break;
+      }
+  
+      return trapsHandler[trap](target(entry), ...args);
+    };
+  
+    return {
+      proxy: thread,
+      [name.toLowerCase()]: global,
+      [`is${name}Proxy`]: () => false
+    };
+  };
+};
+
+var main = main$1('Window', true);
+
+var thread$1 = name => {
+  let id = 0;
+  const ids = new Map;
+  const values = new Map;
+  
+  const __proxied__ = Symbol();
+  
+  const bound = target => typeof target === FUNCTION ? target() : target;
+  
+  const isProxy = value => typeof value === OBJECT$1 && !!value && __proxied__ in value;
+  
+  const localArray = Array[isArray$1];
+  
+  const argument = asEntry(
+    (type, value) => {
+      if (__proxied__ in value)
+        return bound(value[__proxied__]);
+      if (type === FUNCTION) {
+        if (!values.has(value)) {
+          let sid;
+          // a bit apocalyptic scenario but if this thread runs forever
+          // and the id does a whole int32 roundtrip we might have still
+          // some reference dangling around
+          while (values.has(sid = String(id++)));
+          ids.set(value, sid);
+          values.set(sid, value);
+        }
+        return entry(type, ids.get(value));
+      }
+      if (!(value instanceof TypedArray)) {
+        for(const key in value)
+          value[key] = argument(value[key]);
+      }
+      return entry(type, value);
+    }
+  );
+  
+  return (main, MAIN, THREAD) => {
+    const { [MAIN]: __main__ } = main;
+  
+    const proxies = new Map;
+  
+    const registry = new FinalizationRegistry(id => {
+      proxies.delete(id);
+      __main__(DELETE, argument(id));
+    });
+  
+    const register = (entry) => {
+      const [type, value] = entry;
+      if (!proxies.has(value)) {
+        const target = type === FUNCTION ? Bound.bind(entry) : entry;
+        const proxy = new Proxy(target, proxyHandler);
+        const ref = new WeakRef(proxy);
+        proxies.set(value, ref);
+        registry.register(proxy, value, ref);
+      }
+      return proxies.get(value).deref();
+    };
+  
+    const fromEntry = entry => {
+      const [type, value] = entry;
+      switch (type) {
+        case OBJECT$1:
+          return typeof value === NUMBER ? register(entry) : value;
+        case FUNCTION:
+          return typeof value === STRING ? values.get(value) : register(entry);
+        case SYMBOL:
+          return symbol(value);
+      }
+      return value;
+    };
+  
+    const result = (TRAP, target, ...args) => fromEntry(__main__(TRAP, bound(target), ...args));
+  
+    const proxyHandler = {
+      [APPLY]: (target, thisArg, args) => result(APPLY, target, argument(thisArg), args.map(argument)),
+      [CONSTRUCT]: (target, args) => result(CONSTRUCT, target, args.map(argument)),
+      [DEFINE_PROPERTY]: (target, name, descriptor) => {
+        const { get, set, value } = descriptor;
+        if (typeof get === FUNCTION) descriptor.get = argument(get);
+        if (typeof set === FUNCTION) descriptor.set = argument(set);
+        if (typeof value === FUNCTION) descriptor.value = argument(value);
+        return result(DEFINE_PROPERTY, target, argument(name), descriptor);
+      },
+      [DELETE_PROPERTY]: (target, name) => result(DELETE_PROPERTY, target, argument(name)),
+      [GET_PROTOTYPE_OF]: target => result(GET_PROTOTYPE_OF, target),
+      [GET]: (target, name) => name === __proxied__ ? target : result(GET, target, argument(name)),
+      [GET_OWN_PROPERTY_DESCRIPTOR]: (target, name) => {
+        const descriptor = result(GET_OWN_PROPERTY_DESCRIPTOR, target, argument(name));
+        return descriptor && augment(descriptor, fromEntry);
+      },
+      [HAS]: (target, name) => name === __proxied__ || result(HAS, target, argument(name)),
+      [IS_EXTENSIBLE]: target => result(IS_EXTENSIBLE, target),
+      [OWN_KEYS]: target => result(OWN_KEYS, target).map(fromEntry),
+      [PREVENT_EXTENSION]: target => result(PREVENT_EXTENSION, target),
+      [SET$1]: (target, name, value) => result(SET$1, target, argument(name), argument(value)),
+      [SET_PROTOTYPE_OF]: (target, proto) => result(SET_PROTOTYPE_OF, target, argument(proto)),
+    };
+  
+    main[THREAD] = (trap, entry, ctx, args) => {
+      switch (trap) {
+        case APPLY:
+          return fromEntry(entry).apply(fromEntry(ctx), args.map(fromEntry));
+        case DELETE: {
+          const id = fromEntry(entry);
+          ids.delete(values.get(id));
+          values.delete(id);
+        }
+      }
+    };
+  
+    const global = new Proxy([OBJECT$1, null], proxyHandler);
+  
+    // this is needed to avoid confusion when new Proxy([type, value])
+    // passes through `isArray` check, as that would return always true
+    // by specs and there's no Proxy trap to avoid it.
+    const remoteArray = global.Array[isArray$1];
+    defineProperty(Array, isArray$1, {
+      value: ref => isProxy(ref) ? remoteArray(ref) : localArray(ref)
+    });
+  
+    return {
+      [name.toLowerCase()]: global,
+      [`is${name}Proxy`]: isProxy,
+      proxy: main
+    };
+  };
+};
+
+var thread = thread$1('Window');
+
+var serverMain = main$1('Server', false);
+
+var serverThread = thread$1('Server');
+
+const SERVER_MAIN = 'S' + MAIN;
+const SERVER_THREAD = 'S' + THREAD;
+
+const {parse, stringify} = JSON$1;
+
+const isServer = !!globalThis.process;
+const proxies = new WeakMap;
+
+/**
+ * @typedef {object} Coincident
+ * @property {ProxyHandler<globalThis>} proxy
+ * @property {ProxyHandler<Window>} window
+ * @property {(value: any) => boolean} isWindowProxy
+ */
+
+/**
+ * @typedef {object & Coincident} CoincidentWorker
+ * @property {ProxyHandler<globalThis>} proxy
+ * @property {ProxyHandler<Window>} window
+ * @property {(value: any) => boolean} isWindowProxy
+ * @property {ProxyHandler<NodeJS>} server
+ * @property {(value: any) => boolean} isServerProxy
+ */
+
+/**
+ * @callback CoincidentServer
+ * @param {WebSocketServer} wss the WebSocketServer to use to handle Worker/Server calls
+ * @param {object} [globals] optional globals to expose through the Worker via the proxy
+ * @returns {WebSocketServer}
+ */
+
+/**
+ * @callback CoincidentWeb
+ * @param {globalThis | Worker} self either the main thread (Worker)or a worker (in main thread UI)
+ * @param  {WebSocket} [ws] the optional WebSocket to use when `self` is `globalThis` 
+ * @returns {Coincident | CoincidentWorker}
+ */
+
+const parseData = data => {
+  let id;
+  if (/^!(-?\d+)?/.test(data)) {
+    id = RegExp.$1;
+    data = data.slice(1 + id.length);
+  }
+  return {id, result: data ? parse(data) : void 0};
+};
+
+const coincident = isServer ?
+  /** @type {CoincidentServer} */
+  (wss, globals) => {
+    let id = 0, ws = null;
+    const resolvers = new Map;
+    const util = serverMain(
+      {[SERVER_THREAD]: async (trap, ...args) => {
+        const data = stringify([trap, ...args]);
+        if (trap === APPLY) {
+          const {promise, resolve} = Promise.withResolvers();
+          const uid = String(id++);
+          resolvers.set(uid, resolve);
+          ws.send('!' + uid + data);
+          return await promise;
+        }
+        ws.send('!' + data);
+      }},
+      SERVER_MAIN,
+      SERVER_THREAD,
+      globals
+    );
+    const __main__ = util.proxy[SERVER_MAIN];
+    return wss.on('connection', $ws => {
+      if (ws !== null) return $ws.close();
+      ws = $ws
+        .on('close', () => {
+          ws = null;
+          for (const [_, resolve] of resolvers) resolve();
+          resolvers.clear();
+        })
+        .on('message', buffer => {
+          const {id, result} = parseData(String(buffer));
+          if (id) {
+            const resolve = resolvers.get(id);
+            resolvers.delete(id);
+            resolve(result);
+          }
+          else
+            ws.send(stringify(__main__(...result)));
+        });
+    });
+  } :
+
+  /** @type {CoincidentWeb} */
+  (self, ws) => {
+    const proxy = coincident$1(self);
+    if (!proxies.has(proxy)) {
+      const util = self instanceof Worker ? mainBridge : threadBridge;
+      proxies.set(proxy, util(proxy, MAIN, THREAD, ws));
+    }
+    return proxies.get(proxy);
+  }
+;
+
+if (!isServer)
+  coincident.transfer = coincident$1.transfer;
+
+const mainBridge = (thread, MAIN, THREAD, ws) => {
+  let resolve;
+  const {[SERVER_THREAD]: __thread__} = thread;
+  ws.addEventListener('message', async ({data}) => {
+    const {id, result} = parseData(data);
+    if (id != null) {
+      const invoke = __thread__(...result);
+      if (id) {
+        const out = await invoke;
+        ws.send('!' + id + (out === void 0 ? '' : stringify(out)));
+      }
+    }
+    else
+      resolve = resolve(result);
+  });
+  thread[SERVER_MAIN] = (...args) => new Promise($ => {
+    resolve = $;
+    ws.send(stringify(args));
+  });
+  return main(thread, MAIN, THREAD);
+};
+
+const threadBridge = (proxy, MAIN, THREAD) => assign(
+  serverThread(proxy, SERVER_MAIN, SERVER_THREAD),
+  thread(proxy, MAIN, THREAD)
+);
+
+export { coincident as default };
