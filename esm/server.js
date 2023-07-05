@@ -91,7 +91,8 @@ const coincident = isServer ?
           }
           else
             ws.send(stringify(__main__(...result)));
-        });
+        })
+        .send('');
     });
   }) :
 
@@ -112,44 +113,42 @@ if (!isServer)
 export default coincident;
 
 const mainBridge = (self, thread, MAIN, THREAD, ws) => {
-  self.addEventListener('message', ({data: i32}) => {
-    let resolve;
-    const S = crypto.randomUUID();
-    const SERVER_MAIN = 'MS' + S;
-    const SERVER_THREAD = 'TS' + S;
-    for (let i = 0; i < S.length; i++)
-      i32[i] = S.charCodeAt(i);
-    Atomics.notify(i32, 0);
+  self.addEventListener('message', ({data: [CHANNEL, i32]}) => {
+    const SERVER_MAIN = 'M' + CHANNEL;
+    const SERVER_THREAD = 'T' + CHANNEL;
     const {[SERVER_THREAD]: __thread__} = thread;
+    let resolve;
     thread[SERVER_MAIN] = (...args) => new Promise($ => {
       resolve = $;
       ws.send(stringify(args));
     });
     ws.send(stringify([SERVER_MAIN, SERVER_THREAD]));
-    ws.addEventListener('message', async ({data}) => {
-      const {id, result} = parseData(data);
-      if (id != null) {
-        const invoke = __thread__(...result);
-        if (id) {
-          const out = await invoke;
-          ws.send('!' + id + (out === void 0 ? '' : stringify(out)));
+    ws.addEventListener('message', () => {
+      ws.addEventListener('message', async ({data}) => {
+        const {id, result} = parseData(data);
+        if (id != null) {
+          const invoke = __thread__(...result);
+          if (id) {
+            const out = await invoke;
+            ws.send('!' + id + (out === void 0 ? '' : stringify(out)));
+          }
         }
-      }
-      else
-        resolve = resolve(result);
-    });
+        else
+          resolve = resolve(result);
+      });
+      Atomics.notify(i32, 0);
+    }, {once: true});
   }, {once: true});
   return main(thread, MAIN, THREAD);
 };
 
 const threadBridge = (self, proxy, MAIN, THREAD) => {
-  const sb = new SharedArrayBuffer(crypto.randomUUID().length * 4);
-  const i32 = new Int32Array(sb);
-  self.postMessage(i32);
+  const CHANNEL = 'S' + crypto.randomUUID();
+  const i32 = new Int32Array(new SharedArrayBuffer(4));
+  self.postMessage([CHANNEL, i32]);
   Atomics.wait(i32);
-  let S = String.fromCharCode(...i32);
   return assign(
-    serverThread(proxy, 'MS' + S, 'TS' + S),
+    serverThread(proxy, 'M' + CHANNEL, 'T' + CHANNEL),
     thread(proxy, MAIN, THREAD)
   );
 };
