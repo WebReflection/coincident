@@ -56,13 +56,16 @@ const parseData = data => {
 const coincident = isServer ?
   /** @type {CoincidentServer} */
   (wss, globals) => wss.on('connection', ws => {
+    // wait for the cross-hand-shake from the main thread
     ws.once('message', buffer => {
       let id = 0;
       const [SERVER_MAIN, SERVER_THREAD] = parse(buffer);
       const resolvers = new Map;
-      const util = serverMain(
+      // bootstrap a dedicated channel for this socket
+      const {[SERVER_MAIN]: __main__} = serverMain(
         {[SERVER_THREAD]: async (trap, ...args) => {
           const data = stringify([trap, ...args]);
+          // allow return values from thread's callbacks
           if (trap === APPLY) {
             const {promise, resolve} = Promise.withResolvers();
             const uid = String(id++);
@@ -75,12 +78,14 @@ const coincident = isServer ?
         SERVER_MAIN,
         SERVER_THREAD,
         globals
-      );
-      const __main__ = util.proxy[SERVER_MAIN];
+      ).proxy;
+      // setup the socket and terminate the hand-shake
       ws
+        // resolve dangling promises on close
         .on('close', () => {
           for (const [_, resolve] of resolvers) resolve();
         })
+        // resolve or forward results
         .on('message', buffer => {
           const {id, result} = parseData(String(buffer));
           if (id) {
@@ -91,6 +96,7 @@ const coincident = isServer ?
           else
             ws.send(stringify(__main__(...result)));
         })
+        // end cross-hand-shake
         .send('');
     });
   }) :
@@ -112,6 +118,7 @@ if (!isServer)
 export default coincident;
 
 const mainBridge = (self, thread, MAIN, THREAD, ws) => {
+  // wait for the cross-hand-shake from the worker
   self.addEventListener('message', ({data: [CHANNEL, i32]}) => {
     const SERVER_MAIN = 'M' + CHANNEL;
     const SERVER_THREAD = 'T' + CHANNEL;
@@ -121,7 +128,9 @@ const mainBridge = (self, thread, MAIN, THREAD, ws) => {
       resolve = $;
       ws.send(stringify(args));
     });
+    // wait for the cross-hand-shake from the server
     ws.addEventListener('message', () => {
+      // setup regular listener for all socket's interactions
       ws.addEventListener('message', async ({data}) => {
         const {id, result} = parseData(data);
         if (id != null) {
@@ -134,6 +143,7 @@ const mainBridge = (self, thread, MAIN, THREAD, ws) => {
         else
           resolve = resolve(result);
       });
+      // unlock the Worker now that all channels have been defined
       Atomics.notify(i32, 0);
     }, {once: true});
     ws.send(stringify([SERVER_MAIN, SERVER_THREAD]));
@@ -142,10 +152,13 @@ const mainBridge = (self, thread, MAIN, THREAD, ws) => {
 };
 
 const threadBridge = (self, proxy, MAIN, THREAD) => {
+  // create a unique channel to reflect on the server
+  // through the main WebSocket (cross-hand-shake)
   const CHANNEL = 'S' + crypto.randomUUID();
   const i32 = new Int32Array(new SharedArrayBuffer(4));
   self.postMessage([CHANNEL, i32]);
   Atomics.wait(i32);
+  // merge server and worker namespace
   return assign(
     serverThread(proxy, 'M' + CHANNEL, 'T' + CHANNEL),
     thread(proxy, MAIN, THREAD)

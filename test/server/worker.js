@@ -1,5 +1,6 @@
 import coincident from '../../server.js';
 
+console.time('Bootstrap');
 const {
   proxy,            // the main thread (UI/DOM) proxy
   window,           // the window reference
@@ -7,10 +8,9 @@ const {
   server,           // the server reference
   isServerProxy,    // the server introspection helper
 } = coincident(self);
+console.timeEnd('Bootstrap');
 
-console.log('server get');
 const os = await server.import('os');
-console.log('server got');
 
 console.time('Server');
 const html = `
