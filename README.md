@@ -141,7 +141,7 @@ document.body.addEventListener('click', event => {
 });
 ```
 
-See the [test/window.js](./test/window.js) file or reach `http://localhost:8080/test/window.html` locally to play around this feature.
+See the [test/window.js](./test/window.js) file, try it [live](https://webreflection.github.io/coincident/test/window.html) or reach `http://localhost:8080/test/window.html` locally to play around this feature.
 
 #### Extra features
 
@@ -190,7 +190,7 @@ render(document.body, html`
 `);
 ```
 
-See [test/uhtml.js](./test/uhtml.js) page or test it locally via `http://localhost:8080/test/uhtml.html` after `npm run server`.
+See [test/uhtml.js](./test/uhtml.js) page, try it [live](https://webreflection.github.io/coincident/test/uhtml.html), or test it locally via `http://localhost:8080/test/uhtml.html` after `npm run server`.
 
 
 ### coincident/server

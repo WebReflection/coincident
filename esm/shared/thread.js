@@ -38,15 +38,15 @@ export default name => {
   let id = 0;
   const ids = new Map;
   const values = new Map;
-  
+
   const __proxied__ = Symbol();
-  
+
   const bound = target => typeof target === FUNCTION ? target() : target;
-  
+
   const isProxy = value => typeof value === OBJECT && !!value && __proxied__ in value;
-  
+
   const localArray = Array[isArray];
-  
+
   const argument = asEntry(
     (type, value) => {
       if (__proxied__ in value)
@@ -70,17 +70,17 @@ export default name => {
       return entry(type, value);
     }
   );
-  
+
   return (main, MAIN, THREAD) => {
     const { [MAIN]: __main__ } = main;
-  
+
     const proxies = new Map;
-  
+
     const registry = new FinalizationRegistry(id => {
       proxies.delete(id);
       __main__(DELETE, argument(id));
     });
-  
+
     const register = (entry) => {
       const [type, value] = entry;
       if (!proxies.has(value)) {
@@ -92,7 +92,7 @@ export default name => {
       }
       return proxies.get(value).deref();
     };
-  
+
     const fromEntry = entry => {
       const [type, value] = entry;
       switch (type) {
@@ -105,9 +105,9 @@ export default name => {
       }
       return value;
     };
-  
+
     const result = (TRAP, target, ...args) => fromEntry(__main__(TRAP, bound(target), ...args));
-  
+
     const proxyHandler = {
       [APPLY]: (target, thisArg, args) => result(APPLY, target, argument(thisArg), args.map(argument)),
       [CONSTRUCT]: (target, args) => result(CONSTRUCT, target, args.map(argument)),
@@ -132,7 +132,7 @@ export default name => {
       [SET]: (target, name, value) => result(SET, target, argument(name), argument(value)),
       [SET_PROTOTYPE_OF]: (target, proto) => result(SET_PROTOTYPE_OF, target, argument(proto)),
     };
-  
+
     main[THREAD] = (trap, entry, ctx, args) => {
       switch (trap) {
         case APPLY:
@@ -144,9 +144,9 @@ export default name => {
         }
       }
     };
-  
+
     const global = new Proxy([OBJECT, null], proxyHandler);
-  
+
     // this is needed to avoid confusion when new Proxy([type, value])
     // passes through `isArray` check, as that would return always true
     // by specs and there's no Proxy trap to avoid it.
@@ -154,7 +154,7 @@ export default name => {
     defineProperty(Array, isArray, {
       value: ref => isProxy(ref) ? remoteArray(ref) : localArray(ref)
     });
-  
+
     return {
       [name.toLowerCase()]: global,
       [`is${name}Proxy`]: isProxy,

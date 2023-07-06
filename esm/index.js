@@ -127,7 +127,7 @@ const coincident = (self, {parse, stringify} = JSON) => {
               else {
                 const result = results.get(id);
                 results.delete(id);
-                // populate the SaredArrayBuffer with utf-16 chars code
+                // populate the SharedArrayBuffer with utf-16 chars code
                 for (let ui16a = new Uint16Array(sb.buffer), i = 0; i < result.length; i++)
                   ui16a[i] = result.charCodeAt(i);
               }

@@ -178,7 +178,7 @@ const ENV = function () {'use strict';
     };
   }
 
-  var mutationsValue = 0.5;
+  var mutationsValue = 0.1;
 
   function mutations(value) {
     if (value) {
