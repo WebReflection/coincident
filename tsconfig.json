@@ -11,6 +11,7 @@
     "include": [
         "esm/index.js",
         "esm/json.js",
+        "esm/bun.js",
         "esm/server.js",
         "esm/structured.js",
         "esm/window.js"
