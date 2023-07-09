@@ -53,6 +53,11 @@
       "import": "./esm/window.js",
       "default": "./cjs/window.js"
     },
+    "./bun": {
+      "types": "./types/bun.d.ts",
+      "import": "./esm/bun.js",
+      "default": "./cjs/bun.js"
+    },
     "./server": {
       "types": "./types/server.d.ts",
       "import": "./esm/server.js",

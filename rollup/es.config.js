@@ -3,10 +3,7 @@ import terser from '@rollup/plugin-terser';
 
 export default {
   input: './esm/index.js',
-  plugins: [
-    nodeResolve(),
-    terser()
-  ],
+  plugins: [nodeResolve()].concat(process.env.NO_MIN ? [] : [terser()]),
   output: {
     esModule: true,
     file: './es.js',

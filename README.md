@@ -302,3 +302,35 @@ If worried about possible foreign scripts doing weird things it is possible to u
   'Cross-Origin-Resource-Policy': 'same-origin'
 }
 ```
+
+### coincident/bun
+
+Same as *coincident/server* except it's 100% based on *Bun* primitives (*websocket*):
+
+```js
+import { serve, file } from 'bun';
+import coincidentWS from 'coincident/bun';
+
+const port = 8080;
+const headers =  {
+  'Cross-Origin-Opener-Policy': 'same-origin',
+  'Cross-Origin-Embedder-Policy': 'require-corp',
+  'Cross-Origin-Resource-Policy': 'same-origin'
+};
+
+serve({
+  port,
+  fetch(req, server) {
+    // upgrade sockets if possible
+    if (server.upgrade(req)) return;
+    // do anything else you'd do with Bun
+    let path = '.' + new URL(req.url).pathname;
+    if (path.endsWith('/')) path += 'index.html';
+    return new Response(file(path), {headers});
+  },
+  // create automatically the websocket utility
+  websocket: coincidentWS({import: name => import(name)}),
+});
+
+console.log(`http://localhost:${port}/test/server/`);
+``
