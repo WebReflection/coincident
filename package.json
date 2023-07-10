@@ -32,7 +32,6 @@
     "@playwright/test": "^1.35.1",
     "@rollup/plugin-node-resolve": "^15.1.0",
     "@rollup/plugin-terser": "^0.4.3",
-    "@ungap/with-resolvers": "^0.1.0",
     "ascjs": "^6.0.2",
     "c8": "^8.0.0",
     "rollup": "^3.26.0",
@@ -82,7 +81,8 @@
   },
   "unpkg": "es.js",
   "dependencies": {
-    "@ungap/structured-clone": "^1.2.0"
+    "@ungap/structured-clone": "^1.2.0",
+    "@ungap/with-resolvers": "^0.1.0"
   },
   "optionalDependencies": {
     "ws": "^8.13.0"
