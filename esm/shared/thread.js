@@ -97,7 +97,9 @@ export default name => {
       const [type, value] = entry;
       switch (type) {
         case OBJECT:
-          return typeof value === NUMBER ? register(entry) : value;
+          return value === null ? globalThis : (
+            typeof value === NUMBER ? register(entry) : value
+          );
         case FUNCTION:
           return typeof value === STRING ? values.get(value) : register(entry);
         case SYMBOL:

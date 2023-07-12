@@ -57,6 +57,8 @@ export const asEntry = transform => value => {
     case OBJECT:
     if (value == null)
       return entry(NULL, value);
+    if (value === globalThis)
+      return entry(OBJECT, null);
     case FUNCTION:
       return transform(type, value);
     case BOOLEAN:
