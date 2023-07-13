@@ -31,3 +31,6 @@ window.document.body.innerHTML = html;
 console.timeEnd('Main');
 
 server.setTimeout(() => { console.log('OK'); }, 1000);
+
+const test = server.emitter();
+test.on('event', (...args) => console.log(...args));
