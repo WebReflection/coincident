@@ -13,7 +13,7 @@
     "rollup:uhtml": "rollup --config rollup/uhtml.config.js",
     "rollup:window": "rollup --config rollup/window.config.js",
     "test": "c8 node test/index.js",
-    "test:integration": "playwright test test/",
+    "test:integration": "static-handler --cors --coop --coep --corp . 2>/dev/null & SH_PID=$!; EXIT_CODE=0; playwright test test/ || EXIT_CODE=$?; kill $SH_PID 2>/dev/null; exit $EXIT_CODE",
     "test:server": "node test/server/main.cjs",
     "ts": "tsc -p .",
     "server": "npx static-handler --cors --coop --coep --corp .",
