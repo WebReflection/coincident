@@ -111,12 +111,7 @@ export default name => {
     const result = (TRAP, target, ...args) => fromEntry(__main__(TRAP, bound(target), ...args));
 
     const proxyHandler = {
-      [APPLY]: (target, thisArg, args) => {
-        // TODO please remove this ASAP as it makes literally no sense in this repo.
-        // see MicroPython bug: https://github.com/micropython/micropython/issues/11995
-        const context = thisArg?.[0] === globalThis ? globalThis : thisArg;
-        return result(APPLY, target, argument(context), args.map(argument));
-      },
+      [APPLY]: (target, thisArg, args) => result(APPLY, target, argument(thisArg), args.map(argument)),
       [CONSTRUCT]: (target, args) => result(CONSTRUCT, target, args.map(argument)),
       [DEFINE_PROPERTY]: (target, name, descriptor) => {
         const { get, set, value } = descriptor;
