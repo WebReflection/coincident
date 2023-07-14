@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <script src="../../coi-serviceworker.js"></script>
+    <script type="module">
+
+    const { assign, getPrototypeOf, setPrototypeOf } = Object;
+
+    // V-DOM helpers
+    import h from 'https://esm.sh/virtual-dom/h';
+
+    let sample = h('i', null, ['!']);
+    const [ VirtualNode, VirtualText ] = [
+        getPrototypeOf(sample),
+        getPrototypeOf(sample.children[0])
+    ];
+    sample = null;
+
+    // helps V-DOM understanding nodes
+    const promote = node => {
+        if ('tagName' in node) {
+            setPrototypeOf(node, VirtualNode);
+            node.children.forEach(promote);
+        }
+        else if ('text' in node) {
+            setPrototypeOf(node, VirtualText);
+        }
+    };
+
+    // Main logic
+    import createElement from 'https://esm.sh/virtual-dom/create-element';
+    import patch from 'https://esm.sh/virtual-dom/patch';
+    import coincident from '../../es.js';
+
+    let id = 0;
+    const element = new Map;
+    assign(coincident(new Worker('./worker.js', {type: 'module'})), {
+        createElement(tree) {
+            promote(tree);
+            element.set(id, createElement(tree));
+            return id++;
+        },
+        appendElement(where, ...elements) {
+            const parent = document.querySelector(where);
+            parent.append(...elements.map(({ id }) => element.get(id)));
+        },
+        patchElement(patches, { id }) {
+            element.set(id, patch(element.get(id), patches));
+        }
+    });
+    </script>
+  </head>
+</html>
