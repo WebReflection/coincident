@@ -4,7 +4,7 @@ export default coincident;
  * @param {globalThis | Worker} self the context in which code should run
  * @returns {ProxyHandler<globalThis> | ProxyHandler<Worker>}
  */
-declare function coincident(self: typeof globalThis | Worker): ProxyHandler<typeof globalThis> | ProxyHandler<Worker>;
+declare function coincident(self: typeof globalThis | Worker, options: any): ProxyHandler<typeof globalThis> | ProxyHandler<Worker>;
 declare namespace coincident {
     let transfer: (...args: any[]) => any[];
 }

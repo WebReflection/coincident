@@ -6,7 +6,7 @@ import $coincident from './index.js';
  * @param {globalThis | Worker} self the context in which code should run
  * @returns {ProxyHandler<globalThis> | ProxyHandler<Worker>}
  */
-const coincident = self => $coincident(self, JSON);
+const coincident = (self, options) => $coincident(self, {...JSON, ...options});
 
 coincident.transfer = $coincident.transfer;
 

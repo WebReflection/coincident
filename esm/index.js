@@ -32,10 +32,10 @@ let uid = 0;
 /**
  * Create once a `Proxy` able to orchestrate synchronous `postMessage` out of the box.
  * @param {globalThis | Worker} self the context in which code should run
- * @param {{parse: (serialized: string) => any, stringify: (serializable: any) => string}} [JSON] an optional `JSON` like interface to `parse` or `stringify` content
+ * @param {{parse: (serialized: string) => any, stringify: (serializable: any) => string, transform?: (value:any) => any}} [JSON] an optional `JSON` like interface to `parse` or `stringify` content with extra `transform` ability.
  * @returns {ProxyHandler<globalThis> | ProxyHandler<Worker>}
  */
-const coincident = (self, {parse, stringify} = JSON) => {
+const coincident = (self, {parse, stringify, transform} = JSON) => {
   // create a Proxy once for the given context (globalThis or Worker instance)
   if (!context.has(self)) {
     // ensure the CHANNEL and data are posted correctly
@@ -64,10 +64,10 @@ const coincident = (self, {parse, stringify} = JSON) => {
           buffers.delete(transfer = args.pop());
 
         // ask for invoke with arguments and wait for it
-        post(transfer, id, sb, action, args);
+        post(transfer, id, sb, action, transform ? args.map(transform) : args);
 
         // helps deciding how to wait for results
-        const isAsync = self instanceof Worker;
+        const isAsync = self !== globalThis;
         return waitFor(isAsync, sb).value.then(() => {
           // commit transaction using the returned / needed buffer length
           const length = sb[0];
