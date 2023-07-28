@@ -109,13 +109,14 @@ const coincident = (self, {parse, stringify, transform} = JSON) => {
                 const [action, args] = rest;
                 if (actions.has(action)) {
                   // await for result either sync or async and serialize it
-                  const result = stringify(await actions.get(action)(...args));
-                  if (result) {
+                  const result = await actions.get(action)(...args);
+                  if (result !== void 0) {
+                    const serialized = stringify(result);
                     // store the result for "the very next" event listener call
-                    results.set(id, result);
+                    results.set(id, serialized);
                     // communicate the required SharedArrayBuffer length out of the
                     // resulting serialized string
-                    sb[0] = result.length;
+                    sb[0] = serialized.length;
                   }
                 }
                 // unknown action should be notified as missing on the main thread
