@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <script src="../../mini-coi.js"></script>
+    <script>
+      addEventListener('message', ({data}) => {
+        document.body.append(data);
+      });
+    </script>
+  </head>
+  <body>
+    <iframe src="iframe.html"
+      sandbox="allow-scripts allow-same-origin"
+      frameborder="0" width="0" height="0"
+      style="position:absolute;top:-1px;left:-1px"
+    ></iframe>
+  </body>
+</html>
