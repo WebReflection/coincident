@@ -2,6 +2,7 @@ import {MAIN, THREAD} from './channel.js';
 import $coincident from './index.js';
 import main from './window/main.js';
 import thread from './window/thread.js';
+import Worker from './shared/worker.js';
 
 const proxies = new WeakMap;
 

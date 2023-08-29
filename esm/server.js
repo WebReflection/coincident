@@ -8,6 +8,7 @@ import main from './window/main.js';
 import thread from './window/thread.js';
 import serverMain from './server/main.js';
 import serverThread from './server/thread.js';
+import Worker from './shared/worker.js';
 
 const {parse, stringify} = JSON;
 

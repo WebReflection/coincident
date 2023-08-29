@@ -74,10 +74,13 @@ const coincident = (self, {parse, stringify, transform} = JSON) => {
 
         // warn users about possible deadlock still allowing them
         // to explicitly `proxy.invoke().then(...)` without blocking
+        let deadlock = 0;
         if (harakiri && isAsync)
-          console.warn(`💀🔒 - Possible deadlock if proxy.${action}(...args) is awaited`);
+          deadlock = setTimeout(console.warn, 1000, `💀🔒 - Possible deadlock if proxy.${action}(...args) is awaited`);
 
         return waitFor(isAsync, sb).value.then(() => {
+          clearTimeout(deadlock);
+
           // commit transaction using the returned / needed buffer length
           const length = sb[0];
 

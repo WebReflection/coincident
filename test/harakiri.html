@@ -9,6 +9,8 @@
     const { proxy } = coincident(new Worker('./harakiri.js', {type: 'module'}));
     proxy.main = async () => {
       console.log(1);
+      // try this instead to see the warning
+      // await proxy.worker();
       proxy.worker().then(console.log);
       console.log(2);
       requestAnimationFrame(async () => {
