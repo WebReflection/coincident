@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <!-- <script src="../mini-coi.js"></script> -->
+    <script type="module">
+    import coincident from '../window.js';
+    const { proxy } = coincident(new Worker('./harakiri.js', {type: 'module'}));
+    proxy.main = async () => {
+      console.log(1);
+      proxy.worker().then(console.log);
+      console.log(2);
+      requestAnimationFrame(async () => {
+        console.info('here proxy.worker() should not show any warning');
+        console.log(await proxy.worker());
+      });
+    };
+    </script>
+  </head>
+</html>

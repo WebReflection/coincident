@@ -41,6 +41,9 @@ const coincident = (self, {parse, stringify, transform} = JSON) => {
     // ensure the CHANNEL and data are posted correctly
     const post = (transfer, ...args) => self.postMessage({[CHANNEL]: args}, {transfer});
 
+    // prevent Harakiri https://github.com/WebReflection/coincident/issues/18
+    let harakiri = false;
+
     context.set(self, new Proxy(new Map, {
       // there is very little point in checking prop in proxy for this very specific case
       // and I don't want to orchestrate a whole roundtrip neither, as stuff would fail
@@ -68,6 +71,12 @@ const coincident = (self, {parse, stringify, transform} = JSON) => {
 
         // helps deciding how to wait for results
         const isAsync = self !== globalThis;
+
+        // warn users about possible deadlock still allowing them
+        // to explicitly `proxy.invoke().then(...)` without blocking
+        if (harakiri && isAsync)
+          console.warn(`💀🔒 - Possible deadlock if proxy.${action}(...args) is awaited`);
+
         return waitFor(isAsync, sb).value.then(() => {
           // commit transaction using the returned / needed buffer length
           const length = sb[0];
@@ -108,15 +117,21 @@ const coincident = (self, {parse, stringify, transform} = JSON) => {
               if (rest.length) {
                 const [action, args] = rest;
                 if (actions.has(action)) {
-                  // await for result either sync or async and serialize it
-                  const result = await actions.get(action)(...args);
-                  if (result !== void 0) {
-                    const serialized = stringify(result);
-                    // store the result for "the very next" event listener call
-                    results.set(id, serialized);
-                    // communicate the required SharedArrayBuffer length out of the
-                    // resulting serialized string
-                    sb[0] = serialized.length;
+                  harakiri = true;
+                  try {
+                    // await for result either sync or async and serialize it
+                    const result = await actions.get(action)(...args);
+                    if (result !== void 0) {
+                      const serialized = stringify(result);
+                      // store the result for "the very next" event listener call
+                      results.set(id, serialized);
+                      // communicate the required SharedArrayBuffer length out of the
+                      // resulting serialized string
+                      sb[0] = serialized.length;
+                    }
+                  }
+                  finally {
+                    harakiri = false;
                   }
                 }
                 // unknown action should be notified as missing on the main thread
