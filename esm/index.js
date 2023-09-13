@@ -125,7 +125,7 @@ const coincident = (self, {parse, stringify, transform} = JSON) => {
                     // await for result either sync or async and serialize it
                     const result = await actions.get(action)(...args);
                     if (result !== void 0) {
-                      const serialized = stringify(result);
+                      const serialized = stringify(transform ? transform(result) : result);
                       // store the result for "the very next" event listener call
                       results.set(id, serialized);
                       // communicate the required SharedArrayBuffer length out of the
