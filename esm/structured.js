@@ -9,5 +9,6 @@ import $coincident from './index.js';
 const coincident = (self, options) => $coincident(self, {...JSON, ...options});
 
 coincident.transfer = $coincident.transfer;
+coincident.setInterruptHandler = $coincident.setInterruptHandler;
 
 export default coincident;

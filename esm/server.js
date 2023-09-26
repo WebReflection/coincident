@@ -113,8 +113,10 @@ const coincident = isServer ?
   }
 ;
 
-if (!isServer)
+if (!isServer) {
   coincident.transfer = $coincident.transfer;
+  coincident.setInterruptHandler = $coincident.setInterruptHandler;
+}
 
 export default coincident;
 

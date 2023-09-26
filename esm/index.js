@@ -14,11 +14,22 @@ const {isArray} = Array;
 const {notify, wait, waitAsync} = Atomics;
 const {fromCharCode} = String;
 
+const waitInterrupt = sb => {
+  while (wait(sb, 0, 0, 33) === 'timed-out')
+    interruptHandler();
+};
+
+let interruptHandler = () => {};
+
+const setInterruptHandler = callback => {
+  interruptHandler = callback;
+};
+
 // automatically uses sync wait (worker -> main)
 // or fallback to async wait (main -> worker)
 const waitFor = (isAsync, sb) => isAsync ?
                   (waitAsync || waitAsyncFallback)(sb, 0) :
-                  (wait(sb, 0), {value: {then: fn => fn()}});
+                  (waitInterrupt(sb), {value: {then: fn => fn()}});
 
 // retain buffers to transfer
 const buffers = new WeakSet;
@@ -164,5 +175,6 @@ const coincident = (self, {parse, stringify, transform} = JSON) => {
 };
 
 coincident.transfer = (...args) => (buffers.add(args), args);
+coincident.setInterruptHandler = setInterruptHandler;
 
 export default coincident;
