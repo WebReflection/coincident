@@ -63,6 +63,8 @@ Additionally, it can contain a `transform` callback that will be used to change 
 
 **Additionally**, the exported function has a `coincident.tranfer(...buffers)` helper that if used as last argument of any worker demanded task will transfer buffers instead of cloning/copying these.
 
+on top of that, the `setInterruptHandler(callback)` field allows any foreign code to periodically check on awaited main tasks, from a *worker*.
+
 #### Main -> Worker
 
 This module can also communicate from a *main* thread to a *worker*, but in this case the *main* thread needs to `await` for results because [Atomics.wait() cannot be used in main](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Atomics/wait).
