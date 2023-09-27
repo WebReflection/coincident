@@ -1,6 +1,6 @@
 {
   "name": "coincident",
-  "version": "0.13.0",
+  "version": "0.13.1",
   "description": "An Atomics based Proxy to simplify, and synchronize, Worker related tasks",
   "main": "./cjs/index.js",
   "types": "./types/index.d.ts",
