@@ -61,6 +61,8 @@ The second optional argument of the `coincident(context[, JSON])` helper can be 
 
 Additionally, it can contain a `transform` callback that will be used to change arguments into something else via `(value: any) => any` operation per each of them.
 
+Moreover, it can also contain an `interrupt` callback or object that will be used to check some internal state while waiting synchronously from a worker (it's not used when main invokes a worker, it's only used when workers invokes and wait-block itself for main).
+
 **Additionally**, the exported function has a `coincident.tranfer(...buffers)` helper that if used as last argument of any worker demanded task will transfer buffers instead of cloning/copying these.
 
 on top of that, the `setInterruptHandler(callback)` field allows any foreign code to periodically check on awaited main tasks, from a *worker*.

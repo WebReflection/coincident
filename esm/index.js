@@ -14,22 +14,10 @@ const {isArray} = Array;
 const {notify, wait, waitAsync} = Atomics;
 const {fromCharCode} = String;
 
-const waitInterrupt = sb => {
-  while (wait(sb, 0, 0, 33) === 'timed-out')
-    interruptHandler();
+const waitInterrupt = (sb, delay, handler) => {
+  while (wait(sb, 0, 0, delay) === 'timed-out')
+    handler();
 };
-
-let interruptHandler = () => {};
-
-const setInterruptHandler = callback => {
-  interruptHandler = callback;
-};
-
-// automatically uses sync wait (worker -> main)
-// or fallback to async wait (main -> worker)
-const waitFor = (isAsync, sb) => isAsync ?
-                  (waitAsync || waitAsyncFallback)(sb, 0) :
-                  (waitInterrupt(sb), {value: {then: fn => fn()}});
 
 // retain buffers to transfer
 const buffers = new WeakSet;
@@ -41,19 +29,35 @@ const context = new WeakMap;
 let uid = 0;
 
 /**
+ * @typedef {Object} Interrupt used to sanity-check interrupts while waiting synchronously.
+ * @prop {function} [handler] a callback invoked every `delay` milliseconds.
+ * @prop {number} [delay=42] define `handler` invokes in terms of milliseconds.
+ */
+
+/**
  * Create once a `Proxy` able to orchestrate synchronous `postMessage` out of the box.
  * @param {globalThis | Worker} self the context in which code should run
- * @param {{parse: (serialized: string) => any, stringify: (serializable: any) => string, transform?: (value:any) => any}} [JSON] an optional `JSON` like interface to `parse` or `stringify` content with extra `transform` ability.
+ * @param {{parse: (serialized: string) => any, stringify: (serializable: any) => string, transform?: (value:any) => any, interrupt?: () => void | Interrupt}} [JSON] an optional `JSON` like interface to `parse` or `stringify` content with extra `transform` ability.
  * @returns {ProxyHandler<globalThis> | ProxyHandler<Worker>}
  */
-const coincident = (self, {parse, stringify, transform} = JSON) => {
+const coincident = (self, {parse, stringify, transform, interrupt} = JSON) => {
   // create a Proxy once for the given context (globalThis or Worker instance)
   if (!context.has(self)) {
     // ensure the CHANNEL and data are posted correctly
     const post = (transfer, ...args) => self.postMessage({[CHANNEL]: args}, {transfer});
 
+    const handler = typeof interrupt === 'function' ?
+                      interrupt : (interrupt?.handler || (() => {}));
+    const delay = interrupt?.delay || 42;
+
+    // automatically uses sync wait (worker -> main)
+    // or fallback to async wait (main -> worker)
+    const waitFor = (isAsync, sb) => isAsync ?
+      (waitAsync || waitAsyncFallback)(sb, 0) :
+      (waitInterrupt(sb, delay, handler), {value: {then: fn => fn()}});
+
     // prevent Harakiri https://github.com/WebReflection/coincident/issues/18
-    let harakiri = false;
+    let seppuku = false;
 
     context.set(self, new Proxy(new Map, {
       // there is very little point in checking prop in proxy for this very specific case
@@ -86,7 +90,7 @@ const coincident = (self, {parse, stringify, transform} = JSON) => {
         // warn users about possible deadlock still allowing them
         // to explicitly `proxy.invoke().then(...)` without blocking
         let deadlock = 0;
-        if (harakiri && isAsync)
+        if (seppuku && isAsync)
           deadlock = setTimeout(console.warn, 1000, `💀🔒 - Possible deadlock if proxy.${action}(...args) is awaited`);
 
         return waitFor(isAsync, sb).value.then(() => {
@@ -131,7 +135,7 @@ const coincident = (self, {parse, stringify, transform} = JSON) => {
               if (rest.length) {
                 const [action, args] = rest;
                 if (actions.has(action)) {
-                  harakiri = true;
+                  seppuku = true;
                   try {
                     // await for result either sync or async and serialize it
                     const result = await actions.get(action)(...args);
@@ -145,7 +149,7 @@ const coincident = (self, {parse, stringify, transform} = JSON) => {
                     }
                   }
                   finally {
-                    harakiri = false;
+                    seppuku = false;
                   }
                 }
                 // unknown action should be notified as missing on the main thread
@@ -175,6 +179,5 @@ const coincident = (self, {parse, stringify, transform} = JSON) => {
 };
 
 coincident.transfer = (...args) => (buffers.add(args), args);
-coincident.setInterruptHandler = setInterruptHandler;
 
 export default coincident;
