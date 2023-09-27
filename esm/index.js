@@ -40,7 +40,7 @@ let uid = 0;
  * @param {{parse: (serialized: string) => any, stringify: (serializable: any) => string, transform?: (value:any) => any, interrupt?: () => void | Interrupt}} [JSON] an optional `JSON` like interface to `parse` or `stringify` content with extra `transform` ability.
  * @returns {ProxyHandler<globalThis> | ProxyHandler<Worker>}
  */
-const coincident = (self, {parse, stringify, transform, interrupt} = JSON) => {
+const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, transform, interrupt} = JSON) => {
   // create a Proxy once for the given context (globalThis or Worker instance)
   if (!context.has(self)) {
     // ensure the CHANNEL and data are posted correctly
