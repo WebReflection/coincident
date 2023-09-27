@@ -9,3 +9,4 @@ export type CoincidentServer = (wss: WebSocketServer, globals?: object) => WebSo
 export type CoincidentWeb = (self: typeof globalThis | Worker, ws?: WebSocket) => Coincident | CoincidentWorker;
 /** @type {CoincidentServer} */
 declare function coincident(wss: WebSocketServer, globals: any): WebSocketServer;
+import Worker from './shared/worker.js';

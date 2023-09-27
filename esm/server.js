@@ -103,8 +103,8 @@ const coincident = isServer ?
   }) :
 
   /** @type {CoincidentWeb} */
-  (self, ws) => {
-    const proxy = $coincident(self);
+  (self, ws, ...args) => {
+    const proxy = $coincident(self, ...args);
     if (!proxies.has(proxy)) {
       const util = self instanceof Worker ? mainBridge : threadBridge;
       proxies.set(proxy, util(self, proxy, MAIN, THREAD, ws));
@@ -113,10 +113,8 @@ const coincident = isServer ?
   }
 ;
 
-if (!isServer) {
+if (!isServer)
   coincident.transfer = $coincident.transfer;
-  coincident.setInterruptHandler = $coincident.setInterruptHandler;
-}
 
 export default coincident;
 

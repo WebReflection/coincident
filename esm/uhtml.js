@@ -14,6 +14,5 @@ const coincident = (self, ...args) => {
 }
 
 coincident.transfer = $coincident.transfer;
-coincident.setInterruptHandler = $coincident.setInterruptHandler;
 
 export default coincident;

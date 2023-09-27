@@ -20,3 +20,4 @@ declare function coincident(self: Worker | typeof globalThis, ...args: any[]): P
 declare namespace coincident {
     let transfer: (...args: any[]) => any[];
 }
+import Worker from './shared/worker.js';
