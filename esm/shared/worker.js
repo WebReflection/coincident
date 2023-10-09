@@ -1,1 +1,2 @@
-export default typeof Worker === 'function' ? Worker : class {};
+import {FUNCTION} from "./types.js";
+export default typeof Worker === FUNCTION ? Worker : class {};
