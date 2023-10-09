@@ -4,3 +4,8 @@ coverage/
 node_modules/
 cjs/
 !cjs/package.json
+es.js
+window.js
+uhtml.js
+structured.js
+server.js

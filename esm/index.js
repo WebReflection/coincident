@@ -1,6 +1,7 @@
 /*! (c) Andrea Giammarchi - ISC */
 
 import {CHANNEL} from './channel.js';
+import {FUNCTION} from './shared/types.js';
 import waitAsyncFallback from './fallback.js';
 
 // just minifier friendly for Blob Workers' cases
@@ -49,7 +50,7 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
     // ensure the CHANNEL and data are posted correctly
     const post = (transfer, ...args) => self.postMessage({[CHANNEL]: args}, {transfer});
 
-    const handler = typeof interrupt === 'function' ?
+    const handler = typeof interrupt === FUNCTION ?
                       interrupt : (interrupt?.handler || noop);
     const delay = interrupt?.delay || 42;
 
@@ -122,6 +123,8 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
 
       // main thread related: react to any utility a worker is asking for
       set(actions, action, callback) {
+        if (typeof callback !== FUNCTION)
+          throw new Error(`Unable to assign ${action} as ${typeof callback}`);
         // lazy event listener and logic handling, triggered once by setters actions
         if (!actions.size) {
           // maps results by `id` as they are asked for
