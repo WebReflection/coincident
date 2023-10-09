@@ -123,8 +123,9 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
 
       // main thread related: react to any utility a worker is asking for
       set(actions, action, callback) {
-        if (typeof callback !== FUNCTION)
-          throw new Error(`Unable to assign ${action} as ${typeof callback}`);
+        const type = typeof callback;
+        if (type !== FUNCTION)
+          throw new Error(`Unable to assign ${action} as ${type}`);
         // lazy event listener and logic handling, triggered once by setters actions
         if (!actions.size) {
           // maps results by `id` as they are asked for
