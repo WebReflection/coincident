@@ -104,7 +104,7 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
           const length = sb[0];
 
           // filter undefined results
-          if (!length) return;
+          if (length < 0) return;
 
           // calculate the needed ui16 bytes length to store the result string
           const bytes = UI16_BYTES * length;
@@ -146,7 +146,9 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
                   try {
                     // await for result either sync or async and serialize it
                     const result = await actions.get(action)(...args);
-                    if (result !== void 0) {
+                    if (result === void 0)
+                      sb[0] = -1; // @see https://github.com/WebReflection/coincident/issues/26
+                    else {
                       const serialized = stringify(transform ? transform(result) : result);
                       // store the result for "the very next" event listener call
                       results.set(id, serialized);
