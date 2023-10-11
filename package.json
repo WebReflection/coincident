@@ -13,10 +13,10 @@
     "rollup:uhtml": "rollup --config rollup/uhtml.config.js",
     "rollup:window": "rollup --config rollup/window.config.js",
     "test": "c8 node test/index.js",
-    "test:integration": "static-handler --cors --coop --coep --corp . 2>/dev/null & SH_PID=$!; EXIT_CODE=0; playwright test test/ || EXIT_CODE=$?; kill $SH_PID 2>/dev/null; exit $EXIT_CODE",
+    "test:integration": "static-handler --coi . 2>/dev/null & SH_PID=$!; EXIT_CODE=0; playwright test test/ || EXIT_CODE=$?; kill $SH_PID 2>/dev/null; exit $EXIT_CODE",
     "test:server": "node test/server/main.cjs",
     "ts": "tsc -p .",
-    "server": "npx static-handler --cors --coop --coep --corp .",
+    "server": "npx static-handler --coi .",
     "size": "echo -e \"\\x1b[1mfile        size\\x1b[0m\"; echo \"es          $(cat es.js | brotli | wc -c)\"; echo \"structured  $(cat structured.js | brotli | wc -c)\"; echo \"window      $(cat window.js | brotli | wc -c)\"; echo \"server      $(cat server.js | brotli | wc -c)\"; echo \"uhtml       $(cat uhtml.js | brotli | wc -c)\";",
     "coverage": "mkdir -p ./coverage; c8 report --reporter=text-lcov > ./coverage/lcov.info"
   },
@@ -29,13 +29,13 @@
   "author": "Andrea Giammarchi",
   "license": "ISC",
   "devDependencies": {
-    "@playwright/test": "^1.38.1",
+    "@playwright/test": "^1.39.0",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
     "ascjs": "^6.0.2",
     "c8": "^8.0.1",
     "rollup": "^4.0.2",
-    "static-handler": "^0.4.2",
+    "static-handler": "^0.4.3",
     "typescript": "^5.2.2",
     "uhtml": "^3.2.2"
   },
