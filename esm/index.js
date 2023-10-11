@@ -78,7 +78,8 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
         const id = uid++;
 
         // first contact: just ask for how big the buffer should be
-        let sb = new Int32Array(new SharedArrayBuffer(I32_BYTES));
+        // the value would be stored at index [1] while [0] is just control
+        let sb = new Int32Array(new SharedArrayBuffer(I32_BYTES * 2));
 
         // if a transfer list has been passed, drop it from args
         let transfer = [];
@@ -101,10 +102,10 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
           clearTimeout(deadlock);
 
           // commit transaction using the returned / needed buffer length
-          const length = sb[0];
+          const length = sb[1];
 
           // filter undefined results
-          if (length < 0) return;
+          if (!length) return;
 
           // calculate the needed ui16 bytes length to store the result string
           const bytes = UI16_BYTES * length;
@@ -134,6 +135,7 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
           self.addEventListener('message', async (event) => {
             // grub the very same library CHANNEL; ignore otherwise
             const details = event.data?.[CHANNEL];
+            let error;
             if (isArray(details)) {
               // if early enough, avoid leaking data to other listeners
               event.stopImmediatePropagation();
@@ -146,16 +148,17 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
                   try {
                     // await for result either sync or async and serialize it
                     const result = await actions.get(action)(...args);
-                    if (result === void 0)
-                      sb[0] = -1; // @see https://github.com/WebReflection/coincident/issues/26
-                    else {
+                    if (result !== void 0) {
                       const serialized = stringify(transform ? transform(result) : result);
                       // store the result for "the very next" event listener call
                       results.set(id, serialized);
                       // communicate the required SharedArrayBuffer length out of the
                       // resulting serialized string
-                      sb[0] = serialized.length;
+                      sb[1] = serialized.length;
                     }
+                  }
+                  catch (_) {
+                    error = _;
                   }
                   finally {
                     seppuku = false;
@@ -163,10 +166,14 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
                 }
                 // unknown action should be notified as missing on the main thread
                 else {
-                  throw new Error(`Unsupported action: ${action}`);
+                  error = new Error(`Unsupported action: ${action}`);
                 }
+                // unlock the wait lock later on
+                sb[0] = 1;
               }
               // no action means: get results out of the well known `id`
+              // wait lock automatically unlocked here as no `0` value would
+              // possibly ever land at index `0`
               else {
                 const result = results.get(id);
                 results.delete(id);
@@ -176,6 +183,7 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
               }
               // release te worker waiting either the length or the result
               notify(sb, 0);
+              if (error) throw error;
             }
           });
         }
