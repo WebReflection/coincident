@@ -27,7 +27,6 @@ const buffers = new WeakSet;
 const context = new WeakMap;
 
 const syncResult = {value: {then: fn => fn()}};
-const noop = () => {};
 
 // used to generate a unique `id` per each worker `postMessage` "transaction"
 let uid = 0;
@@ -50,15 +49,14 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
     // ensure the CHANNEL and data are posted correctly
     const post = (transfer, ...args) => self.postMessage({[CHANNEL]: args}, {transfer});
 
-    const handler = typeof interrupt === FUNCTION ?
-                      interrupt : (interrupt?.handler || noop);
+    const handler = typeof interrupt === FUNCTION ? interrupt : interrupt?.handler;
     const delay = interrupt?.delay || 42;
 
     // automatically uses sync wait (worker -> main)
     // or fallback to async wait (main -> worker)
     const waitFor = (isAsync, sb) => isAsync ?
       (waitAsync || waitAsyncFallback)(sb, 0) :
-      (waitInterrupt(sb, delay, handler), syncResult);
+      ((handler ? waitInterrupt(sb, delay, handler) : wait(sb, 0)), syncResult);
 
     // prevent Harakiri https://github.com/WebReflection/coincident/issues/18
     let seppuku = false;

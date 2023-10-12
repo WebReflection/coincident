@@ -45,6 +45,8 @@ const proxies = new WeakMap;
  * @returns {Coincident | CoincidentWorker}
  */
 
+const { notify, wait } = Atomics;
+
 const parseData = data => {
   let id;
   if (/^!(-?\d+)?/.test(data)) {
@@ -141,11 +143,11 @@ const mainBridge = (self, thread, MAIN, THREAD, ws) => {
             ws.send('!' + id + (out === void 0 ? '' : stringify(out)));
           }
         }
-        else
-          resolve = resolve(result);
+        else if (resolve) resolve = resolve(result);
       });
       // unlock the Worker now that all channels have been defined
-      Atomics.notify(i32, 0);
+      i32[0] = 1;
+      notify(i32, 0);
     }, {once: true});
     ws.send(stringify([SERVER_MAIN, SERVER_THREAD]));
   }, {once: true});
@@ -158,7 +160,7 @@ const threadBridge = (self, proxy, MAIN, THREAD) => {
   const CHANNEL = 'S' + crypto.randomUUID();
   const i32 = new Int32Array(new SharedArrayBuffer(4));
   self.postMessage([CHANNEL, i32]);
-  Atomics.wait(i32);
+  wait(i32, 0);
   // merge server and worker namespace
   return assign(
     serverThread(proxy, 'M' + CHANNEL, 'T' + CHANNEL),
