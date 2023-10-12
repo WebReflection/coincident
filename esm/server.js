@@ -10,6 +10,7 @@ import serverMain from './server/main.js';
 import serverThread from './server/thread.js';
 import Worker from './shared/worker.js';
 
+const {notify, wait} = Atomics;
 const {parse, stringify} = JSON;
 
 const isServer = !!globalThis.process;
@@ -44,8 +45,6 @@ const proxies = new WeakMap;
  * @param  {WebSocket} [ws] the optional WebSocket to use when `self` is `globalThis` 
  * @returns {Coincident | CoincidentWorker}
  */
-
-const { notify, wait } = Atomics;
 
 const parseData = data => {
   let id;
