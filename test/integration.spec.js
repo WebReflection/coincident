@@ -46,7 +46,7 @@ test('has title', async ({ page }) => {
 
 test('has worker working', async ({ page }) => {
   await page.goto('http://localhost:8080/test/integration/');
-  await pages.get(page);
+  await page.waitForSelector('html.ready');
   const result = await page.evaluate(() => document.body.textContent);
   await expect(result.trim()).toBe('Greetingstrue');
 });
