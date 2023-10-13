@@ -64,6 +64,7 @@ export default name => {
         if (__proxied__ in value)
           return bound(value[__proxied__]);
         if (type === FUNCTION) {
+          value = $(value);
           if (!values.has(value)) {
             let sid;
             // a bit apocalyptic scenario but if this thread runs forever
@@ -75,9 +76,9 @@ export default name => {
           }
           return entry(type, ids.get(value));
         }
-        if (type === OBJECT)
-          value = $(value);
         if (!(value instanceof TypedArray)) {
+          if (type === OBJECT)
+            value = $(value);
           for(const key in value)
             value[key] = argument(value[key]);
         }
