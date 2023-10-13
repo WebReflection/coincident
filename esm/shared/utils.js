@@ -88,6 +88,8 @@ export const symbol = value => {
   }
 };
 
+export const transform = o => o;
+
 export function Bound() {
   return this;
 }

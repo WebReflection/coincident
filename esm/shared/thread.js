@@ -6,6 +6,7 @@ import {
   entry,
   asEntry,
   symbol,
+  transform,
   isArray
 } from './utils.js';
 
@@ -47,31 +48,8 @@ export default name => {
 
   const localArray = Array[isArray];
 
-  const argument = asEntry(
-    (type, value) => {
-      if (__proxied__ in value)
-        return bound(value[__proxied__]);
-      if (type === FUNCTION) {
-        if (!values.has(value)) {
-          let sid;
-          // a bit apocalyptic scenario but if this thread runs forever
-          // and the id does a whole int32 roundtrip we might have still
-          // some reference dangling around
-          while (values.has(sid = String(id++)));
-          ids.set(value, sid);
-          values.set(sid, value);
-        }
-        return entry(type, ids.get(value));
-      }
-      if (!(value instanceof TypedArray)) {
-        for(const key in value)
-          value[key] = argument(value[key]);
-      }
-      return entry(type, value);
-    }
-  );
-
-  return (main, MAIN, THREAD) => {
+  return function (main, MAIN, THREAD) {
+    const $ = this?.transform || transform;
     const { [MAIN]: __main__ } = main;
 
     const proxies = new Map;
@@ -80,6 +58,32 @@ export default name => {
       proxies.delete(id);
       __main__(DELETE, argument(id));
     });
+
+    const argument = asEntry(
+      (type, value) => {
+        if (__proxied__ in value)
+          return bound(value[__proxied__]);
+        if (type === FUNCTION) {
+          if (!values.has(value)) {
+            let sid;
+            // a bit apocalyptic scenario but if this thread runs forever
+            // and the id does a whole int32 roundtrip we might have still
+            // some reference dangling around
+            while (values.has(sid = String(id++)));
+            ids.set(value, sid);
+            values.set(sid, value);
+          }
+          return entry(type, ids.get(value));
+        }
+        if (type === OBJECT)
+          value = $(value);
+        if (!(value instanceof TypedArray)) {
+          for(const key in value)
+            value[key] = argument(value[key]);
+        }
+        return entry(type, value);
+      }
+    );
 
     const register = (entry) => {
       const [type, value] = entry;

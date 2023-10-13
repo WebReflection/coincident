@@ -23,7 +23,7 @@ const coincident = (self, ...args) => {
   const proxy = $coincident(self, ...args);
   if (!proxies.has(proxy)) {
     const util = self instanceof Worker ? main : thread;
-    proxies.set(proxy, util(proxy, MAIN, THREAD));
+    proxies.set(proxy, util.call(args.at(0), proxy, MAIN, THREAD));
   }
   return proxies.get(proxy);
 }

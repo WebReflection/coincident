@@ -14,7 +14,8 @@ import {
   augment,
   entry,
   asEntry,
-  symbol
+  symbol,
+  transform
 } from './utils.js';
 
 import {
@@ -70,8 +71,8 @@ export default (name, patch) => {
       event[method]();
   });
 
-  return (thread, MAIN, THREAD, ...args) => {
-    let id = 0;
+  return function (thread, MAIN, THREAD, ...args) {
+    let id = 0, $ = this?.transform || transform;
     const ids = new Map;
     const values = new Map;
 
@@ -87,7 +88,7 @@ export default (name, patch) => {
         // some reference danglign around
         while (values.has(sid = id++));
         ids.set(value, sid);
-        values.set(sid, value);
+        values.set(sid, type === OBJECT ? $(value) : value);
       }
       return entry(type, ids.get(value));
     });
