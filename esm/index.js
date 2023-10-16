@@ -133,11 +133,11 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
           self.addEventListener('message', async (event) => {
             // grub the very same library CHANNEL; ignore otherwise
             const details = event.data?.[CHANNEL];
-            let error;
             if (isArray(details)) {
               // if early enough, avoid leaking data to other listeners
               event.stopImmediatePropagation();
               const [id, sb, ...rest] = details;
+              let error;
               // action available: it must be defined/known on the main thread
               if (rest.length) {
                 const [action, args] = rest;

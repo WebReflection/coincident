@@ -80,7 +80,7 @@ const symbols = new Map(
     .filter(s => typeof Symbol[s] === SYMBOL)
     .map(s => [Symbol[s], s])
 );
-  
+
 export const symbol = value => {
   for (const [symbol, name] of symbols) {
     if (name === value)
