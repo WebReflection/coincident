@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script type="module">
+    import coincident from '../../es.js';
+    const proxy = coincident(new Worker('./worker.js', {type: 'module'}));
+    proxy.func = () => {
+      let buf = new ArrayBuffer(51111);
+      return new Uint8Array(buf);
+    };
+  </script>
+</head>
+</html>
