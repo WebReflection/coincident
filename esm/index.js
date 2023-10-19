@@ -11,6 +11,10 @@ const {Int32Array, Map, SharedArrayBuffer, Uint16Array} = globalThis;
 const {BYTES_PER_ELEMENT: I32_BYTES} = Int32Array;
 const {BYTES_PER_ELEMENT: UI16_BYTES} = Uint16Array;
 
+// @see https://github.com/WebReflection/coincident/issues/29
+// @see http://webreflection.blogspot.com/2011/07/about-javascript-apply-arguments-limit.html
+const SAFE_ARITY_LENGTH = 2048;
+
 const {isArray} = Array;
 const {notify, wait, waitAsync} = Atomics;
 const {fromCharCode} = String;
@@ -113,10 +117,14 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
 
           // ask for results and wait for it
           post([], id, sb);
-          return waitFor(isAsync, sb).value.then(
+          return waitFor(isAsync, sb).value.then(() => {
             // transform the shared buffer into a string and return it parsed
-            () => parse(fromCharCode(...new Uint16Array(sb.buffer).slice(0, length)))
-          );
+            const uint16 = new Uint16Array(sb.buffer).slice(0, length);
+            const result = [];
+            for (let i = 0; i < length; i += SAFE_ARITY_LENGTH)
+              result.push(fromCharCode(...uint16.slice(i, i + SAFE_ARITY_LENGTH)));
+            return parse(result.join(''));
+          });
         });
       }),
 
