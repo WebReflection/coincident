@@ -94,7 +94,10 @@ export default name => {
         const target = type === FUNCTION ? Bound.bind(entry) : entry;
         const proxy = new Proxy(target, proxyHandler);
         proxies.set(value, new WeakRef(proxy));
-        return createGCHook(value, onGarbageCollected, { return: proxy });
+        return createGCHook(value, onGarbageCollected, {
+          return: proxy,
+          token: false,
+        });
       }
       return proxies.get(value).deref();
     };

@@ -124,7 +124,10 @@ export default (name, patch) => {
                 );
               };
               values.set(value, new WeakRef(cb));
-              return createGCHook(value, onGarbageCollected, { return: cb });
+              return createGCHook(value, onGarbageCollected, {
+                return: cb,
+                token: false,
+              });
             }
             return values.get(value).deref();
           }
