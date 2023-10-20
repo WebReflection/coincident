@@ -83,7 +83,7 @@
   "dependencies": {
     "@ungap/structured-clone": "^1.2.0",
     "@ungap/with-resolvers": "^0.1.0",
-    "gc-hook": "^0.1.2"
+    "gc-hook": "^0.2.1"
   },
   "optionalDependencies": {
     "ws": "^8.14.2"
