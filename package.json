@@ -34,7 +34,7 @@
     "@rollup/plugin-terser": "^0.4.4",
     "ascjs": "^6.0.2",
     "c8": "^8.0.1",
-    "rollup": "^4.0.2",
+    "rollup": "^4.1.4",
     "static-handler": "^0.4.3",
     "typescript": "^5.2.2",
     "uhtml": "^3.2.2"
@@ -83,7 +83,7 @@
   "dependencies": {
     "@ungap/structured-clone": "^1.2.0",
     "@ungap/with-resolvers": "^0.1.0",
-    "gc-hook": "^0.1.1"
+    "gc-hook": "^0.2.0"
   },
   "optionalDependencies": {
     "ws": "^8.14.2"
