@@ -1,3 +1,5 @@
+import { create as createGCHook } from 'gc-hook';
+
 import {
   TypedArray,
   defineProperty,
@@ -93,9 +95,9 @@ export default (name, patch) => {
       return entry(type, ids.get(value));
     });
 
-    const registry = new FinalizationRegistry(id => {
-      __thread__(DELETE, entry(STRING, id));
-    });
+    const onGarbageCollected = value => {
+      __thread__(DELETE, entry(STRING, value));
+    };
 
     const target = ([type, value]) => {
       switch (type) {
@@ -121,9 +123,8 @@ export default (name, patch) => {
                   args.map(result)
                 );
               };
-              const ref = new WeakRef(cb);
-              values.set(value, ref);
-              registry.register(cb, value, ref);
+              values.set(value, new WeakRef(cb));
+              return createGCHook(value, onGarbageCollected, { return: cb });
             }
             return values.get(value).deref();
           }

@@ -1,3 +1,5 @@
+import { create as createGCHook } from 'gc-hook';
+
 import {
   Bound,
   TypedArray,
@@ -54,10 +56,10 @@ export default name => {
 
     const proxies = new Map;
 
-    const registry = new FinalizationRegistry(id => {
-      proxies.delete(id);
-      __main__(DELETE, argument(id));
-    });
+    const onGarbageCollected = value => {
+      proxies.delete(value);
+      __main__(DELETE, argument(value));
+    };
 
     const argument = asEntry(
       (type, value) => {
@@ -91,9 +93,8 @@ export default name => {
       if (!proxies.has(value)) {
         const target = type === FUNCTION ? Bound.bind(entry) : entry;
         const proxy = new Proxy(target, proxyHandler);
-        const ref = new WeakRef(proxy);
-        proxies.set(value, ref);
-        registry.register(proxy, value, ref);
+        proxies.set(value, new WeakRef(proxy));
+        return createGCHook(value, onGarbageCollected, { return: proxy });
       }
       return proxies.get(value).deref();
     };
