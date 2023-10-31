@@ -8,11 +8,12 @@ import waitAsyncFallback from './fallback.js';
 const {Int32Array, Map, SharedArrayBuffer, Uint16Array} = globalThis;
 
 // common constants / utilities for repeated operations
-const {BYTES_PER_ELEMENT: I32_BYTES} = Int32Array;
+const {BYTES_PER_ELEMENT: I32_BYTES, __proto__: TypedArray} = Int32Array;
 const {BYTES_PER_ELEMENT: UI16_BYTES} = Uint16Array;
 
 const {isArray} = Array;
 const {notify, wait, waitAsync} = Atomics;
+const {parse: JSON_parse, stringify: JSON_stringify} = JSON;
 
 const waitInterrupt = (sb, delay, handler) => {
   while (wait(sb, 0, 0, delay) === 'timed-out')
@@ -42,7 +43,7 @@ let uid = 0;
  * @param {{parse: (serialized: string) => any, stringify: (serializable: any) => string, transform?: (value:any) => any, interrupt?: () => void | Interrupt}} [JSON] an optional `JSON` like interface to `parse` or `stringify` content with extra `transform` ability.
  * @returns {ProxyHandler<globalThis> | ProxyHandler<Worker>}
  */
-const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, transform, interrupt} = JSON) => {
+const coincident = (self, {parse = JSON_parse, stringify = JSON_stringify, transform, interrupt} = JSON) => {
   // create a Proxy once for the given context (globalThis or Worker instance)
   if (!context.has(self)) {
     // ensure the CHANNEL and data are posted correctly
@@ -113,9 +114,14 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
 
           // ask for results and wait for it
           post([], id, sb);
-          return waitFor(isAsync, sb).value.then(() => parse(
-            decoder.decode(new Uint16Array(sb.buffer).slice(0, length)))
-          );
+          return waitFor(isAsync, sb).value.then(() => {
+            const result = decoder.decode(new Uint16Array(sb.buffer).slice(0, length));
+            if (/^([A-Z].+?):/.test(result)) {
+              const name = RegExp.$1;
+              return globalThis[name].from(JSON_parse(result.slice(name.length + 1)));
+            }
+            return parse(result);
+          });
         });
       }),
 
@@ -146,7 +152,11 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
                     // await for result either sync or async and serialize it
                     const result = await actions.get(action)(...args);
                     if (result !== void 0) {
-                      const serialized = stringify(transform ? transform(result) : result);
+                      const out = transform ? transform(result) : result;
+                      const serialized = out instanceof TypedArray ?
+                        `${out.constructor.name}:${JSON_stringify([...out])}` :
+                        stringify(out)
+                      ;
                       // store the result for "the very next" event listener call
                       results.set(id, serialized);
                       // communicate the required SharedArrayBuffer length out of the
