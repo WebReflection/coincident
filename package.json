@@ -5,7 +5,7 @@
   "main": "./cjs/index.js",
   "types": "./types/index.d.ts",
   "scripts": {
-    "build": "node rollup/channel.cjs && npm run cjs && npm run rollup:es && npm run rollup:window && npm run rollup:structured && npm run rollup:uhtml && npm run rollup:server && npm run test:integration && npm run size",
+    "build": "node rollup/channel.cjs && npm run cjs && npm run rollup:es && npm run rollup:window && npm run rollup:structured && npm run rollup:uhtml && npm run rollup:server && npm run ts && npm run test:integration && npm run size",
     "cjs": "ascjs --no-default esm cjs",
     "rollup:es": "rollup --config rollup/es.config.js",
     "rollup:server": "rollup --config rollup/server.config.js",
@@ -32,9 +32,9 @@
     "@playwright/test": "^1.39.0",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
-    "ascjs": "^6.0.2",
+    "ascjs": "^6.0.3",
     "c8": "^8.0.1",
-    "rollup": "^4.1.4",
+    "rollup": "^4.3.0",
     "static-handler": "^0.4.3",
     "typescript": "^5.2.2",
     "uhtml": "^3.2.2"
@@ -83,7 +83,7 @@
   "dependencies": {
     "@ungap/structured-clone": "^1.2.0",
     "@ungap/with-resolvers": "^0.1.0",
-    "gc-hook": "^0.2.3"
+    "gc-hook": "^0.2.4"
   },
   "optionalDependencies": {
     "ws": "^8.14.2"

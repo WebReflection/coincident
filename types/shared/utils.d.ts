@@ -5,6 +5,7 @@ export function augment(descriptor: any, how: any): any;
 export function entry(type: any, value: any): any[];
 export function asEntry(transform: any): (value: any) => any;
 export function symbol(value: any): any;
+export function transform(o: any): any;
 export const assign: {
     <T extends {}, U>(target: T, source: U): T & U;
     <T_1 extends {}, U_1, V>(target: T_1, source1: U_1, source2: V): T_1 & U_1 & V;
