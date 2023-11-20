@@ -9,7 +9,7 @@ import init from 'uhtml/init';
 const coincident = (self, ...args) => {
   const utilities = $coincident(self, ...args);
   if (!utilities.uhtml)
-    utilities.uhtml = init(utilities.window);
+    utilities.uhtml = init(utilities.window.document);
   return utilities;
 }
 

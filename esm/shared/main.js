@@ -1,6 +1,16 @@
 import { create as createGCHook } from 'gc-hook';
 
 import {
+  ARRAY,
+  OBJECT,
+  FUNCTION,
+  NUMBER,
+  STRING,
+  SYMBOL,
+  UNDEFINED
+} from 'proxy-target';
+
+import {
   TypedArray,
   defineProperty,
   getOwnPropertyDescriptor,
@@ -19,15 +29,6 @@ import {
   symbol,
   transform
 } from './utils.js';
-
-import {
-  OBJECT,
-  FUNCTION,
-  NUMBER,
-  STRING,
-  SYMBOL,
-  UNDEFINED
-} from './types.js';
 
 import {
   APPLY,
@@ -51,7 +52,7 @@ export default (name, patch) => {
 
   // patch once main UI tread
   if (patch) {
-    const {addEventListener} = EventTarget.prototype;
+    const { addEventListener } = EventTarget.prototype;
     // this should never be on the way as it's extremely light and fast
     // but it's necessary to allow "preventDefault" or other event invokes at distance
     defineProperty(EventTarget.prototype, 'addEventListener', {
@@ -87,10 +88,10 @@ export default (name, patch) => {
         let sid;
         // a bit apocalyptic scenario but if this main runs forever
         // and the id does a whole int32 roundtrip we might have still
-        // some reference danglign around
+        // some reference dangling around
         while (values.has(sid = id++));
         ids.set(value, sid);
-        values.set(sid, type === OBJECT ? $(value) : value);
+        values.set(sid, type === FUNCTION ? value : $(value));
       }
       return entry(type, ids.get(value));
     });
@@ -104,6 +105,7 @@ export default (name, patch) => {
         case OBJECT:
           if (value == null)
             return global;
+        case ARRAY:
           if (typeof value === NUMBER)
             return values.get(value);
           if (!(value instanceof TypedArray)) {

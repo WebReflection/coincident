@@ -6,11 +6,11 @@ export type Interrupt = {
     /**
      * a callback invoked every `delay` milliseconds.
      */
-    handler?: Function;
+    handler?: Function | undefined;
     /**
      * define `handler` invokes in terms of milliseconds.
      */
-    delay?: number;
+    delay?: number | undefined;
 };
 /**
  * @typedef {Object} Interrupt used to sanity-check interrupts while waiting synchronously.
@@ -26,9 +26,9 @@ export type Interrupt = {
 declare function coincident(self: typeof globalThis | Worker, { parse, stringify, transform, interrupt }?: {
     parse: (serialized: string) => any;
     stringify: (serializable: any) => string;
-    transform?: (value: any) => any;
-    interrupt?: () => void | Interrupt;
-}): ProxyHandler<typeof globalThis> | ProxyHandler<Worker>;
+    transform?: ((value: any) => any) | undefined;
+    interrupt?: (() => void | Interrupt) | undefined;
+} | undefined): ProxyHandler<typeof globalThis> | ProxyHandler<Worker>;
 declare namespace coincident {
     function transfer(...args: any[]): any[];
 }
