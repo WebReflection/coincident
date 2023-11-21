@@ -161,7 +161,7 @@ export default name => {
 
     const global = new Proxy(pair(OBJECT, null), proxyHandler);
 
-    // this is needed to avoid confusion when new Proxy({type, value})
+    // this is needed to avoid confusion when Proxy of {type, value}
     // passes through `isArray` check, as that would return always true
     // by specs and there's no Proxy trap to avoid it.
     const remoteArray = global.Array[isArray];
