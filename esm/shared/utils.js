@@ -1,4 +1,3 @@
-
 import {
   ARRAY,
   OBJECT,
@@ -10,9 +9,9 @@ import {
   BIGINT,
   SYMBOL,
   NULL,
-  pair,
-  wrap,
-} from 'proxy-target';
+} from 'proxy-target/types';
+
+import { pair, wrap } from 'proxy-target/array';
 
 const {
   defineProperty,
@@ -29,8 +28,6 @@ const {
 const {assign, create} = Object;
 
 export const TypedArray = getPrototypeOf(Int8Array);
-
-export const isArray = 'isArray';
 
 export {
   assign,

@@ -1,4 +1,4 @@
-import coincident from '../esm/index.js';
+import coincident from '../es.js';
 
 const wrap = coincident(self);
 

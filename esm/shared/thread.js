@@ -7,19 +7,19 @@ import {
   NUMBER,
   STRING,
   SYMBOL,
+} from 'proxy-target/types';
+
+import {
   pair, unwrap,
   bound, unbound,
-} from 'proxy-target';
+} from 'proxy-target/array';
 
 import {
   TypedArray,
   augment,
-  defineProperty,
   asEntry,
   symbol,
   transform,
-  isArray,
-  getOwnPropertyDescriptor
 } from './utils.js';
 
 import {
@@ -39,19 +39,12 @@ import {
   DELETE
 } from './traps.js';
 
-const LENGTH = 'length';
-const length = getOwnPropertyDescriptor([], LENGTH);
-
 export default name => {
   let id = 0;
   const ids = new Map;
   const values = new Map;
 
   const __proxy__ = Symbol();
-
-  const isProxy = value => typeof value === OBJECT && !!value && __proxy__ in value;
-
-  const localArray = Array[isArray];
 
   return function (main, MAIN, THREAD) {
     const $ = this?.transform || transform;
@@ -93,8 +86,6 @@ export default name => {
 
     const register = (entry, type, value) => {
       if (!proxies.has(value)) {
-        if (type === ARRAY && !(LENGTH in entry))
-          defineProperty(entry, LENGTH, length);
         const target = type === FUNCTION ? bound(entry) : entry;
         const proxy = new Proxy(target, proxyHandler);
         proxies.set(value, new WeakRef(proxy));
@@ -161,17 +152,9 @@ export default name => {
 
     const global = new Proxy(pair(OBJECT, null), proxyHandler);
 
-    // this is needed to avoid confusion when Proxy of {type, value}
-    // passes through `isArray` check, as that would return always true
-    // by specs and there's no Proxy trap to avoid it.
-    const remoteArray = global.Array[isArray];
-    defineProperty(Array, isArray, {
-      value: ref => isProxy(ref) ? remoteArray(ref) : localArray(ref)
-    });
-
     return {
       [name.toLowerCase()]: global,
-      [`is${name}Proxy`]: isProxy,
+      [`is${name}Proxy`]: value => typeof value === OBJECT && !!value && __proxy__ in value,
       proxy: main
     };
   };

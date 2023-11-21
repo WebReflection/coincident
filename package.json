@@ -84,7 +84,7 @@
     "@ungap/structured-clone": "^1.2.0",
     "@ungap/with-resolvers": "^0.1.0",
     "gc-hook": "^0.2.5",
-    "proxy-target": "^2.0.1"
+    "proxy-target": "^2.0.4"
   },
   "optionalDependencies": {
     "ws": "^8.14.2"

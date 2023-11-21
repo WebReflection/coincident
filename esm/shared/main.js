@@ -8,9 +8,12 @@ import {
   STRING,
   SYMBOL,
   UNDEFINED,
+} from 'proxy-target/types';
+
+import {
   pair,
   unwrap
-} from 'proxy-target';
+} from 'proxy-target/array';
 
 import {
   TypedArray,

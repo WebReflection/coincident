@@ -1,6 +1,6 @@
 /*! (c) Andrea Giammarchi - ISC */
 
-import {FUNCTION} from 'proxy-target';
+import {FUNCTION} from 'proxy-target/types';
 
 import {CHANNEL} from './channel.js';
 import {GET, HAS, SET} from './shared/traps.js';
