@@ -56,13 +56,13 @@ export const augment = (descriptor, how) => {
 export const entry = (type, value) => [type, value];
 
 export const asEntry = transform => value => wrap(value, (type, value) => {
-  if (type === ARRAY) type = OBJECT;
   switch (type) {
     case NULL:
       return entry(NULL, value);
     case OBJECT:
       if (value === globalThis)
-        return entry(OBJECT, null);
+        return entry(type, null);
+    case ARRAY:
     case FUNCTION:
       return transform(type, value);
     case BOOLEAN:
