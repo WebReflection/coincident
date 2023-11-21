@@ -1,7 +1,6 @@
 export const TypedArray: object | null;
 export const isArray: "isArray";
 export function augment(descriptor: any, how: any): any;
-export function entry(type: any, value: any): any[];
 export function asEntry(transform: any): (value: any) => any;
 export function symbol(value: any): any;
 export function transform(o: any): any;

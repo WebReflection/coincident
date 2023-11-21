@@ -10,6 +10,7 @@ import {
   BIGINT,
   SYMBOL,
   NULL,
+  pair,
   wrap,
 } from 'proxy-target';
 
@@ -53,15 +54,13 @@ export const augment = (descriptor, how) => {
   return descriptor;
 };
 
-export const entry = (type, value) => [type, value];
-
 export const asEntry = transform => value => wrap(value, (type, value) => {
   switch (type) {
     case NULL:
-      return entry(NULL, value);
+      return pair(NULL, value);
     case OBJECT:
       if (value === globalThis)
-        return entry(type, null);
+        return pair(type, null);
     case ARRAY:
     case FUNCTION:
       return transform(type, value);
@@ -70,10 +69,10 @@ export const asEntry = transform => value => wrap(value, (type, value) => {
     case STRING:
     case UNDEFINED:
     case BIGINT:
-      return entry(type, value);
+      return pair(type, value);
     case SYMBOL: {
       if (symbols.has(value))
-        return entry(type, symbols.get(value));
+        return pair(type, symbols.get(value));
     }
   }
   throw new Error(`Unable to handle this ${type} type`);

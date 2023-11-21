@@ -7,12 +7,15 @@ import {
   NUMBER,
   STRING,
   SYMBOL,
-  UNDEFINED
+  UNDEFINED,
+  pair,
+  unwrap
 } from 'proxy-target';
 
 import {
   TypedArray,
   defineProperty,
+  deleteProperty,
   getOwnPropertyDescriptor,
   getPrototypeOf,
   isExtensible,
@@ -24,7 +27,6 @@ import {
   assign,
   create,
   augment,
-  entry,
   asEntry,
   symbol,
   transform
@@ -93,21 +95,19 @@ export default (name, patch) => {
         ids.set(value, sid);
         values.set(sid, type === FUNCTION ? value : $(value));
       }
-      return entry(type, ids.get(value));
+      return pair(type, ids.get(value));
     });
 
     const onGarbageCollected = value => {
-      __thread__(DELETE, entry(STRING, value));
+      __thread__(DELETE, pair(STRING, value));
     };
 
-    const target = ([type, value]) => {
+    const asValue = (type, value) => {
       switch (type) {
         case OBJECT:
-          if (value == null)
-            return global;
+          if (value == null) return global;
         case ARRAY:
-          if (typeof value === NUMBER)
-            return values.get(value);
+          if (typeof value === NUMBER) return values.get(value);
           if (!(value instanceof TypedArray)) {
             for (const key in value)
               value[key] = target(value[key]);
@@ -120,7 +120,7 @@ export default (name, patch) => {
                 if (patch && args.at(0) instanceof Event) handleEvent(...args);
                 return __thread__(
                   APPLY,
-                  entry(FUNCTION, value),
+                  pair(FUNCTION, value),
                   result(this),
                   args.map(result)
                 );
@@ -140,20 +140,22 @@ export default (name, patch) => {
       return value;
     };
 
+    const target = entry => unwrap(entry, asValue);
+
     const trapsHandler = {
       [APPLY]: (target, thisArg, args) => result(target.apply(thisArg, args)),
       [CONSTRUCT]: (target, args) => result(new target(...args)),
       [DEFINE_PROPERTY]: (target, name, descriptor) => result(defineProperty(target, name, descriptor)),
-      [DELETE_PROPERTY]: (target, name) => result(delete target[name]),
+      [DELETE_PROPERTY]: (target, name) => result(deleteProperty(target, name)),
       [GET_PROTOTYPE_OF]: target => result(getPrototypeOf(target)),
       [GET]: (target, name) => result(target[name]),
       [GET_OWN_PROPERTY_DESCRIPTOR]: (target, name) => {
         const descriptor = getOwnPropertyDescriptor(target, name);
-        return descriptor ? entry(OBJECT, augment(descriptor, result)) : entry(UNDEFINED, descriptor);
+        return descriptor ? pair(OBJECT, augment(descriptor, result)) : pair(UNDEFINED, descriptor);
       },
       [HAS]: (target, name) => result(name in target),
       [IS_EXTENSIBLE]: target => result(isExtensible(target)),
-      [OWN_KEYS]: target => entry(OBJECT, ownKeys(target).map(result)),
+      [OWN_KEYS]: target => pair(ARRAY, ownKeys(target).map(result)),
       [PREVENT_EXTENSION]: target => result(preventExtensions(target)),
       [SET]: (target, name, value) => result(set(target, name, value)),
       [SET_PROTOTYPE_OF]: (target, proto) => result(setPrototypeOf(target, proto)),

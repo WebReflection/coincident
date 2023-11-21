@@ -7,6 +7,7 @@ import {
   NUMBER,
   STRING,
   SYMBOL,
+  pair, unwrap,
   bound, unbound,
 } from 'proxy-target';
 
@@ -14,11 +15,11 @@ import {
   TypedArray,
   augment,
   defineProperty,
-  entry,
   asEntry,
   symbol,
   transform,
-  isArray
+  isArray,
+  getOwnPropertyDescriptor
 } from './utils.js';
 
 import {
@@ -37,6 +38,9 @@ import {
   SET_PROTOTYPE_OF,
   DELETE
 } from './traps.js';
+
+const LENGTH = 'length';
+const length = getOwnPropertyDescriptor([], LENGTH);
 
 export default name => {
   let id = 0;
@@ -75,7 +79,7 @@ export default name => {
             ids.set(value, sid);
             values.set(sid, value);
           }
-          return entry(type, ids.get(value));
+          return pair(type, ids.get(value));
         }
         if (!(value instanceof TypedArray)) {
           if (type === OBJECT || type === ARRAY)
@@ -83,13 +87,14 @@ export default name => {
           for(const key in value)
             value[key] = argument(value[key]);
         }
-        return entry(type, value);
+        return pair(type, value);
       }
     );
 
-    const register = (entry) => {
-      const [type, value] = entry;
+    const register = (entry, type, value) => {
       if (!proxies.has(value)) {
+        if (type === ARRAY && !(LENGTH in entry))
+          defineProperty(entry, LENGTH, length);
         const target = type === FUNCTION ? bound(entry) : entry;
         const proxy = new Proxy(target, proxyHandler);
         proxies.set(value, new WeakRef(proxy));
@@ -101,20 +106,19 @@ export default name => {
       return proxies.get(value).deref();
     };
 
-    const fromEntry = entry => {
-      const [type, value] = entry;
+    const fromEntry = entry => unwrap(entry, (type, value) => {
       switch (type) {
         case OBJECT:
           if (value === null) return globalThis;
         case ARRAY:
-          return typeof value === NUMBER ? register(entry) : value;
+          return typeof value === NUMBER ? register(entry, type, value) : value;
         case FUNCTION:
-          return typeof value === STRING ? values.get(value) : register(entry);
+          return typeof value === STRING ? values.get(value) : register(entry, type, value);
         case SYMBOL:
           return symbol(value);
       }
       return value;
-    };
+    });
 
     const result = (TRAP, target, ...args) => fromEntry(__main__(TRAP, unbound(target), ...args));
 
@@ -155,9 +159,9 @@ export default name => {
       }
     };
 
-    const global = new Proxy(entry(OBJECT, null), proxyHandler);
+    const global = new Proxy(pair(OBJECT, null), proxyHandler);
 
-    // this is needed to avoid confusion when new Proxy([type, value])
+    // this is needed to avoid confusion when new Proxy({type, value})
     // passes through `isArray` check, as that would return always true
     // by specs and there's no Proxy trap to avoid it.
     const remoteArray = global.Array[isArray];

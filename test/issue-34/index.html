@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script type="module">
+    console.log('main');
+    import coincident from '../../window.js';
+
+    globalThis.array = [1,2,3];
+    globalThis.object = {a: 1};
+
+    coincident(new Worker('./worker.js', {type: 'module'}));
+  </script>
+</head>
+</html>
