@@ -1,8 +1,5 @@
-export function Bound(): any;
-export const TypedArray: object;
-export const isArray: "isArray";
+export const TypedArray: object | null;
 export function augment(descriptor: any, how: any): any;
-export function entry(type: any, value: any): any[];
 export function asEntry(transform: any): (value: any) => any;
 export function symbol(value: any): any;
 export function transform(o: any): any;
@@ -13,10 +10,11 @@ export const assign: {
     (target: object, ...sources: any[]): any;
 };
 export const create: {
-    (o: object): any;
-    (o: object, properties: PropertyDescriptorMap & ThisType<any>): any;
+    (o: object | null): any;
+    (o: object | null, properties: PropertyDescriptorMap & ThisType<any>): any;
 };
 export const defineProperty: typeof Reflect.defineProperty;
+export const deleteProperty: typeof Reflect.deleteProperty;
 export const getOwnPropertyDescriptor: typeof Reflect.getOwnPropertyDescriptor;
 export const getPrototypeOf: typeof Reflect.getPrototypeOf;
 export const isExtensible: typeof Reflect.isExtensible;

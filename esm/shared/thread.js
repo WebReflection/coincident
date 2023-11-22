@@ -1,24 +1,26 @@
 import { create as createGCHook } from 'gc-hook';
 
 import {
-  Bound,
-  TypedArray,
-  augment,
-  defineProperty,
-  entry,
-  asEntry,
-  symbol,
-  transform,
-  isArray
-} from './utils.js';
-
-import {
+  ARRAY,
   OBJECT,
   FUNCTION,
   NUMBER,
   STRING,
-  SYMBOL
-} from './types.js';
+  SYMBOL,
+} from 'proxy-target/types';
+
+import {
+  pair, unwrap,
+  bound, unbound,
+} from 'proxy-target/array';
+
+import {
+  TypedArray,
+  augment,
+  asEntry,
+  symbol,
+  transform,
+} from './utils.js';
 
 import {
   APPLY,
@@ -42,13 +44,7 @@ export default name => {
   const ids = new Map;
   const values = new Map;
 
-  const __proxied__ = Symbol();
-
-  const bound = target => typeof target === FUNCTION ? target() : target;
-
-  const isProxy = value => typeof value === OBJECT && !!value && __proxied__ in value;
-
-  const localArray = Array[isArray];
+  const __proxy__ = Symbol();
 
   return function (main, MAIN, THREAD) {
     const $ = this?.transform || transform;
@@ -63,8 +59,8 @@ export default name => {
 
     const argument = asEntry(
       (type, value) => {
-        if (__proxied__ in value)
-          return bound(value[__proxied__]);
+        if (__proxy__ in value)
+          return unbound(value[__proxy__]);
         if (type === FUNCTION) {
           value = $(value);
           if (!values.has(value)) {
@@ -76,22 +72,21 @@ export default name => {
             ids.set(value, sid);
             values.set(sid, value);
           }
-          return entry(type, ids.get(value));
+          return pair(type, ids.get(value));
         }
         if (!(value instanceof TypedArray)) {
-          if (type === OBJECT)
+          if (type === OBJECT || type === ARRAY)
             value = $(value);
           for(const key in value)
             value[key] = argument(value[key]);
         }
-        return entry(type, value);
+        return pair(type, value);
       }
     );
 
-    const register = (entry) => {
-      const [type, value] = entry;
+    const register = (entry, type, value) => {
       if (!proxies.has(value)) {
-        const target = type === FUNCTION ? Bound.bind(entry) : entry;
+        const target = type === FUNCTION ? bound(entry) : entry;
         const proxy = new Proxy(target, proxyHandler);
         proxies.set(value, new WeakRef(proxy));
         return createGCHook(value, onGarbageCollected, {
@@ -102,22 +97,21 @@ export default name => {
       return proxies.get(value).deref();
     };
 
-    const fromEntry = entry => {
-      const [type, value] = entry;
+    const fromEntry = entry => unwrap(entry, (type, value) => {
       switch (type) {
         case OBJECT:
-          return value === null ? globalThis : (
-            typeof value === NUMBER ? register(entry) : value
-          );
+          if (value === null) return globalThis;
+        case ARRAY:
+          return typeof value === NUMBER ? register(entry, type, value) : value;
         case FUNCTION:
-          return typeof value === STRING ? values.get(value) : register(entry);
+          return typeof value === STRING ? values.get(value) : register(entry, type, value);
         case SYMBOL:
           return symbol(value);
       }
       return value;
-    };
+    });
 
-    const result = (TRAP, target, ...args) => fromEntry(__main__(TRAP, bound(target), ...args));
+    const result = (TRAP, target, ...args) => fromEntry(__main__(TRAP, unbound(target), ...args));
 
     const proxyHandler = {
       [APPLY]: (target, thisArg, args) => result(APPLY, target, argument(thisArg), args.map(argument)),
@@ -131,12 +125,12 @@ export default name => {
       },
       [DELETE_PROPERTY]: (target, name) => result(DELETE_PROPERTY, target, argument(name)),
       [GET_PROTOTYPE_OF]: target => result(GET_PROTOTYPE_OF, target),
-      [GET]: (target, name) => name === __proxied__ ? target : result(GET, target, argument(name)),
+      [GET]: (target, name) => name === __proxy__ ? target : result(GET, target, argument(name)),
       [GET_OWN_PROPERTY_DESCRIPTOR]: (target, name) => {
         const descriptor = result(GET_OWN_PROPERTY_DESCRIPTOR, target, argument(name));
         return descriptor && augment(descriptor, fromEntry);
       },
-      [HAS]: (target, name) => name === __proxied__ || result(HAS, target, argument(name)),
+      [HAS]: (target, name) => name === __proxy__ || result(HAS, target, argument(name)),
       [IS_EXTENSIBLE]: target => result(IS_EXTENSIBLE, target),
       [OWN_KEYS]: target => result(OWN_KEYS, target).map(fromEntry),
       [PREVENT_EXTENSION]: target => result(PREVENT_EXTENSION, target),
@@ -156,19 +150,11 @@ export default name => {
       }
     };
 
-    const global = new Proxy([OBJECT, null], proxyHandler);
-
-    // this is needed to avoid confusion when new Proxy([type, value])
-    // passes through `isArray` check, as that would return always true
-    // by specs and there's no Proxy trap to avoid it.
-    const remoteArray = global.Array[isArray];
-    defineProperty(Array, isArray, {
-      value: ref => isProxy(ref) ? remoteArray(ref) : localArray(ref)
-    });
+    const global = new Proxy(pair(OBJECT, null), proxyHandler);
 
     return {
       [name.toLowerCase()]: global,
-      [`is${name}Proxy`]: isProxy,
+      [`is${name}Proxy`]: value => typeof value === OBJECT && !!value && __proxy__ in value,
       proxy: main
     };
   };

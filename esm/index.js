@@ -1,7 +1,9 @@
 /*! (c) Andrea Giammarchi - ISC */
 
+import {FUNCTION} from 'proxy-target/types';
+
 import {CHANNEL} from './channel.js';
-import {FUNCTION} from './shared/types.js';
+import {GET, HAS, SET} from './shared/traps.js';
 import waitAsyncFallback from './fallback.js';
 
 // just minifier friendly for Blob Workers' cases
@@ -68,10 +70,10 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
       // This is here mostly to guarantee that if such check is performed, at least the
       // get trap goes through and then it's up to developers guarantee they are accessing
       // stuff that actually exists elsewhere.
-      has: (_, action) => typeof action === 'string' && !action.startsWith('_'),
+      [HAS]: (_, action) => typeof action === 'string' && !action.startsWith('_'),
 
       // worker related: get any utility that should be available on the main thread
-      get: (_, action) => action === 'then' ? null : ((...args) => {
+      [GET]: (_, action) => action === 'then' ? null : ((...args) => {
         // transaction id
         const id = uid++;
 
@@ -120,7 +122,7 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
       }),
 
       // main thread related: react to any utility a worker is asking for
-      set(actions, action, callback) {
+      [SET](actions, action, callback) {
         const type = typeof callback;
         if (type !== FUNCTION)
           throw new Error(`Unable to assign ${action} as ${type}`);

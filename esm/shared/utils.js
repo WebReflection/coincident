@@ -1,5 +1,5 @@
-
 import {
+  ARRAY,
   OBJECT,
   FUNCTION,
   BOOLEAN,
@@ -8,11 +8,14 @@ import {
   UNDEFINED,
   BIGINT,
   SYMBOL,
-  NULL
-} from './types.js';
+  NULL,
+} from 'proxy-target/types';
+
+import { pair, wrap } from 'proxy-target/array';
 
 const {
   defineProperty,
+  deleteProperty,
   getOwnPropertyDescriptor,
   getPrototypeOf,
   isExtensible,
@@ -26,12 +29,11 @@ const {assign, create} = Object;
 
 export const TypedArray = getPrototypeOf(Int8Array);
 
-export const isArray = 'isArray';
-
 export {
   assign,
   create,
   defineProperty,
+  deleteProperty,
   getOwnPropertyDescriptor,
   getPrototypeOf,
   isExtensible,
@@ -49,16 +51,14 @@ export const augment = (descriptor, how) => {
   return descriptor;
 };
 
-export const entry = (type, value) => [type, value];
-
-export const asEntry = transform => value => {
-  const type = typeof value;
+export const asEntry = transform => value => wrap(value, (type, value) => {
   switch (type) {
+    case NULL:
+      return pair(NULL, value);
     case OBJECT:
-    if (value == null)
-      return entry(NULL, value);
-    if (value === globalThis)
-      return entry(OBJECT, null);
+      if (value === globalThis)
+        return pair(type, null);
+    case ARRAY:
     case FUNCTION:
       return transform(type, value);
     case BOOLEAN:
@@ -66,14 +66,14 @@ export const asEntry = transform => value => {
     case STRING:
     case UNDEFINED:
     case BIGINT:
-      return entry(type, value);
+      return pair(type, value);
     case SYMBOL: {
       if (symbols.has(value))
-        return entry(type, symbols.get(value));
+        return pair(type, symbols.get(value));
     }
   }
   throw new Error(`Unable to handle this ${type} type`);
-};
+});
 
 const symbols = new Map(
   ownKeys(Symbol)
@@ -89,7 +89,3 @@ export const symbol = value => {
 };
 
 export const transform = o => o;
-
-export function Bound() {
-  return this;
-}
