@@ -1,3 +1,5 @@
+import { target as tv, wrap } from 'proxy-target/array';
+
 import {
   ARRAY,
   OBJECT,
@@ -11,8 +13,6 @@ import {
   NULL,
 } from 'proxy-target/types';
 
-import { pair, wrap } from 'proxy-target/array';
-
 const {
   defineProperty,
   deleteProperty,
@@ -25,7 +25,7 @@ const {
   setPrototypeOf
 } = Reflect;
 
-const {assign, create} = Object;
+const { assign, create } = Object;
 
 export const TypedArray = getPrototypeOf(Int8Array);
 
@@ -54,10 +54,10 @@ export const augment = (descriptor, how) => {
 export const asEntry = transform => value => wrap(value, (type, value) => {
   switch (type) {
     case NULL:
-      return pair(NULL, value);
+      return tv(NULL, value);
     case OBJECT:
       if (value === globalThis)
-        return pair(type, null);
+        return tv(type, null);
     case ARRAY:
     case FUNCTION:
       return transform(type, value);
@@ -66,10 +66,10 @@ export const asEntry = transform => value => wrap(value, (type, value) => {
     case STRING:
     case UNDEFINED:
     case BIGINT:
-      return pair(type, value);
+      return tv(type, value);
     case SYMBOL: {
       if (symbols.has(value))
-        return pair(type, symbols.get(value));
+        return tv(type, symbols.get(value));
     }
   }
   throw new Error(`Unable to handle this ${type} type`);

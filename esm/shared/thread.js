@@ -1,3 +1,4 @@
+import { target as tv, unwrap, bound, unbound } from 'proxy-target/array';
 import { create as createGCHook } from 'gc-hook';
 
 import {
@@ -8,11 +9,6 @@ import {
   STRING,
   SYMBOL,
 } from 'proxy-target/types';
-
-import {
-  pair, unwrap,
-  bound, unbound,
-} from 'proxy-target/array';
 
 import {
   TypedArray,
@@ -72,7 +68,7 @@ export default name => {
             ids.set(value, sid);
             values.set(sid, value);
           }
-          return pair(type, ids.get(value));
+          return tv(type, ids.get(value));
         }
         if (!(value instanceof TypedArray)) {
           if (type === OBJECT || type === ARRAY)
@@ -80,7 +76,7 @@ export default name => {
           for(const key in value)
             value[key] = argument(value[key]);
         }
-        return pair(type, value);
+        return tv(type, value);
       }
     );
 
@@ -150,7 +146,7 @@ export default name => {
       }
     };
 
-    const global = new Proxy(pair(OBJECT, null), proxyHandler);
+    const global = new Proxy(tv(OBJECT, null), proxyHandler);
 
     return {
       [name.toLowerCase()]: global,

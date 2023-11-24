@@ -1,3 +1,4 @@
+import { target as tv, unwrap } from 'proxy-target/array';
 import { create as createGCHook } from 'gc-hook';
 
 import {
@@ -9,11 +10,6 @@ import {
   SYMBOL,
   UNDEFINED,
 } from 'proxy-target/types';
-
-import {
-  pair,
-  unwrap
-} from 'proxy-target/array';
 
 import {
   TypedArray,
@@ -98,11 +94,11 @@ export default (name, patch) => {
         ids.set(value, sid);
         values.set(sid, type === FUNCTION ? value : $(value));
       }
-      return pair(type, ids.get(value));
+      return tv(type, ids.get(value));
     });
 
     const onGarbageCollected = value => {
-      __thread__(DELETE, pair(STRING, value));
+      __thread__(DELETE, tv(STRING, value));
     };
 
     const asValue = (type, value) => {
@@ -123,7 +119,7 @@ export default (name, patch) => {
                 if (patch && args.at(0) instanceof Event) handleEvent(...args);
                 return __thread__(
                   APPLY,
-                  pair(FUNCTION, value),
+                  tv(FUNCTION, value),
                   result(this),
                   args.map(result)
                 );
@@ -154,11 +150,11 @@ export default (name, patch) => {
       [GET]: (target, name) => result(target[name]),
       [GET_OWN_PROPERTY_DESCRIPTOR]: (target, name) => {
         const descriptor = getOwnPropertyDescriptor(target, name);
-        return descriptor ? pair(OBJECT, augment(descriptor, result)) : pair(UNDEFINED, descriptor);
+        return descriptor ? tv(OBJECT, augment(descriptor, result)) : tv(UNDEFINED, descriptor);
       },
       [HAS]: (target, name) => result(name in target),
       [IS_EXTENSIBLE]: target => result(isExtensible(target)),
-      [OWN_KEYS]: target => pair(ARRAY, ownKeys(target).map(result)),
+      [OWN_KEYS]: target => tv(ARRAY, ownKeys(target).map(result)),
       [PREVENT_EXTENSION]: target => result(preventExtensions(target)),
       [SET]: (target, name, value) => result(set(target, name, value)),
       [SET_PROTOTYPE_OF]: (target, proto) => result(setPrototypeOf(target, proto)),
