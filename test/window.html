@@ -6,6 +6,7 @@
     <script src="../mini-coi.js"></script>
     <script type="module">
     import coincident from '../window.js';
+    globalThis[Symbol.for('coincident')] = 'Symbol.for("coincident") 🥳';
     const {proxy} = coincident(new Worker('./window.js', {type: 'module'}));
     proxy.greetings = () => {
       console.log('Greetings from main!');

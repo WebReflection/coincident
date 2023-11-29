@@ -68,11 +68,16 @@ export const asEntry = transform => value => wrap(value, (type, value) => {
     case BIGINT:
       return tv(type, value);
     case SYMBOL: {
+      // handle known symbols
       if (symbols.has(value))
         return tv(type, symbols.get(value));
+      // handle `Symbol.for('...')` cases
+      let key = Symbol.keyFor(value);
+      if (key)
+        return tv(type, `.${key}`);
     }
   }
-  throw new Error(`Unable to handle this ${type} type`);
+  throw new TypeError(`Unable to handle this ${type}: ${String(value)}`);
 });
 
 const symbols = new Map(
@@ -82,6 +87,8 @@ const symbols = new Map(
 );
 
 export const symbol = value => {
+  if (value.startsWith('.'))
+    return Symbol.for(value.slice(1));
   for (const [symbol, name] of symbols) {
     if (name === value)
       return symbol;

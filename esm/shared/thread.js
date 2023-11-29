@@ -71,8 +71,7 @@ export default name => {
           return tv(type, ids.get(value));
         }
         if (!(value instanceof TypedArray)) {
-          if (type === OBJECT || type === ARRAY)
-            value = $(value);
+          value = $(value);
           for(const key in value)
             value[key] = argument(value[key]);
         }

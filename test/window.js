@@ -2,6 +2,8 @@ import coincident from '../window.js';
 
 const {proxy, window, isWindowProxy} = coincident(self);
 
+console.log(window[Symbol.for('coincident')]);
+
 proxy.greetings();
 
 const {document} = window;
