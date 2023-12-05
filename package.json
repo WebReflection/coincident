@@ -5,7 +5,7 @@
   "main": "./cjs/index.js",
   "types": "./types/index.d.ts",
   "scripts": {
-    "build": "node rollup/channel.cjs && npm run cjs && npm run rollup:es && npm run rollup:window && npm run rollup:structured && npm run rollup:uhtml && npm run rollup:server && npm run ts && npm run test:integration && npm run size",
+    "build": "node rollup/channel.cjs && npm run cjs && npm run rollup:es && npm run rollup:window && npm run rollup:structured && npm run rollup:uhtml && npm run rollup:server && npm run ts && npm run test:integration && cp *.js test/dist/ && npm run size",
     "cjs": "ascjs --no-default esm cjs",
     "rollup:es": "rollup --config rollup/es.config.js",
     "rollup:server": "rollup --config rollup/server.config.js",
