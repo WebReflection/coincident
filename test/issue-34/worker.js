@@ -1,4 +1,4 @@
-import coincident from '../../window.js';
+import coincident from '../dist/window.js';
 const { window } = coincident(self);
 
 const { array, object } = window;
