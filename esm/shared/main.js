@@ -114,23 +114,22 @@ export default (name, patch) => {
           return value;
         case FUNCTION:
           if (typeof value === STRING) {
-            if (!values.has(value)) {
-              const cb = function (...args) {
-                if (patch && args.at(0) instanceof Event) handleEvent(...args);
-                return __thread__(
-                  APPLY,
-                  tv(FUNCTION, value),
-                  result(this),
-                  args.map(result)
-                );
-              };
-              values.set(value, new WeakRef(cb));
-              return createGCHook(value, onGarbageCollected, {
-                return: cb,
-                token: false,
-              });
-            }
-            return values.get(value).deref();
+            const retained = values.get(value)?.deref();
+            if (retained) return retained;
+            const cb = function (...args) {
+              if (patch && args.at(0) instanceof Event) handleEvent(...args);
+              return __thread__(
+                APPLY,
+                tv(FUNCTION, value),
+                result(this),
+                args.map(result)
+              );
+            };
+            values.set(value, new WeakRef(cb));
+            return createGCHook(value, onGarbageCollected, {
+              return: cb,
+              token: false,
+            });
           }
           return values.get(value);
         case SYMBOL:

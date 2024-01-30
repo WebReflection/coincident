@@ -29,15 +29,15 @@
   "author": "Andrea Giammarchi",
   "license": "ISC",
   "devDependencies": {
-    "@playwright/test": "^1.40.1",
+    "@playwright/test": "^1.41.1",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
     "ascjs": "^6.0.3",
-    "c8": "^8.0.1",
-    "rollup": "^4.6.1",
+    "c8": "^9.1.0",
+    "rollup": "^4.9.6",
     "static-handler": "^0.4.3",
-    "typescript": "^5.3.2",
-    "uhtml": "^4.1.21"
+    "typescript": "^5.3.3",
+    "uhtml": "^4.4.7"
   },
   "module": "./esm/index.js",
   "type": "module",
@@ -87,6 +87,6 @@
     "proxy-target": "^3.0.1"
   },
   "optionalDependencies": {
-    "ws": "^8.14.2"
+    "ws": "^8.16.0"
   }
 }

@@ -80,16 +80,15 @@ export default name => {
     );
 
     const register = (entry, type, value) => {
-      if (!proxies.has(value)) {
-        const target = type === FUNCTION ? bound(entry) : entry;
-        const proxy = new Proxy(target, proxyHandler);
-        proxies.set(value, new WeakRef(proxy));
-        return createGCHook(value, onGarbageCollected, {
-          return: proxy,
-          token: false,
-        });
-      }
-      return proxies.get(value).deref();
+      const retained = proxies.get(value)?.deref();
+      if (retained) return retained;
+      const target = type === FUNCTION ? bound(entry) : entry;
+      const proxy = new Proxy(target, proxyHandler);
+      proxies.set(value, new WeakRef(proxy));
+      return createGCHook(value, onGarbageCollected, {
+        return: proxy,
+        token: false,
+      });
     };
 
     const fromEntry = entry => unwrap(entry, (type, value) => {
