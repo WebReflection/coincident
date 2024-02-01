@@ -1,5 +1,3 @@
-import coincident from '../dist/window.js';
+import coincident from '../dist/es.js';
 
-const {proxy} = coincident(self);
-
-proxy.getValue = () => Math.random();
+coincident(self).getValue = () => Math.random();

@@ -4,18 +4,16 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script type="module">
-    import coincident from '../dist/window.js';
+    import coincident from '../dist/es.js';
 
     console.log('main');
-    const {proxy} = coincident(new Worker('./worker.js', {type: 'module'}));
+    const {getValue} = coincident(new Worker('./worker.js', {type: 'module'}));
 
-    setTimeout(async () => {
-      console.log(await Promise.all([
-        proxy.getValue(),
-        proxy.getValue(),
-        proxy.getValue()
-      ]));
-    }, 1000);
+    console.log(await Promise.all([
+      getValue(),
+      getValue(),
+      getValue(),
+    ]));
   </script>
 </head>
 </html>
