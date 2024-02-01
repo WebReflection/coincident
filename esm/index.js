@@ -4,17 +4,15 @@ import {FUNCTION} from 'proxy-target/types';
 
 import {CHANNEL} from './channel.js';
 import {GET, HAS, SET} from './shared/traps.js';
-import waitAsyncFallback from './fallback.js';
+
+import {SharedArrayBuffer, isArray, notify, postPatched, wait, waitAsync} from './bridge.js';
 
 // just minifier friendly for Blob Workers' cases
-const {Int32Array, Map, SharedArrayBuffer, Uint16Array} = globalThis;
+const {Int32Array, Map, Uint16Array} = globalThis;
 
 // common constants / utilities for repeated operations
 const {BYTES_PER_ELEMENT: I32_BYTES} = Int32Array;
 const {BYTES_PER_ELEMENT: UI16_BYTES} = Uint16Array;
-
-const {isArray} = Array;
-const {notify, wait, waitAsync} = Atomics;
 
 const waitInterrupt = (sb, delay, handler) => {
   while (wait(sb, 0, 0, delay) === 'timed-out')
@@ -47,8 +45,10 @@ let uid = 0;
 const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, transform, interrupt} = JSON) => {
   // create a Proxy once for the given context (globalThis or Worker instance)
   if (!context.has(self)) {
+    // ensure no SAB gets a chance to pass through this call
+    const sendMessage = postPatched || self.postMessage;
     // ensure the CHANNEL and data are posted correctly
-    const post = (transfer, ...args) => self.postMessage({[CHANNEL]: args}, {transfer});
+    const post = (transfer, ...args) => sendMessage.call(self, {[CHANNEL]: args}, {transfer});
 
     const handler = typeof interrupt === FUNCTION ? interrupt : interrupt?.handler;
     const delay = interrupt?.delay || 42;
@@ -57,7 +57,7 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
     // automatically uses sync wait (worker -> main)
     // or fallback to async wait (main -> worker)
     const waitFor = (isAsync, sb) => isAsync ?
-      (waitAsync || waitAsyncFallback)(sb, 0) :
+      waitAsync(sb, 0) :
       ((handler ? waitInterrupt(sb, delay, handler) : wait(sb, 0)), syncResult);
 
     // prevent Harakiri https://github.com/WebReflection/coincident/issues/18
