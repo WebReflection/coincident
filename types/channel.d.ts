@@ -1,3 +1,3 @@
-export const CHANNEL: "077d73a2-2406-4ea9-85cc-6a2b19e8fef8";
+export const CHANNEL: "58800b0f-b2cb-4c43-8c1b-48a9a6d9d246";
 export const MAIN: string;
 export const THREAD: string;
