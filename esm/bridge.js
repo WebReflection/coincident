@@ -37,7 +37,7 @@ catch (_) {
     const resolvers = new Map;
     const {prototype: {postMessage}} = Worker;
 
-    const listener = async (event) => {
+    const listener = event => {
       const details = event.data?.[CHANNEL];
       if (!isArray(details)) {
         event.stopImmediatePropagation();
@@ -74,7 +74,7 @@ catch (_) {
       postMessage(as(ids.get(sb), sb));
     };
 
-    addEventListener('message', async (event) => {
+    addEventListener('message', event => {
       const details = event.data?.[CHANNEL];
       if (isArray(details)) {
         const [id, sb] = details;
