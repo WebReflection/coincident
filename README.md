@@ -339,4 +339,24 @@ serve({
 });
 
 console.log(`http://localhost:${port}/test/server/`);
-``
+```
+
+### A quick way to test SharedArrayBuffer
+
+If you would like to just test locally *SharedArrayBuffer* you can also use [mini-coi](https://github.com/WebReflection/mini-coi#readme), now enriched with a *CLI* that bootstraps locally in a snap:
+
+```sh
+npx mini-coi .
+
+# or even ...
+bunx mini-coi .
+```
+
+If you would like to bring *SharedArrayBuffer* to your GitHub pages or any other hosting space where you can't configure headers, you can use the *Service Worker* approach currently tested to work already here and elsewhere.
+
+To copy the **script** that must be used on the page locally as Service Worker, you can also use *mini-coi*:
+
+```sh
+# put mini-coi.js into ./public/mini-coi.js
+npx mini-coi -sw ./public/
+```
