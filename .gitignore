@@ -13,7 +13,6 @@ server.js
 structured.js
 !test/dist/structured.js
 !esm/structured.js
-uhtml.js
 !test/dist/uhtml.js
 !esm/uhtml.js
 window.js
