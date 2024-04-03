@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>MicroPython Terminal</title>
+        <script src="../mini-coi.js"></script>
+        <script type="module" src="https://cdn.jsdelivr.net/npm/@pyscript/core@0.4.23/dist/core.js"></script>
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@pyscript/core@0.4.23/dist/core.css">
+        <style>
+            html, body {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
+            .xterm {
+                padding: 0;
+                width: 100vw;
+                height: 100vh;
+                width: 100dvw;
+                height: 100dvh;
+            }
+            #paste {
+                position: fixed;
+                top: 8px;
+                right: 24px;
+                width: 32px;
+                height: 32px;
+            }
+        </style>
+        <script type="module">
+            let type = location.search.slice(1);
+            if (type !== 'py') type = 'mpy';
+            document.body.innerHTML = `    
+                <script type="${type}" worker terminal>
+                    import code
+                    code.interact()
+                <\x2fscript>
+                <button id="paste" title="paste code in prompt">📝</button>
+            `;
+
+            const inputLines = (terminal, readline, code) => {
+                let queue = Promise.resolve();
+                for (const line of code.split(/(?:\r|\n|\r\n)/)) {
+                    queue = queue.then(async () => {
+                        terminal.paste(`${line}\n`);
+                        do { await new Promise(resolve => setTimeout(resolve, 0)); }
+                        while (!readline.instance.activeRead?.resolve);
+                        readline.instance.activeRead.resolve(line);
+                    });
+                }
+                return queue;
+            };
+
+            paste.onclick = async event => {
+                paste.disabled = true;
+                event.preventDefault();
+                const { terminal } = document.querySelector('script[terminal]');
+                const readline = terminal._addonManager._addons.at(-1);
+                try {
+                    await inputLines(terminal, readline, prompt('code'));
+                }
+                finally {
+                    paste.disabled = false;
+                }
+            };
+        </script>
+    </head>
+</html>
