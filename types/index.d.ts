@@ -26,8 +26,8 @@ export type Interrupt = {
 declare function coincident(self: typeof globalThis | Worker, { parse, stringify, transform, interrupt }?: {
     parse: (serialized: string) => any;
     stringify: (serializable: any) => string;
-    transform?: ((value: any) => any) | undefined;
-    interrupt?: (() => void | Interrupt) | undefined;
+    transform?: (value: any) => any;
+    interrupt?: () => void | Interrupt;
 } | undefined): ProxyHandler<typeof globalThis> | ProxyHandler<Worker>;
 declare namespace coincident {
     function transfer(...args: any[]): any[];
