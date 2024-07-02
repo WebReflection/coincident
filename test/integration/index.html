@@ -6,7 +6,10 @@
     <title>coincident</title>
     <script type="module">
       import coincident from '../dist/window.js';
-      const {proxy} = coincident(new Worker('./index.js', {type: 'module'}));
+      const {proxy} = coincident(new Worker('./index.js', {
+        type: 'module',
+        serviceWorker: '../sabayon.js',
+      }));
       addEventListener('ready', () => {
         proxy.greetings = (windowProxy) => {
           document.body.append('Greetings', windowProxy);

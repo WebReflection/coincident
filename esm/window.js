@@ -2,7 +2,7 @@ import {MAIN, THREAD} from './channel.js';
 import $coincident from './index.js';
 import main from './window/main.js';
 import thread from './window/thread.js';
-import Worker from './shared/worker.js';
+import { Worker } from './bridge.js';
 
 const proxies = new WeakMap;
 
@@ -22,7 +22,7 @@ const proxies = new WeakMap;
 const coincident = (self, ...args) => {
   const proxy = $coincident(self, ...args);
   if (!proxies.has(proxy)) {
-    const util = self instanceof Worker ? main : thread;
+    const util = Worker && self instanceof Worker ? main : thread;
     proxies.set(proxy, util.call(args.at(0), proxy, MAIN, THREAD));
   }
   return proxies.get(proxy);

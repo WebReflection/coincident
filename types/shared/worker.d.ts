@@ -1,5 +1,5 @@
 declare const _default: {
-    new (scriptURL: string | URL, options?: WorkerOptions | undefined): Worker;
+    new (scriptURL: string | URL, options?: WorkerOptions): Worker;
     prototype: Worker;
 } | {
     new (): {};

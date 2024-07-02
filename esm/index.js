@@ -5,10 +5,21 @@ import {FUNCTION} from 'proxy-target/types';
 import {CHANNEL} from './channel.js';
 import {GET, HAS, SET} from './shared/traps.js';
 
-import {SharedArrayBuffer, isArray, notify, postPatched, wait, waitAsync} from './bridge.js';
+import {
+  Int32Array,
+  SharedArrayBuffer,
+  Worker,
+  addEventListener,
+  postMessage,
+  ignore,
+  isArray,
+  notify,
+  wait,
+  waitAsync,
+} from './bridge.js';
 
 // just minifier friendly for Blob Workers' cases
-const {Int32Array, Map, Uint16Array} = globalThis;
+const {Map, Uint16Array} = globalThis;
 
 // common constants / utilities for repeated operations
 const {BYTES_PER_ELEMENT: I32_BYTES} = Int32Array;
@@ -45,8 +56,8 @@ let uid = 0;
 const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, transform, interrupt} = JSON) => {
   // create a Proxy once for the given context (globalThis or Worker instance)
   if (!context.has(self)) {
-    // ensure no SAB gets a chance to pass through this call
-    const sendMessage = postPatched || self.postMessage;
+    const sendMessage = postMessage || self.postMessage;
+
     // ensure the CHANNEL and data are posted correctly
     const post = (transfer, ...args) => sendMessage.call(self, {[CHANNEL]: args}, {transfer});
 
@@ -87,7 +98,7 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
           buffers.delete(transfer = args.pop());
 
         // ask for invoke with arguments and wait for it
-        post(transfer, id, sb, action, transform ? args.map(transform) : args);
+        post(transfer, id, sb, action, ignore(transform ? args.map(transform) : args));
 
         // helps deciding how to wait for results
         const isAsync = self !== globalThis;
@@ -195,5 +206,8 @@ const coincident = (self, {parse = JSON.parse, stringify = JSON.stringify, trans
 };
 
 coincident.transfer = (...args) => (buffers.add(args), args);
+
+if (postMessage) globalThis.addEventListener = addEventListener;
+else globalThis.Worker = Worker;
 
 export default coincident;
