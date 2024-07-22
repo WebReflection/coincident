@@ -1,7 +1,10 @@
-<!DOCTYPE html>
-<script type="module">
 import coincident from '../../dist/window/main.js';
+
 const { Worker } = coincident();
 
 new Worker('./worker.js', { serviceWorker: '../sw.js' });
-</script>
+
+globalThis.test = {
+    a: 1,
+    b: 2,
+};

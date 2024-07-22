@@ -5,8 +5,12 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <script type="module">
     console.log('main');
-    import coincident from '../../es.js';
-    const proxy = coincident(new Worker('./worker.js', {type: 'module'}));
+    import coincident from '../../dist/window/main.js';
+
+    const { Worker } = coincident();
+
+    const { proxy } = new Worker('./worker.js', { serviceWorker: '../sw.js' });
+
     let func_calls = 0;
     proxy.func = () => {
       func_calls++;
