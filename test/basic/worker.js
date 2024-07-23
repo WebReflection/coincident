@@ -1,8 +1,8 @@
 import coincident from '../../dist/worker.js';
 
-const { proxy, polyfill } = await coincident();
+const { proxy, polyfill, sync } = await coincident();
 
-console.info('worker', { polyfill });
+console.table({ polyfill, sync });
 
 proxy.log = (...args) => {
   console.info('worker', 'log', args);

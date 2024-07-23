@@ -35,6 +35,7 @@ document.body.appendChild(document.createElement('div')).textContent = '🥳';
 const remote = new window.Object;
 
 console.assert(isWindowProxy(remote));
+console.assert(!isWindowProxy({}));
 
 console.log(JSON.stringify(
   window.Object.getOwnPropertyDescriptor(window.Int32Array, 'BYTES_PER_ELEMENT')

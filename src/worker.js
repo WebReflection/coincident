@@ -39,7 +39,7 @@ const { wait, waitAsync } = Atomics;
 /**
  * @callback Coincident
  * @param {WorkerOptions} [options]
- * @returns {Promise<{polyfill: boolean, transfer: (...args: Transferable[]) => Transferable[], proxy: {}}>}
+ * @returns {Promise<{polyfill: boolean, sync: boolean, transfer: (...args: Transferable[]) => Transferable[], proxy: {}}>}
  */
 
 export default /** @type {Coincident} */ ({
@@ -52,6 +52,7 @@ export default /** @type {Coincident} */ ({
 
   const ready = withResolvers();
   const map = new Map;
+  const results = new Map;
 
   let CHANNEL = '';
   let waitSync = wait;
@@ -69,22 +70,23 @@ export default /** @type {Coincident} */ ({
       const [_, ACTION, ...rest] = event.data;
       switch (ACTION) {
         case ACTION_INIT: {
+          const sync = !!wait;
           CHANNEL = _;
           ready.resolve({
             polyfill,
+            sync,
             transfer,
             proxy: createProxy(
               [
                 CHANNEL,
-                Int32Array,
-                SharedArrayBuffer,
+                bytes => new Int32Array(new SharedArrayBuffer(bytes)),
                 ignore,
-                !!wait,
+                sync,
                 parse,
                 polyfill,
                 postMessage,
                 transform,
-                wait ?
+                sync ?
                   (...args) => ({ value: { then: fn => fn(waitSync(...args)) } }) :
                   waitAsync,
               ],
@@ -95,12 +97,12 @@ export default /** @type {Coincident} */ ({
         }
         case ACTION_WAIT: {
           // give the code a chance to finish running (serviceWorker mode)
-          if (!map.size) setTimeout(actionWait, 0, waitLength, map, rest);
-          else actionWait(waitLength, map, rest);
+          if (!map.size) setTimeout(actionWait, 0, waitLength, results, map, rest);
+          else actionWait(waitLength, results, map, rest);
           break;
         }
         case ACTION_NOTIFY: {
-          actionFill(...rest);
+          actionFill(results, rest);
           break;
         }
       }

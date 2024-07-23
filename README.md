@@ -37,7 +37,7 @@ const {
 
 The `Worker` class returned by `coincident()` has these features:
 
-  * it always starts a *Worker* as `{ type: "module" }` <sup>( mostly because the worker needs to `await coincident()` on bootstrap )</sup>
+  * it always starts a *Worker* as `{ type: "module" }` <sup><sub>( mostly because the worker needs to `await coincident()` on bootstrap )</sub></sup>
   * it optionally accepts a `{ serviceWorker: "../sw.js" }` to help *sabayon* falling back to synchronous behavior, which is mandatory to use any *DOM* or `window` related functionality
   * it provides to each instance a `proxy` reference where utilities, as *callbacks*, can be assigned or asynchronously awaited if exposed within *worker*'s code
 
@@ -63,6 +63,8 @@ const {
   proxy,
   // a boolean indicating if sabayon is being used
   polyfill,
+  // a boolean indicating if it's possible to do synchronous operations
+  sync,
   // a utility to transfer values directly via `postMessage`
   // (...args: Transferable[]) => Transferable[]
   transfer,
@@ -88,6 +90,66 @@ proxy.compute = async () => {
 // the Service Worker was passed
 console.log(proxy.location());
 ```
+
+### coincident/window/main
+
+When the *worker* code expects the *main* `window` reference, this import is needed to allow just that.
+
+```js
+import coincident from 'coincident/window/main';
+//                                 ^^^^^^
+
+const { Worker, polyfill, transfer } = coincident();
+```
+
+The signature, on the *main* thread, is identical.
+
+### coincident/window/worker
+
+On the *worker* side, this import is also identical to the non-window variant but it's returned namespace, after bootstrap, contains two extra utilities:
+
+```js
+import coincident from 'coincident/window/worker';
+//                                 ^^^^^^
+
+const {
+  proxy, polyfill, sync, transfer,
+  // it's a synchronous, Atomic.wait based, Proxy
+  // to the actual globalThis reference on the main
+  window,
+  // it's an introspection helper that returns `true`
+  // only when a reference points at the main thread
+  // (value: any) => boolean
+  isWindowProxy,
+} = await coincident();
+
+// direct synchronous access to the main `window`
+console.log(window.location.href);
+
+window.document.body.textContent = 'Hello World 👋';
+```
+
+#### A note about performance
+
+Every single property retrieved via the `window` reference is a whole *worker* ↔ *main* roundtrip and this is inevitable. There is no "*smart caching*" ability backed in the project, because everytrhing could be suddenly different at any point in time due side effects that both the worker, or the main thread, could have around previously retrieved references.
+
+Especially when *SharedArrayBuffer* is polyfilled, and the `serviceWorker` provided as option, an average *PC* would perform up to ~1000 roundtrips per second. That seems like a lot but operations can easily pile up and make the program feel unnecessary slower than it could be (if run on the *main* thread directly, as comparison).
+
+When native *SharedArrayBuffer* is enabled though, an average *PC* would be able to do ~50000 (50x) roundtrips per second .... and yet that could also easily degrade with more complex logic involved.
+
+An easy way to prevent repeated roundtrips, when we already assume a reference will not change by any mean over time, we can take over that "*smart caching*" explicit operation:
+
+```js
+const { window } = await coincident();
+
+const { document } = window;
+const { head, body } = document;
+
+// any time we need to change the content
+body.textContent = 'Hello World 👋';
+```
+
+Please note that because those references won't likely ever change on the *main* thread, there are also no *memory leaks* hazard, and that's true with every other reference that might live forefer on the *main* thread.
 
 - - -
 

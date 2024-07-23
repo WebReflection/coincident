@@ -34,7 +34,7 @@ const { [APPLY]: apply } = Reflect;
 /**
  * @callback Coincident
  * @param {import('../worker.js').WorkerOptions} [options]
- * @returns {Promise<{polyfill: boolean, transfer: (...args: Transferable[]) => Transferable[], proxy: {}, window: Window, isWindowProxy: (value: any) => boolean}>}
+ * @returns {Promise<{polyfill: boolean, sync: boolean, transfer: (...args: Transferable[]) => Transferable[], proxy: {}, window: Window, isWindowProxy: (value: any) => boolean}>}
  */
 
 export default /** @type {Coincident} */ async options => {
@@ -42,7 +42,7 @@ export default /** @type {Coincident} */ async options => {
   const $ = options?.transform || ((o) => o);
   const { [MAIN]: __main__ } = exports.proxy;
 
-  const proxies = new Map();
+  const proxies = new Map;
   const proxied = (value, proxy) => {
     let ref = proxies.get(value)?.deref();
     if (!ref) proxies.set(value, new WeakRef((ref = proxy(value))));
@@ -122,7 +122,7 @@ export default /** @type {Coincident} */ async options => {
     },
   };
 
-  let definition = {
+  const definition = {
     object: handler,
     array: handler,
     function: {
@@ -150,6 +150,11 @@ export default /** @type {Coincident} */ async options => {
 
   const { proxy, isProxy, pair } = define(definition);
 
+  // when exports.sync is `false` ... there is a possibility
+  // to make this read-only by changing the Proxy kind and
+  // just queue accessors until `await` is performed (a `then` get)
+  // this feels a bit too much though, let's say for the
+  // time being I don't care about that possibility 😇
   const window = proxy.object(null);
 
   // for the time being this is used only to invoke callbacks

@@ -18,14 +18,10 @@ const decoder = new TextDecoder('utf-16');
 
 const buffers = new WeakSet;
 
-/**
- * @param  {...Transferable} args
- */
 const transfer = (...args) => (buffers.add(args), args);
 
 let seppuku = '';
-const results = new Map;
-const actionLength = (stringify, transform) => async (callback, [name, id, sb, args, isSync]) => {
+const actionLength = (stringify, transform) => async (callback, results, [name, id, sb, args, isSync]) => {
   if (isSync) seppuku = name;
   try {
     const result = await callback(...args);
@@ -41,18 +37,18 @@ const actionLength = (stringify, transform) => async (callback, [name, id, sb, a
     notify(sb, 0);
   }
 };
-const actionFill = (id, sb) => {
+const actionFill = (results, [id, sb]) => {
   const result = results.get(id);
   results.delete(id);
   for (let ui16a = new Uint16Array(sb.buffer), i = 0, { length } = result; i < length; i++)
     ui16a[i] = result.charCodeAt(i);
   notify(sb, 0);
 };
-const actionWait = (waitLength, map, rest) => {
+const actionWait = (waitLength, results, map, rest) => {
   const [name] = rest;
   const callback = map.get(name);
   if (!callback) throw new Error(`Unknown proxy.${name}()`);
-  waitLength(callback, rest);
+  waitLength(callback, results, rest);
 };
 
 const warn = (name, seppuku) => setTimeout(
@@ -65,8 +61,7 @@ let uid = 0;
 const invoke = (
   [
     CHANNEL,
-    Int32Array,
-    SharedArrayBuffer,
+    i32View,
     ignore,
     isSync,
     parse,
@@ -84,14 +79,14 @@ const invoke = (
   if (buffers.has(args.at(-1) || transfer))
     buffers.delete(transfer = args.pop());
   const data = ignore(transform ? args.map(transform) : args);
-  let sb = new Int32Array(new SharedArrayBuffer(I32_BYTES * 2));
+  let sb = i32View(I32_BYTES * 2);
   postMessage([CHANNEL, ACTION_WAIT, name, id, sb, data, isSync], { transfer });
   return waitAsync(sb, 0).value.then(() => {
     if (deadlock) clearTimeout(timer);
     const length = sb[1];
     if (!length) return;
     const bytes = UI16_BYTES * length;
-    sb = new Int32Array(new SharedArrayBuffer(bytes + (bytes % I32_BYTES)));
+    sb = i32View(bytes + (bytes % I32_BYTES));
     postMessage([CHANNEL, ACTION_NOTIFY, id, sb]);
     return waitAsync(sb, 0).value.then(() =>{
       const ui16a = new Uint16Array(sb.buffer);
@@ -102,11 +97,23 @@ const invoke = (
 };
 
 const createProxy = (details, map) => new Proxy(map, {
-  get: (map, name) => (
-    map.get(name) ||
-    map.set(name, invoke(details, name)).get(name)
+  get: (map, name) => {
+    let cb;
+    // the curse of potentially awaiting proxies in the wild
+    // requires this ugly guard around `then`
+    if (name !== 'then') {
+      cb = map.get(name);
+      if (!cb) {
+        cb = invoke(details, name);
+        map.set(name, cb);
+      }
+    }
+    return cb;
+  },
+  set: (map, name, callback) => (
+    name !== 'then' &&
+    !!map.set(name, callback)
   ),
-  set: (map, name, callback) => !!map.set(name, callback),
 });
 
 export {

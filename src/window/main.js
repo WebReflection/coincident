@@ -36,7 +36,6 @@ const { isArray } = Array;
 
 export default /** @type {import('../main.js').Coincident} */ options => {
   const exports = coincident(options);
-  const { Worker: $Worker } = exports;
 
   const toEntry = value => {
     const TYPE = typeof value;
@@ -53,12 +52,12 @@ export default /** @type {import('../main.js').Coincident} */ options => {
     }
   };
 
-  class Worker extends $Worker {
+  class Worker extends exports.Worker {
     constructor(url, options) {
       const { proxy } = super(url, options);
       const { [WORKER]: __worker__ } = proxy;
 
-      const proxies = new Map();
+      const proxies = new Map;
       const onGC = ref => {
         proxies.delete(ref);
         __worker__(DESTRUCT, ref);
@@ -88,7 +87,7 @@ export default /** @type {import('../main.js').Coincident} */ options => {
                   fn = create(value, onGC, {
                     token: false,
                     return: function (...args) {
-                      if (args.at(0) instanceof Event) handleEvent(...args);
+                      if (args.length && args[0] instanceof Event) handleEvent(args[0]);
                       return __worker__(APPLY, value, toEntry(this), args.map(toEntry)).then(fromEntry);
                     }
                   });
@@ -105,14 +104,6 @@ export default /** @type {import('../main.js').Coincident} */ options => {
 
       const asEntry = (method, target, args) => toEntry(method(target, ...args.map(fromEntry)));
 
-      const asDescriptor = (descriptor, asEntry) => {
-        const { get, set, value } = descriptor;
-        if (get) descriptor.get = asEntry(get);
-        if (set) descriptor.set = asEntry(set);
-        if (value) descriptor.value = asEntry(value);
-        return descriptor;
-      };
-
       proxy[MAIN] = (TRAP, ref, ...args) => {
         if (TRAP === DESTRUCT) drop(ref);
         else {
@@ -124,8 +115,14 @@ export default /** @type {import('../main.js').Coincident} */ options => {
               return toEntry(method(target, name, descriptor));
             }
             case GET_OWN_PROPERTY_DESCRIPTOR: {
-              const value = method(target, ...args.map(fromEntry));
-              return [numeric[value ? OBJECT : UNDEFINED], value && asDescriptor(value, toEntry)];
+              const descriptor = method(target, ...args.map(fromEntry));
+              if (descriptor) {
+                const { get, set, value } = descriptor;
+                if (get) descriptor.get = toEntry(get);
+                if (set) descriptor.set = toEntry(set);
+                if (value) descriptor.value = toEntry(value);
+              }
+              return [numeric[descriptor ? OBJECT : UNDEFINED], descriptor];
             }
             case OWN_KEYS: return [numeric[ARRAY], method(target).map(toEntry)];
             default: return asEntry(method, target, args);

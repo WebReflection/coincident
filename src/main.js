@@ -49,12 +49,12 @@ export default /** @type {Coincident} */ ({
   class Worker extends $Worker {
     constructor(url, options) {
       const map = new Map;
+      const results = new Map;
       super(url, options);
       this.proxy = createProxy(
         [
           CHANNEL,
-          Int32Array,
-          SharedArrayBuffer,
+          bytes => new Int32Array(new SharedArrayBuffer(bytes)),
           ignore,
           false,
           parse,
@@ -71,11 +71,11 @@ export default /** @type {Coincident} */ ({
           const [_, ACTION, ...rest] = event.data;
           switch (ACTION) {
             case ACTION_WAIT: {
-              actionWait(waitLength, map, rest);
+              actionWait(waitLength, results, map, rest);
               break;
             }
             case ACTION_NOTIFY: {
-              actionFill(...rest);
+              actionFill(results, rest);
               break;
             }
           }
