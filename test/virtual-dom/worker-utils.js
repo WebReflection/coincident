@@ -1,8 +1,10 @@
 import diff from 'https://esm.sh/virtual-dom/diff';
 
-import coincident from '../../es.js';
+import coincident from '../../dist/window/worker.js';
 
-const { createElement: $createElement, appendElement, patchElement } = coincident(self);
+const { proxy } = await coincident();
+
+const { createElement: $createElement, appendElement, patchElement } = proxy;
 
 class Element {
     constructor(tree) {

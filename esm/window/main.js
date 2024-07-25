@@ -1,3 +1,0 @@
-import main from '../shared/main.js';
-
-export default main('Window', true);

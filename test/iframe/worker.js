@@ -1,6 +1,6 @@
-import coincident from '../dist/window.js';
+import coincident from '../../dist/window/worker.js';
+const { window } = await coincident();
 
-const {window} = coincident(self);
 const parser = new window.DOMParser;
 
 const document = parser.parseFromString(

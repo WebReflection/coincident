@@ -1,92 +1,38 @@
 {
   "name": "coincident",
-  "version": "1.2.3",
+  "version": "2.0.0",
   "description": "An Atomics based Proxy to simplify, and synchronize, Worker related tasks",
-  "main": "./cjs/index.js",
-  "types": "./types/index.d.ts",
   "scripts": {
-    "build": "node rollup/channel.cjs && npm run cjs && npm run rollup:es && npm run rollup:window && npm run rollup:structured && npm run rollup:uhtml && npm run rollup:server && npm run ts && npm run test:integration && cp *.js test/dist/ && npm run size",
-    "cjs": "ascjs --no-default esm cjs",
-    "rollup:es": "rollup --config rollup/es.config.js",
-    "rollup:server": "rollup --config rollup/server.config.js",
-    "rollup:structured": "rollup --config rollup/structured.config.js",
-    "rollup:uhtml": "rollup --config rollup/uhtml.config.js",
-    "rollup:window": "rollup --config rollup/window.config.js",
-    "test": "c8 node test/index.js",
-    "test:integration": "static-handler --coi . 2>/dev/null & SH_PID=$!; EXIT_CODE=0; playwright test test/ || EXIT_CODE=$?; kill $SH_PID 2>/dev/null; exit $EXIT_CODE",
-    "test:server": "node test/server/main.cjs",
-    "ts": "tsc -p .",
-    "server": "npx static-handler --coi .",
-    "size": "echo -e \"\\x1b[1mfile        size\\x1b[0m\"; echo \"es          $(cat es.js | brotli | wc -c)\"; echo \"structured  $(cat structured.js | brotli | wc -c)\"; echo \"window      $(cat window.js | brotli | wc -c)\"; echo \"server      $(cat server.js | brotli | wc -c)\"; echo \"uhtml       $(cat uhtml.js | brotli | wc -c)\";",
-    "coverage": "mkdir -p ./coverage; c8 report --reporter=text-lcov > ./coverage/lcov.info"
+    "build": "node build/index.cjs && node build/constants.cjs && rollup --config build/dist.js && sabayon ./test/sw.js && npm run size",
+    "coi": "npx mini-coi .",
+    "server": "static-handler .",
+    "size": "echo -e \"\\x1b[1mfile          size\\x1b[0m\"; echo \"main          $(cat dist/main.js | brotli | wc -c)\"; echo \"worker        $(cat dist/worker.js | brotli | wc -c)\"; echo \"window/worker $(cat dist/window/worker.js | brotli | wc -c)\"; echo \"window/main   $(cat dist/window/main.js | brotli | wc -c)\";"
   },
   "keywords": [
     "Atomics",
     "Worker",
-    "sync",
-    "synchronize"
+    "sync"
   ],
   "author": "Andrea Giammarchi",
-  "license": "ISC",
+  "license": "MIT",
   "devDependencies": {
-    "@playwright/test": "^1.45.2",
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
-    "ascjs": "^6.0.3",
-    "c8": "^10.1.2",
-    "rollup": "^4.18.1",
-    "static-handler": "^0.4.3",
-    "typescript": "^5.5.3",
-    "uhtml": "^4.5.9"
+    "mini-coi": "^0.3.3",
+    "rollup": "^4.19.0",
+    "static-handler": "^0.4.3"
   },
-  "module": "./esm/index.js",
   "type": "module",
   "exports": {
-    ".": {
-      "types": "./types/index.d.ts",
-      "import": "./esm/index.js",
-      "default": "./cjs/index.js"
-    },
-    "./window": {
-      "types": "./types/window.d.ts",
-      "import": "./esm/window.js",
-      "default": "./cjs/window.js"
-    },
-    "./bun": {
-      "types": "./types/bun.d.ts",
-      "import": "./esm/bun.js",
-      "default": "./cjs/bun.js"
-    },
-    "./server": {
-      "types": "./types/server.d.ts",
-      "import": "./esm/server.js",
-      "default": "./cjs/server.js"
-    },
-    "./structured": {
-      "types": "./types/structured.d.ts",
-      "import": "./esm/structured.js",
-      "default": "./cjs/structured.js"
-    },
-    "./json": {
-      "types": "./types/json.d.ts",
-      "import": "./esm/json.js",
-      "default": "./cjs/json.js"
-    },
-    "./uhtml": {
-      "types": "./types/window.d.ts",
-      "import": "./esm/uhtml.js",
-      "default": "./cjs/uhtml.js"
-    },
+    "./main": "./src/main.js",
+    "./worker": "./src/worker.js",
+    "./window/main": "./src/window/main.js",
+    "./window/worker": "./src/window/worker.js",
     "./package.json": "./package.json"
   },
-  "unpkg": "es.js",
   "dependencies": {
-    "@ungap/structured-clone": "^1.2.0",
-    "@ungap/with-resolvers": "^0.1.0",
     "gc-hook": "^0.3.1",
-    "proxy-target": "^3.0.2"
-  },
-  "optionalDependencies": {
-    "ws": "^8.18.0"
+    "js-proxy": "^0.4.3",
+    "sabayon": "^0.5.0"
   }
 }

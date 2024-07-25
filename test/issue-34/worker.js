@@ -1,5 +1,5 @@
-import coincident from '../dist/window.js';
-const { window } = coincident(self);
+import coincident from '../../dist/window/worker.js';
+const { window } = await coincident();
 
 const { array, object } = window;
 

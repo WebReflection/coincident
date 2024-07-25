@@ -3,10 +3,8 @@
 .eslintrc.json
 .github/
 .travis.yml
+v8.log
+build/
 coverage/
 node_modules/
-rollup/
 test/
-index.html
-favicon.ico
-tsconfig.json

@@ -1,32 +1,23 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <script src="../mini-coi.js"></script>
-    <script type="module">
-    import coincident from './dist/window.js';
-    const worker = new Worker('./worker.js', {type: 'module'});
-    // sync way VS promise based (more Webbish)
-    // add a slash in front of the next line to see the form
-    //**/coincident(worker).input = value => prompt(value);/*
-    coincident(worker).proxy.input = placeholder => new Promise(resolve => {
-      const [user, submit] = document.querySelectorAll('input');
-      submit.addEventListener('click', event => {
-        event.preventDefault();
-        resolve(user.value.trim());
-      }, {once: true});
-      question.removeAttribute('hidden');
-      user.placeholder = placeholder;
-      user.focus();
-    });
-    //*/
-    </script>
-  </head>
-  <body>
-    <form id="question" hidden>
-      <input required>
-      <input type="submit">
-    </form>
-  </body>
-</html>
+<!doctype html>
+  <html>
+<head>
+  <title>Coincident Tests</title>
+</head>
+<body>
+  <ul>
+    <li><a href="./array/">array</a></li>
+      <li><a href="./basic/">basic</a></li>
+      <li><a href="./dom/">dom</a></li>
+      <li><a href="./harakiri/">harakiri</a></li>
+      <li><a href="./iframe/">iframe</a></li>
+      <li><a href="./input/">input</a></li>
+      <li><a href="./issue-26/">issue-26</a></li>
+      <li><a href="./issue-34/">issue-34</a></li>
+      <li><a href="./no-sab-or-sw/">no-sab-or-sw</a></li>
+      <li><a href="./reflect/">reflect</a></li>
+      <li><a href="./too-big/">too-big</a></li>
+      <li><a href="./virtual-dom/">virtual-dom</a></li>
+      <li><a href="./window/">window</a></li>
+  </ul>
+</body>
+  </html>

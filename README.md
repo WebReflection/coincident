@@ -1,362 +1,203 @@
 # coincident
 
-[![build](https://github.com/WebReflection/coincident/actions/workflows/node.js.yml/badge.svg)](https://github.com/WebReflection/coincident/actions/workflows/node.js.yml)
-
 <sup>**Social Media Photo by [bady abbas](https://unsplash.com/@bady) on [Unsplash](https://unsplash.com/)**</sup>
 
 An [Atomics](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Atomics) based [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) to simplify, and synchronize, [Worker](https://developer.mozilla.org/en-US/docs/Web/API/Worker) related tasks.
 
-#### Example
-
-```html
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1">
-    <script type="module">
-      import coincident from 'https://unpkg.com/coincident';
-      const worker = new Worker('./worker.js', {type: 'module'});
-      // set a sync or async callback to return a serializable answer
-      coincident(worker).input = value => prompt(value);
-    </script>
-  </head>
-</html>
-```
-
-```js
-// worker.js
-import coincident from 'https://unpkg.com/coincident';
-
-console.log('asking for an input');
-// pauses in a non blocking way the worker until the answer has been received
-console.log('input', coincident(self).input('what is 1 + 2 ?'));
-console.log('input received');
-```
-
 ## API
 
-The module exports a utility/helper able to *Proxy* once a generic *worker* or *globalThis* / *self* context, adding an unobtrusive listener, providing orchestration out of the box for bootstrapped *workers* that use such module.
+Following the description of all different imports to use either on the *main* or the *worker* thread.
 
-#### Worker -> Main
+### coincident/main
 
-```js
-import coincident from 'coincident';
-// or const coincident = require('coincident');
-
-// on the main thread
-const worker = new Worker('./any-worker.js');
-coincident(worker).enabler = async (...args) => {
-  // do something sync or async with received args
-  return {some: 'value'};
-};
-
-// on the worker side
-const result = coincident(self).enabler('one', {or_more: 'args'});
-console.log(result);
-// {some: 'value'}
-```
-
-The second optional argument of the `coincident(context[, JSON])` helper can be any *JSON* like namespace able to `parse` and `stringify` data, such as [flatted](https://www.npmjs.com/package/flatted) or [@ungap/structured-clone/json](https://github.com/ungap/structured-clone/#tojson) (or use `coincident/structured`).
-
-Additionally, it can contain a `transform` callback that will be used to change arguments into something else via `(value: any) => any` operation per each of them.
-
-Moreover, it can also contain an `interrupt` callback or object that will be used to check some internal state while waiting synchronously from a worker (it's not used when main invokes a worker, it's only used when workers invokes and wait-block itself for main).
-
-**Additionally**, the exported function has a `coincident.tranfer(...buffers)` helper that if used as last argument of any worker demanded task will transfer buffers instead of cloning/copying these.
-
-on top of that, the `setInterruptHandler(callback)` field allows any foreign code to periodically check on awaited main tasks, from a *worker*.
-
-#### Main -> Worker
-
-This module can also communicate from a *main* thread to a *worker*, but in this case the *main* thread needs to `await` for results because [Atomics.wait() cannot be used in main](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Atomics/wait).
-
-```html
-<script type="module">
-  // main thread
-  import coincident from 'coincident';
-  const worker = new Worker('./worker.js', {type: 'module'});
-
-  document.body.textContent = await coincident(worker).compute(1, 2);
-</script>
-```
+This is the *import* that provides the ability to expose *main* thread's callbacks to the *worker* thread and to also await callbacks exposed via the *worker* code.
 
 ```js
-// worker.js
-import coincident from 'coincident';
-
-// expose a specific function to the main thread
-coincident(self).compute = (a, b) => (a + b);
-```
-
-
-### coincident/structured
-
-This entry point exports the exact same module except it uses [@ungap/structured-clone/json](https://github.com/ungap/structured-clone/#tojson) `parse` and `stringify` functions, allowing more complex, or recursive, objects to be passed along as result to, or from, the *worker*.
-
-Please keep in mind not all complex types are supported by the polyfill but also any other export could use this version with ease:
-
-```js
-import * as JSON from '@ungap/structured-clone/json';
-import coincident from 'coincident/uhtml';
-
-// bootstrap in both main / workers like this
-const {proxy, window, isWindowProxy} = coincident(self, JSON);
-
-// that's it: structured-clone enabled for responses!
-```
-
-
-### coincident/window
-
-This entry point exports the same `coincident` module (using *JSON* as default) **but** the utility returns an obejct with 3 fields:
-
-  * **proxy** it's the usual proxy utility to expose or invoke functions defined in the main counter-part.
-  * **window** it's the proxy that orchestrates access to the *main* world in *Workers*, including the ability to pass callbacks from the *Worker*, with the only caveat these will be inevitably executed asynchronously on the main thread, so that *Promise* or *thenable* work out of the box but *accessors* or defined callbacks will need to be awaited from the worker too. DOM listeners should be also handled with no issues but the `event` can't *preventDefault* or *stopPropagation* as the listener will be asynchronous too. All well known *Symbol* also cross boundaries so that `[...window.document.querySelectorAll('*')]` or any other *Symbol* based functionality should be preserved, as long as the `symbol` is known as runtime symbols can't cross paths in any meaningful way. In the *main* thread, this is just a reference to the `globalThis` object.
-  * **isWindowProxy** is an utility that helps introspecting window proxies, callbacks, classes, or main thread references in general. This returns always `false` in the *main* thread.
-
-While the initial utility/behavior is preserved on both sides via `proxy`, the *Worker* can seamlessly use `window` utility to operate on *DOM*, *localStorage*, or literally anything else, included *Promise* based operations, DOM listeners, and so on.
-
-
-```html
-<!-- main page -->
-<script type="module">
-  import coincident from 'coincident/window';
-  const {proxy} = coincident(new Worker('./worker.js', {type: 'module'}));
-</script>
-```
-
-```js
-// The worker.js !!!
-import coincident from 'coincident/window';
-
-const {proxy, window, isWindowProxy} = coincident(self);
-// the proxy can expose or answer to main proxy counter part
-
-// ... but here is the fun part ...
-const {document} = window;
-document.body.innerHTML = '<h1>Hello World!</h1>';
-
-document.body.appendChild(
-  document.createElement('div')
-).textContent = '😱';
-
-const scoped = true;
-document.body.addEventListener('click', event => {
-  console.log(event.type, 'running in a worker', scoped);
-});
-```
-
-See the [test/window.js](./test/window.js) file, try it [live](https://webreflection.github.io/coincident/test/window.html) or reach `http://localhost:8080/test/window.html` locally to play around this feature.
-
-#### Extra features
-
-Beside providing some handy utility, the `window` (and other exports such as `uhtml`) allows *Workers*' listeners to synchronously invoke methods on the **event** on the main thread, before the proxied worker function gets a chance to get executed (remember, functions form the *worker* are inevitably async when executed from *main*).
-
-```js
-document.body.addEventListener(
-  'click',
-  event => console.log(event.type),
-  {invoke: ['preventDefault', 'stopImmediatePropagation']}
-);
-```
-
-When options are passed, be sure these contains [all the details you need](https://developer.mozilla.org/en-US/docs/Web/API/EventTarget/addEventListener#parameters) *plus* an `invoke` *string* or array of strings.
-
-
-### coincident/uhtml
-
-This export includes [uhtml](https://github.com/WebReflection/uhtml#readme) to fully drive reactive UI from a Worker.
-
-The `uhtml` field is added to the returned object after `coincident(self)` call.
-
-```html
-<!-- main page -->
-<script type="module">
-  import coincident from 'coincident/window';
-  const {proxy, uhtml} = coincident(new Worker('./worker.js', {type: 'module'}));
-  // uhtml directly on main thread
-  const {render, html} = uhtml;
-</script>
-```
-
-```js
-// The worker.js !!!
-import coincident from 'coincident/window';
-
-const {proxy, window, uhtml} = coincident(self);
-
-// uhtml directly from the thread
-const {render, html} = uhtml;
-
-const {document} = window;
-
-render(document.body, html`
-  <h1>Hello uhtml!</h1>
-`);
-```
-
-See [test/uhtml.js](./test/uhtml.js) page, try it [live](https://webreflection.github.io/coincident/test/uhtml.html), or test it locally via `http://localhost:8080/test/uhtml.html` after `npm run server`.
-
-
-### coincident/server
-
-<sup><sub>⚠️ **WARNING - THIS EXPORT SHOULD NOT BE PUBLICLY AVAILABLE**</sub></sup>
-
-This export, automatically based on `structured` export to allow passing more complex data around, allows a *Worker* to drive not just the *main* thread (UI/DOM/global page namespace) but also a *server* such as *NodeJS* or *Bun* (both successfully tested) and likely more, as long as a *WebSocketServer* like reference is passed along while creating the connection.
-
-
-**HTML example** - see [test/server/index.html](./test/server/index.html)
-```html
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <style>body{font-family:Arial, Helvetica, sans-serif}</style>
-    <script type="module">
-      // import the `/server` export
-      import coincident from 'coincident/server';
-      // define the worker super-chard with main/server power
-      const w = new Worker('./worker.js', {type: 'module'});
-      // pass along the socket to use for such interaction
-      const ws = new WebSocket('ws://localhost:8080/');
-      // retrieve usual `/window` utilities/helpers and move on
-      const {proxy, window, isWindowProxy} = coincident(w, ws);
-    </script>
-</head>
-</html>
-```
-
-**Worker example** - see [test/server/worker.js](./test/server/worker.js)
-```js
-import coincident from 'coincident/server';
+import coincident from 'coincident/main';
 
 const {
-  proxy,            // the main thread (UI/DOM) proxy
-  window,           // the window reference
-  isWindowProxy,    // the window introspection helper
-  server,           // the server reference
-  isServerProxy,    // the server introspection helper
-} = coincident(self);
-
-// deal directly with the server modules out of the box
-const os = server.require('os');
-
-// deal directly with the main UI/DOM thread out of the box
-window.document.body.innerHTML = `
-  <h1>coincident/server</h1>
-  <h2>Platform Info</h2>
-  <ul>
-    <li>Platform: ${os.platform()}</li>
-    <li>Arch: ${os.arch()}</li>
-    <li>CPUS: ${os.cpus().length}</li>
-    <li>RAM: ${os.totalmem()}</li>
-    <li>Free: ${os.freemem()}</li>
-  </ul>
-`;
-
-```
-
-**NodeJS / Bun example** - see [test/server/main.cjs](./test/server/main.cjs)
-```js
-const {createServer} = require('http');
-const {join} = require('path');
-const {WebSocketServer} = require('ws');
-
-// static file server utility + headers for SharedArrayBuffer
-const staticHandler = require('static-handler');
-const handler = staticHandler(join(__dirname, '..', '..'), {
-  'Access-Control-Allow-Origin': '*',
-  'Cross-Origin-Opener-Policy': 'same-origin',
-  'Cross-Origin-Embedder-Policy': 'require-corp',
-  'Cross-Origin-Resource-Policy': 'cross-origin'
-});
-
-const server = createServer(handler);
-
-// require the coincident export
-const coincident = require('coincident/server');
-
-// pass along the wss to instrument with listeners
-// and a list of globals utilities to make available
-// whenever the Worker tries to reach these
-coincident(new WebSocketServer({server}), {require});
-
-// bootstrap the server and that's it!
-server.listen(8080, () => {
-  console.log(`http://localhost:8080/test/server/`);
+  // the Worker to be used (this extends the global one)
+  Worker,
+  // a boolean indicating if sabayon is being used
+  polyfill,
+  // a utility to transfer values directly via `postMessage`
+  // (...args: Transferable[]) => Transferable[]
+  transfer,
+} = coincident({
+  // a utility to parse text, default: JSON.parse
+  parse: JSON.parse,
+  // a utility to stringify values, default: JSON.stringify
+  stringify: JSON.stringify,
+  // an optional utility to transform values (FFI / Proxy related)
+  transform: value => value,
 });
 ```
 
-The main goal of this export is **IoT** related projects, *KIOSK* like project, *Electron* like project, *Tauri* integration, and so on ... there's the possibility to fully orchestrate from a worker listeners on the page that result into *Server* operations and so on and so forth, so please be aware while this is an **achievement unlocked** from my side, it's also potentially dangerous if used in any open space where evil attackers can try to operate Server side operations on "*your*" behalf, as if it was the *Worker* itself asking for such operations.
+#### coincident/main - Worker class
 
-That being said, in Apps where no foreign code is allowed, this export unlocks an infinite amount of potentials for any sort of project.
+The `Worker` class returned by `coincident()` has these features:
 
-Alternatively, please consider strict *CSP* rules to be sure no code evaluation can arrive from a console, from foreign injected files, from users' input, and so on.
-
-Thanks for trying this feature out as no other projects (to date) can do in a cross platform, cross browser, cross environment way what this module currently offer.
-
-### Local Only
-
-If worried about possible foreign scripts doing weird things it is possible to use these headers instead so that only local files would be able to execute any content.
+  * it always starts a *Worker* as `{ type: "module" }` <sup><sub>( mostly because the worker needs to `await coincident()` on bootstrap )</sub></sup>
+  * it optionally accepts a `{ serviceWorker: "../sw.js" }` to help *sabayon* falling back to synchronous behavior, which is mandatory to use any *DOM* or `window` related functionality
+  * it provides to each instance a `proxy` reference where utilities, as *callbacks*, can be assigned or asynchronously awaited if exposed within *worker*'s code
 
 ```js
-{
-  'Cross-Origin-Opener-Policy': 'same-origin',
-  'Cross-Origin-Embedder-Policy': 'require-corp',
-  'Cross-Origin-Resource-Policy': 'same-origin'
-}
+const { proxy } = new Worker('./worker.js');
+
+// can be invoked from the worker
+proxy.location = () => location.href;
+
+// exposed via worker code
+await proxy.compute();
 ```
 
-### coincident/bun
+### coincident/worker
 
-Same as *coincident/server* except it's 100% based on *Bun* primitives (*websocket*):
+This is the *import* that provides the ability to expose *worker* thread's callbacks to the *main* thread and to also directly invoke callbacks exposed via the *main* proxied reference.
 
 ```js
-import { serve, file } from 'bun';
-import coincidentWS from 'coincident/bun';
+import coincident from 'coincident/worker';
 
-const port = 8080;
-const headers =  {
-  'Cross-Origin-Opener-Policy': 'same-origin',
-  'Cross-Origin-Embedder-Policy': 'require-corp',
-  'Cross-Origin-Resource-Policy': 'same-origin'
+const {
+  // the counter-part of the main worker.proxy reference
+  proxy,
+  // a boolean indicating if sabayon is being used
+  polyfill,
+  // a boolean indicating if it's possible to do synchronous operations
+  sync,
+  // a utility to transfer values directly via `postMessage`
+  // (...args: Transferable[]) => Transferable[]
+  transfer,
+} = await coincident({
+  // a utility to parse text, default: JSON.parse
+  parse: JSON.parse,
+  // a utility to stringify values, default: JSON.stringify
+  stringify: JSON.stringify,
+  // an optional utility to transform values (FFI / Proxy related)
+  transform: value => value,
+  // an optional interrupt reference that is used via `Atomic.wait(sb)`
+  interrupt: { handler() {}, timeout: 42 },
+});
+
+// exposed to the main thread
+proxy.compute = async () => {
+  // super expensive task ...
+  return 'result';
 };
 
-serve({
-  port,
-  fetch(req, server) {
-    // upgrade sockets if possible
-    if (server.upgrade(req)) return;
-    // do anything else you'd do with Bun
-    let path = '.' + new URL(req.url).pathname;
-    if (path.endsWith('/')) path += 'index.html';
-    return new Response(file(path), {headers});
-  },
-  // create automatically the websocket utility
-  websocket: coincidentWS({import: name => import(name)}),
-});
-
-console.log(`http://localhost:${port}/test/server/`);
+// consumed from the main thread
+// synchronous if COI is enabled or
+// the Service Worker was passed
+console.log(proxy.location());
 ```
 
-### A quick way to test SharedArrayBuffer
+### coincident/window/main
 
-If you would like to just test locally *SharedArrayBuffer* you can also use [mini-coi](https://github.com/WebReflection/mini-coi#readme), now enriched with a *CLI* that bootstraps locally in a snap:
+When the *worker* code expects the *main* `window` reference, this import is needed to allow just that.
 
-```sh
-npx mini-coi .
+```js
+import coincident from 'coincident/window/main';
+//                                 ^^^^^^
 
-# or even ...
-bunx mini-coi .
+const { Worker, polyfill, transfer } = coincident();
 ```
 
-If you would like to bring *SharedArrayBuffer* to your GitHub pages or any other hosting space where you can't configure headers, you can use the *Service Worker* approach currently tested to work already here and elsewhere.
+The signature, on the *main* thread, is identical.
 
-To copy the **script** that must be used on the page locally as Service Worker, you can also use *mini-coi*:
+### coincident/window/worker
 
-```sh
-# put mini-coi.js into ./public/mini-coi.js
-npx mini-coi -sw ./public/
+On the *worker* side, this import is also identical to the non-window variant but it's returned namespace, after bootstrap, contains two extra utilities:
+
+```js
+import coincident from 'coincident/window/worker';
+//                                 ^^^^^^
+
+const {
+  proxy, polyfill, sync, transfer,
+  // it's a synchronous, Atomic.wait based, Proxy
+  // to the actual globalThis reference on the main
+  window,
+  // it's an introspection helper that returns `true`
+  // only when a reference points at the main thread
+  // (value: any) => boolean
+  isWindowProxy,
+} = await coincident();
+
+// direct synchronous access to the main `window`
+console.log(window.location.href);
+
+window.document.body.textContent = 'Hello World 👋';
 ```
+
+#### A note about performance
+
+Every single property retrieved via the `window` reference is a whole *worker* ↔ *main* roundtrip and this is inevitable. There is no "*smart caching*" ability backed in the project, because everytrhing could be suddenly different at any point in time due side effects that both the worker, or the main thread, could have around previously retrieved references.
+
+Especially when *SharedArrayBuffer* is polyfilled, and the `serviceWorker` provided as option, an average *PC* would perform up to ~1000 roundtrips per second. That seems like a lot but operations can easily pile up and make the program feel unnecessary slower than it could be (if run on the *main* thread directly, as comparison).
+
+When native *SharedArrayBuffer* is enabled though, an average *PC* would be able to do ~50000 (50x) roundtrips per second .... and yet that could also easily degrade with more complex logic involved.
+
+An easy way to prevent repeated roundtrips, when we already assume a reference will not change by any mean over time, we can take over that "*smart caching*" explicit operation:
+
+```js
+const { window } = await coincident();
+
+const { document } = window;
+const { head, body } = document;
+
+// any time we need to change the content
+body.textContent = 'Hello World 👋';
+```
+
+Please note that because those references won't likely ever change on the *main* thread, there are also no *memory leaks* hazard, and that's true with every other reference that might live forefer on the *main* thread.
+
+- - -
+
+### About 💀🔒 Deadlock Message
+
+This module allows different worlds to expose utilities that can be invoked elsewhere and there are two ways this can work:
+
+  * `Atomics.wait` is usable, from a *worker*, and it will be preferred over `Atomics.waitAsync` for the simple reason that it unlocks much more than trivial *async* exchanges between the two worlds. In this case, if the worker is invoking a foreign exposed utility, it will be fully unresponsive until that utility returned a value and there's no possible workaround. When this happens, the module understands that the requested utility comes from a *worker* that is paused until such invoke returns, and if this invoke relies on a *synchronous* *worker* utility there won't be any chance to complete that request: the *worker* is stuck and the *main* can't use it until is not stuck anymore. In this case, an error is thrown with details around which *worker* utility was invoked while the *main* utility was executing, and the program won't just block itself forever. This is the most meaningful and reasonable deadlock case to `throw` errors unconditionally ... but ...
+  * if this module runs without `Atomics.wait` ability, meaning no *COI* headers are enabled and no `serviceWorker` fallback has been used, it is possible for a *main* exported utility to query a *worker* exported utility one once executed, assuming there is no recursion in doing so (i.e. the *worker* calls `main()` that internally calls `worker()` which in turns calls `main()` again). These cases are rather infinite loops/recursions than deadlocks but if you are sure your *main* utility is invoking something in the *worker* that won't cause such infinite recursion, no *deadlock* error would be shown, as that would not be the case, strictly speaking, but also recursions won't be tracked so ... be careful with your logic!
+
+As rule of thumb, do not ever invoke other world utilities while one of your exported utility is executing, so that code will be guaranteed to work in both `Atomics.wait` and `Atomics.waitAsync` scenarios without ever worrying about future deadlock, once all headers are available or the `serviceWorker` helper will be used.
+
+It is, however, always possible to execute foreign utilities on the next tick, micro-task, timeout, idle state or listener, so that if a *main* exposed utility needs to invoke a *worker* utility right after, there are ways to do that.
+
+### About SharedArrayBuffer
+
+Unfortunately not enabled by default on the Web, the *SharedArrayBuffer* primitive requires either special *headers* permissions to be trusted or a *polyfill* that can always enable the *async* abilities of the *Atomics* specifications and eventually grant the *sync* abilities too, as long as a *ServiceWorker* able to handle those requests is installed.
+
+This primitive is needed to enable notifications about data cross realms, notifications that are expected to be *sync*, in the best case scenario, or *async* as least possible fallback.
+
+#### Enable both sync & async SharedArrayBuffer features
+
+This is the preferred way to use this module or any module depending on it, meaning all headers to enable *SAB* are in place. To do so:
+
+  * be sure your server is providing those headers as explained in *MDN*
+  * bootstrap a local server that provides such headers for local tests: `npx mini-coi ./` is all you need to enable these headers locally, but the utility doesn't do much more than serving files with those headers enabled
+  * use `<script src="./mini-coi.js"></script>` on top of your `<head>` node in your *HTML* templates to use automatically a *ServiceWorker* that force-enable those headers for any request made frm any client. This woks on *GitHub* pages too, and every other static files handler for local projects
+  * use the *ServiceWorker* logic enabled out of the box by passing the file `npx sabayon ./public/sw.js` to *Worker* constructors, so that such *SW* can be used to polyfill the *sync* case
+  * provide your own *ServiceWorker* file whenever a *Worker* is created, out of the `{ serviceWorker: '../sw.js' }` extra option, as long as it imports utilities from [sabayon](https://github.com/WebReflection/sabayon#readme), as explained in its [ServiceWorker related details](https://github.com/WebReflection/sabayon?tab=readme-ov-file#service-worker)
+
+The latter 2 points will inevitably fallback to a *polyfilled* version of the native possible performance but it should be *god enough* to enable your logic around *workers* invoking, or reaching, synchronous *main* thread related tasks.
+
+#### Enable only async SharedArrayBuffer features
+
+This module by default does fallback to a *SAB* polyfill, meaning *async* notification of any buffer are still granted to be executed or succeed, thanks to [sabayon](https://github.com/WebReflection/sabayon#readme) underlying module.
+
+This scenario is **ideal** when:
+
+  * no special headers are allowed in your project
+  * no *Serviceworker* is allowed in your project
+  * you only need to *await* *asynchronous* utilities from a *Worker*, never the other way around
+  * you never need to reach, or execute, code on the *main* thread, from a *worker*
+
+As long as these enabled use cases are clear, here the caveats:
+
+  * your *worker* can't ever reach directly anything coming from the *main* thread
+  * your *worker* doesn't ever receive a *main* thread reference as an argument
+
+If all of this is clear, it's possible to use *coincident* module as bridge between *worker* exported features / utilities consumed asynchronously by the *main* thread any time it needs to.
+
+This still unlocks tons of use cases out there, but it's definitively a constrained and limited experience.

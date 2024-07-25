@@ -3,7 +3,6 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1">
-    <script src="../../mini-coi.js"></script>
     <script type="module">
 
     const { assign, getPrototypeOf, setPrototypeOf } = Object;
@@ -32,11 +31,12 @@
     // Main logic
     import createElement from 'https://esm.sh/virtual-dom/create-element';
     import patch from 'https://esm.sh/virtual-dom/patch';
-    import coincident from '../../es.js';
+    import coincident from '../../dist/window/main.js';
 
     let id = 0;
     const element = new Map;
-    assign(coincident(new Worker('./worker.js', {type: 'module'})), {
+    const { Worker } = coincident();
+    assign(new Worker('./worker.js', { serviceWorker: '../sw.js' }).proxy, {
         createElement(tree) {
             promote(tree);
             element.set(id, createElement(tree));

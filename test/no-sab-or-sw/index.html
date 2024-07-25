@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script type="module">
+    import coincident from '../../dist/window/main.js';
+
+    const { Worker } = coincident();
+
+    const { proxy } = new Worker('./worker.js');
+
+    proxy.href = () => location.href;
+
+    console.log('main invoking worker', await proxy.sum(1, 2, 3, 4));
+  </script>
+</head>
+</html>
