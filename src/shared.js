@@ -53,7 +53,7 @@ const actionWait = (waitLength, results, map, rest) => {
 
 const warn = (name, seppuku) => setTimeout(
   console.warn,
-  1000,
+  3e3,
   `💀🔒 - proxy.${name}() in proxy.${seppuku}()`
 );
 
@@ -73,7 +73,11 @@ const invoke = (
   name,
 ) => (...args) => {
   let deadlock = seppuku !== '', timer = 0;
-  if (deadlock) timer = warn(name, seppuku);
+  // slow operations between main and worker should likely not
+  // be tracked as the dance there would never deadlock, it just
+  // eventually slow down and that's it
+  if (deadlock && seppuku[0] !== '=' && seppuku[0] !== '-')
+    timer = warn(name, seppuku);
   const id = uid++;
   const transfer = [];
   if (buffers.has(args.at(-1) || transfer))
