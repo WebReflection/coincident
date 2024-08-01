@@ -19,7 +19,7 @@
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
     "mini-coi": "^0.3.3",
-    "rollup": "^4.19.0",
+    "rollup": "^4.19.2",
     "static-handler": "^0.4.3"
   },
   "type": "module",
@@ -31,8 +31,8 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
-    "gc-hook": "^0.3.1",
+    "gc-hook": "^0.4.1",
     "js-proxy": "^0.4.3",
-    "sabayon": "^0.5.0"
+    "sabayon": "^0.5.2"
   }
 }
