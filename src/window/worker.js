@@ -159,12 +159,16 @@ export default /** @type {Coincident} */ async options => {
 
   // for the time being this is used only to invoke callbacks
   // attached as listeners or as references' fields.
-  exports.proxy[WORKER] = (TRAP, ref, ...args) => {
+  exports.proxy[WORKER] = async (TRAP, ref, ...args) => {
     const id = parseInt(ref);
     switch (TRAP) {
       case APPLY: {
         const [self, params] = args;
-        return toEntry(apply(get(id), fromEntry(self), params.map(fromEntry)));
+        return toEntry(await apply(
+          get(id),
+          fromEntry(self),
+          params.map(fromEntry)
+        ));
       }
       case DESTRUCT:
         drop(id);
