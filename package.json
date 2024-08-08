@@ -34,5 +34,13 @@
     "gc-hook": "^0.4.1",
     "js-proxy": "^0.4.3",
     "sabayon": "^0.5.2"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/WebReflection/coincident.git"
+  },
+  "bugs": {
+    "url": "https://github.com/WebReflection/coincident/issues"
+  },
+  "homepage": "https://github.com/WebReflection/coincident#readme"
 }
