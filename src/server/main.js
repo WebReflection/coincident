@@ -10,27 +10,47 @@ import {
   withResolvers,
 } from 'sabayon/shared';
 
+import coincident from '../window/main.js';
+
+class EventWrap {
+  constructor(event, data) {
+    this._ = event;
+    this.$ = data;
+  }
+  get data() {
+    return this.$;
+  }
+  preventDefault() {
+    this._.preventDefault();
+  }
+  stopImmediatePropagation() {
+    this._.stopImmediatePropagation();
+  }
+}
+
 const { WebSocket } = globalThis;
 const { parse: p, stringify: s } = JSON;
-const { create } = Object;
 
 export default options => {
+  options = { parse: p, stringify: s, ...options };
+  const { parse, stringify, ws: websocket } = options;
   const exports = coincident(options);
-  const { parse = p, stringify = s } = options;
   class Worker extends exports.Worker {
     #ws = null;
-    constructor(url, options) {
+    constructor(url, ...rest) {
       let id = 0;
       const CHANNEL = crypto.randomUUID();
       const messages = new Map;
-      const { proxy } = super(url, options);
+      const { proxy } = super(url, ...rest);
       const { [WORKER_WS]: __worker__ } = proxy;
       const { promise: wsReady, resolve } = withResolvers();
-      const ws = (this.#ws = new WebSocket(options.ws));
+      const ws = (this.#ws = new WebSocket(websocket));
+      if (DEBUG) console.info(`WebSocket created`);
       proxy[MAIN_WS] = async (...args) => {
         await wsReady;
         const { promise, resolve } = withResolvers();
         messages.set(id, resolve);
+        if (DEBUG) console.log('MAIN_WS processing', [CHANNEL, id, ...args]);
         ws.send(stringify([CHANNEL, id++, ...args]));
         return promise;
       };
@@ -40,26 +60,28 @@ export default options => {
         super.terminate();
       });
       ws.addEventListener('open', () => {
+        if (DEBUG) console.log('WebSocket opened');
         ws.send(stringify([CHANNEL, ACTION_INIT]));
       });
       ws.addEventListener('message', async event => {
+        if (DEBUG) console.log('WebSocket message', event.data);
         if (!event.data) resolve();
         try {
-          const value = parse(event.data);
-          if (isChannel(create(event, { data: { value } }), CHANNEL)) {
-            let [_, id, result] = value;
+          const data = parse(event.data);
+          if (isChannel(new EventWrap(event, data), CHANNEL)) {
+            let [_, id, result] = data;
             // this is for server asking worker to do something
             // directly, without answering any specific callback
             if (id == null) {
-              const [TRAP, ref, ...args] = data;
+              const [TRAP, ref, ...args] = result;
               const apply = TRAP === APPLY;
-              if (apply) id = args.shift();
-              let result;
+              if (apply) id = args.pop();
               try {
                 result = await __worker__(TRAP, ref, ...args);
               }
               catch (_) {
-                if (DEBUG) console.log(`Failed to invoke`, [TRAP, ref, ...args]);
+                result = _;
+                if (DEBUG) console.error(_, [TRAP, ref, ...args]);
               }
               if (apply) ws.send(stringify([CHANNEL, null, TRAP, id, result]));
             }

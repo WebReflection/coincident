@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <style>body{font-family:Arial, Helvetica, sans-serif}</style>
+    <script type="module">
+      import coincident from '../../dist/server/main.js';
+      const { Worker } = coincident({
+        ws: 'ws://localhost:8080/'
+      });
+      new Worker('./worker.js');
+    </script>
+</head>
+</html>

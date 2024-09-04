@@ -91,6 +91,12 @@ proxy.compute = async () => {
 console.log(proxy.location());
 ```
 
+- - -
+
+## Window
+
+These exports and their `coincident/dist/...` pre-optimized counter-parts allow *coincident* to drive, from a *Worker* the *main* thread and operate directly on it.
+
 ### coincident/window/main
 
 When the *worker* code expects the *main* `window` reference, this import is needed to allow just that.
@@ -128,6 +134,87 @@ console.log(window.location.href);
 
 window.document.body.textContent = 'Hello World 👋';
 ```
+
+- - -
+
+## Server
+
+These exports and their `coincident/dist/...` pre-optimized counter-parts allow *coincident* to drive, from a *Worker* both the *main* thread and operate directly on the running *server* too.
+
+---
+
+#### ⚠️ WARNING
+
+This feature exists mostly to enable *Kiosk* or *IoT* related projects and it should not be publicly available as any malicious *worker* code could fully take over the server or harm the service.
+
+---
+
+### coincident/server
+
+This is what *node* or *deno* or others should import to instrument connected *WebSockets*.
+
+```js
+import coincident from 'coincident/server';
+
+import { WebSocketServer } from 'ws';
+
+// create any server
+const server = '...';
+
+coincident({
+  wss: new WebSocketServer({ server })
+});
+```
+
+The `coincident` utility here simply instruments every connected *WebSocket* to react on `message` and `close` events.
+
+This is currently tested on *NodeJS* only but it's going to be soon compatible with *bun* servers too.
+
+### coincident/server/main
+
+When the *worker* code expects both the *main* `window` and the `server` references, this import is needed to allow just that.
+
+```js
+import coincident from 'coincident/server/main';
+//                                 ^^^^^^
+
+const { Worker, polyfill, transfer } = coincident({
+  ws: 'ws://localhotst:8080/'
+  //   ^^^^^^^^^^^^^^^^^^^^^
+});
+```
+
+The signature, on the *main* thread, is identical *except* the WebSocket *url* must be provided during initialization.
+
+### coincident/server/worker
+
+On the *worker* side, this import is also identical to the window variant but it's returned namespace, after bootstrap, contains two extra utilities:
+
+```js
+import coincident from 'coincident/server/worker';
+//                                 ^^^^^^
+
+const {
+  proxy, polyfill, sync, transfer,
+  window, isWindowProxy,
+  // it's a synchronous, Atomic.wait based, Proxy
+  // to the actual globalThis reference on the server
+  server,
+  // it's an introspection helper that returns `true`
+  // only when a reference points at the server
+  // (value: any) => boolean
+  isServerProxy,
+} = await coincident();
+
+// direct synchronous access to the main `server`
+server.console.log('Hello World 👋');
+
+// example of module import
+const os = await server.import('os');
+console.log(os.platform());
+```
+
+- - -
 
 #### A note about performance
 

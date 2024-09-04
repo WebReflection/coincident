@@ -1,5 +1,7 @@
 import { APPLY } from 'js-proxy/traps';
 
+import DEBUG from '../debug.js';
+
 import {
   isChannel,
   withResolvers,
@@ -17,14 +19,12 @@ const event = {
 
 export default (ws, options) => {
   const { parse = p, stringify = s } = options;
-  const resolvers = new Map;
-  let init = true, id = 0, CHANNEL = '', __main__;
+  let CHANNEL = '', init = true, id = 0, resolvers = new Map, __main__;
   return {
     onclose: () => {
       for (const [_, resolve] of resolvers) resolve();
       resolvers.clear();
-      CHANNEL = '';
-      __main__ = null;
+      CHANNEL = init = id = resolvers = __main__ = null;
     },
     onmessage: async (buffer) => {
       try {
@@ -34,16 +34,20 @@ export default (ws, options) => {
           if (init) {
             init = false;
             [CHANNEL] = data;
-            __main__ = mainProxy((TRAP, ref, ...args) => {
-              let promise, resolve;
-              if (TRAP === APPLY) {
-                ({ promise, resolve } = withResolvers());
-                resolvers.set(id, resolve);
-                args.unshift(id++);
+            __main__ = mainProxy(
+              // options.import = name => valid(name) && name
+              options?.import || String,
+              (TRAP, ref, ...args) => {
+                let promise, resolve;
+                if (TRAP === APPLY) {
+                  ({ promise, resolve } = withResolvers());
+                  resolvers.set(id, resolve);
+                  args.push(id++);
+                }
+                ws.send(stringify([CHANNEL, null, [TRAP, ref, ...args]]));
+                return promise;
               }
-              ws.send(stringify([CHANNEL, null, [TRAP, ref, ...args]]));
-              return promise;
-            });
+            );
             ws.send('');
           }
           else {
@@ -55,9 +59,13 @@ export default (ws, options) => {
             else {
               let result;
               try {
+                if (DEBUG) console.log('awaiting', TRAP, ref, ...args);
                 result = await __main__(TRAP, ref, ...args);
+                if (DEBUG) console.log('returned', result);
               }
-              catch (_) {}
+              catch (_) {
+                result = _;
+              }
               ws.send(stringify([CHANNEL, id, result]));
             }
           }

@@ -1,6 +1,7 @@
 import {
   APPLY,
   DEFINE_PROPERTY,
+  GET,
   GET_OWN_PROPERTY_DESCRIPTOR,
   OWN_KEYS,
   DESTRUCT,
@@ -17,6 +18,8 @@ import {
   UNDEFINED,
 } from 'js-proxy/types';
 
+import DEBUG from '../debug.js';
+
 import { drop, get, hold } from 'js-proxy/heap';
 import { TypedArray } from 'sabayon/shared';
 
@@ -30,6 +33,7 @@ import handleEvent from '../window/events.js';
 const { isArray } = Array;
 
 export const toEntry = value => {
+  if (DEBUG) console.log('toEntry', value);
   const TYPE = typeof value;
   switch (TYPE) {
     case OBJECT: {
@@ -44,7 +48,7 @@ export const toEntry = value => {
   }
 };
 
-export default __worker__ => {
+export default (resolve, __worker__) => {
   const proxies = new Map;
   const onGC = ref => {
     proxies.delete(ref);
@@ -91,6 +95,7 @@ export default __worker__ => {
   };
 
   const asEntry = (method, target, args) => toEntry(method(target, ...args.map(fromEntry)));
+  const asImport = name => import(resolve(name));
 
   return (TRAP, ref, ...args) => {
     if (TRAP === DESTRUCT) drop(ref);
@@ -113,6 +118,10 @@ export default __worker__ => {
           return [numeric[descriptor ? OBJECT : UNDEFINED], descriptor];
         }
         case OWN_KEYS: return [numeric[ARRAY], method(target).map(toEntry)];
+        case GET: {
+          if (ref == null && args[0][1] === 'import')
+            return toEntry(asImport);
+        }
         default: return asEntry(method, target, args);
       }
     }
