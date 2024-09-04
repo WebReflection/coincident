@@ -19,20 +19,23 @@
     "@rollup/plugin-node-resolve": "^15.2.3",
     "@rollup/plugin-terser": "^0.4.4",
     "mini-coi": "^0.3.3",
-    "rollup": "^4.19.2",
+    "rollup": "^4.21.2",
     "static-handler": "^0.4.3"
   },
   "type": "module",
   "exports": {
     "./main": "./src/main.js",
+    "./server": "./src/server.js",
     "./worker": "./src/worker.js",
+    "./server/main": "./src/server/main.js",
+    "./server/worker": "./src/server/worker.js",
     "./window/main": "./src/window/main.js",
     "./window/worker": "./src/window/worker.js",
     "./package.json": "./package.json"
   },
   "dependencies": {
     "gc-hook": "^0.4.1",
-    "js-proxy": "^0.4.3",
+    "js-proxy": "^0.4.4",
     "sabayon": "^0.5.2"
   },
   "repository": {
