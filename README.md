@@ -165,7 +165,7 @@ serve({
   websocket: coincident({ bun: true })
 });
 
-// NodeJS or any other with `ws` module as example
+// NodeJS ⬡ or any other with `ws` module as example
 import { WebSocketServer } from 'ws';
 const server = ...;
 coincident({
