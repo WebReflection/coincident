@@ -6,6 +6,7 @@
     "build": "node build/index.cjs && node build/constants.cjs && rollup --config build/dist.js && sabayon ./test/sw.js && npm run size",
     "coi": "npx mini-coi .",
     "server": "static-handler .",
+    "server:bun": "bun test/server/bun.js",
     "server:node": "node test/server/node.js",
     "size": "echo -e \"\\x1b[1mfile          size\\x1b[0m\";echo \"server/main   $(cat dist/server/main.js | brotli | wc -c)\";echo \"server/worker $(cat dist/server/worker.js | brotli | wc -c)\";echo \"window/main   $(cat dist/window/main.js | brotli | wc -c)\";echo \"window/worker $(cat dist/window/worker.js | brotli | wc -c)\";echo \"main          $(cat dist/main.js | brotli | wc -c)\";echo \"worker        $(cat dist/worker.js | brotli | wc -c)\""
   },
