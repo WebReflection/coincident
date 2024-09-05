@@ -2,6 +2,7 @@ import { join } from 'path';
 import { createServer } from 'http';
 import { WebSocketServer } from 'ws';
 import staticHandler from 'static-handler';
+
 import coincident from '../../src/server.js';
 
 const handler = staticHandler(

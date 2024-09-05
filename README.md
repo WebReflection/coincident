@@ -151,24 +151,30 @@ This feature exists mostly to enable *Kiosk* or *IoT* related projects and it sh
 
 ### coincident/server
 
-This is what *node* or *deno* or others should import to instrument connected *WebSockets*.
+This is what *node* or *bun* or others should import to instrument connected *WebSockets*.
 
 ```js
 import coincident from 'coincident/server';
 
+// Bun example
+serve({
+  port,
+  fetch,
+  // here coincident options should have
+  // a "truthy" bun 🐰
+  websocket: coincident({ bun: true })
+});
+
+// NodeJS or any other with `ws` module as example
 import { WebSocketServer } from 'ws';
-
-// create any server
-const server = '...';
-
+const server = ...;
 coincident({
+  // the `wss` property must be there
   wss: new WebSocketServer({ server })
 });
 ```
 
 The `coincident` utility here simply instruments every connected *WebSocket* to react on `message` and `close` events.
-
-This is currently tested on *NodeJS* only but it's going to be soon compatible with *bun* servers too.
 
 ### coincident/server/main
 
