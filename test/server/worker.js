@@ -13,21 +13,41 @@ const os = await server.import('os');
 console.timeEnd('server.import("os")');
 
 console.time('Server');
-const html = `
-  <h1>coincident/server</h1>
-  <h2>Platform Info</h2>
-  <ul>
-    <li>Platform: ${os.platform()}</li>
-    <li>Arch: ${os.arch()}</li>
-    <li>CPUS: ${os.cpus().length}</li>
-    <li>RAM: ${os.totalmem()}</li>
-    <li>Free: ${os.freemem()}</li>
-  </ul>
-`;
+const [
+  platform,
+  arch,
+  cpus,
+  totalmem,
+  freemem,
+] = [
+  os.platform(),
+  os.arch(),
+  os.cpus().length,
+  os.totalmem(),
+  os.freemem(),
+];
 console.timeEnd('Server');
 
+
+console.time('window.import("uhtml")');
+const { render, html } = await window.import('https://esm.run/uhtml');
+console.timeEnd('window.import("uhtml")');
+
 console.time('Main');
-window.document.body.innerHTML = html;
+render(
+  window.document.body,
+  html`
+    <h1>coincident/server</h1>
+    <h2>Platform Info</h2>
+    <ul>
+      <li>Platform: ${platform}</li>
+      <li>Arch: ${arch}</li>
+      <li>CPUS: ${cpus}</li>
+      <li>RAM: ${totalmem}</li>
+      <li>Free: ${freemem}</li>
+    </ul>
+  `
+);
 console.timeEnd('Main');
 
 const { process } = server;
