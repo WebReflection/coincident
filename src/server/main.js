@@ -45,7 +45,10 @@ export default options => {
       const { [WORKER_WS]: __worker__ } = proxy;
       const { promise: wsReady, resolve } = withResolvers();
       const ws = (this.#ws = new WebSocket(websocket));
-      if (DEBUG) console.info(`WebSocket created`);
+      if (DEBUG) {
+        console.info(`WebSocket created`);
+        ws.addEventListener('error', console.error);
+      }
       proxy[MAIN_WS] = async (...args) => {
         await wsReady;
         const { promise, resolve } = withResolvers();
@@ -54,7 +57,6 @@ export default options => {
         ws.send(stringify([CHANNEL, id++, ...args]));
         return promise;
       };
-      if (DEBUG) ws.addEventListener('error', console.error);
       ws.addEventListener('close', () => {
         if (DEBUG) console.info(`Worker ${url} terminated`);
         super.terminate();
