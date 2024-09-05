@@ -34,24 +34,23 @@ const { render, html } = await window.import('https://esm.run/uhtml');
 console.timeEnd('window.import("uhtml")');
 
 console.time('Main');
-render(
-  window.document.body,
-  html`
-    <h1>coincident/server</h1>
-    <h2>Platform Info</h2>
-    <ul>
-      <li>Platform: ${platform}</li>
-      <li>Arch: ${arch}</li>
-      <li>CPUS: ${cpus}</li>
-      <li>RAM: ${totalmem}</li>
-      <li>Free: ${freemem}</li>
-    </ul>
-  `
-);
+render(window.document.body, html`
+  <h1>coincident/server</h1>
+  <h2>Platform Info</h2>
+  <ul>
+    <li>Platform: ${platform}</li>
+    <li>Arch: ${arch}</li>
+    <li>CPUS: ${cpus}</li>
+    <li>RAM: ${totalmem}</li>
+    <li>Free: ${freemem}</li>
+  </ul>
+`);
 console.timeEnd('Main');
 
 const { process } = server;
-process.on('client', value => {
-  console.log('client', value);
-});
-process.emit('client', Math.random());
+process
+  .once('client', value => {
+    console.log('client', value);
+  })
+  .emit('client', Math.random())
+;
