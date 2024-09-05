@@ -1,6 +1,8 @@
 import coincident from '../../dist/window/worker.js';
 const { proxy, window, isWindowProxy } = await coincident();
 
+console.assert((await window.import('./module.js')).default === 'OK', 'window.import');
+
 console.log(window[Symbol.for('coincident')]);
 
 proxy.greetings();
