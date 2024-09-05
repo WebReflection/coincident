@@ -9,6 +9,7 @@ import {
 
 import mainProxy from './main.js';
 
+const $ = String;
 const { parse: p, stringify: s } = JSON;
 
 const initValues = () => ['', true, 0, null];
@@ -31,7 +32,7 @@ export default (ws, options) => {
     },
     onmessage: async (buffer) => {
       try {
-        const data = parse(String(buffer));
+        const data = parse($(buffer));
         event.data = data;
         if (isChannel(event, CHANNEL)) {
           if (init) {
@@ -39,7 +40,7 @@ export default (ws, options) => {
             [CHANNEL] = data;
             __main__ = mainProxy(
               // options.import = name => valid(name) && name
-              options?.import || String,
+              options?.import || $,
               (TRAP, ref, ...args) => {
                 let promise, resolve;
                 if (TRAP === APPLY) {
