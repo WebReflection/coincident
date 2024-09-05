@@ -11,6 +11,8 @@ import mainProxy from './main.js';
 
 const { parse: p, stringify: s } = JSON;
 
+const initValues = () => ['', true, 0, null];
+
 const event = {
   data: null,
   stopImmediatePropagation() {},
@@ -19,12 +21,13 @@ const event = {
 
 export default (ws, options) => {
   const { parse = p, stringify = s } = options;
-  let CHANNEL = '', init = true, id = 0, resolvers = new Map, __main__;
+  const resolvers = new Map;
+  let [CHANNEL, init, id, __main__] = initValues();
   return {
     onclose: () => {
       for (const [_, resolve] of resolvers) resolve();
       resolvers.clear();
-      CHANNEL = init = id = resolvers = __main__ = null;
+      [CHANNEL, init, id, __main__] = initValues();
     },
     onmessage: async (buffer) => {
       try {

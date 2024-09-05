@@ -26,6 +26,7 @@ import { fromSymbol, toSymbol } from '../window/symbol.js';
 
 import DEBUG from '../debug.js';
 
+const { isArray } = Array;
 const { [APPLY]: apply } = Reflect;
 
 export default (__main__, transform) => {
@@ -63,7 +64,8 @@ export default (__main__, transform) => {
         if (ref == globalThis || ref == null) ref = null;
         else if ((typeof ref === OBJECT) && !(ref instanceof TypedArray)) {
           ref = transform(ref);
-          for (const key in ref) ref[key] = toEntry(ref[key]);
+          if (isArray(ref)) ref = ref.map(toEntry);
+          else for (const key in ref) ref[key] = toEntry(ref[key]);
         }
         return [numeric[OBJECT], ref];
       }
@@ -110,9 +112,9 @@ export default (__main__, transform) => {
   };
 
   const definition = {
-    object: handler,
-    array: handler,
-    function: {
+    [OBJECT]: handler,
+    [ARRAY]: handler,
+    [FUNCTION]: {
       ...handler,
       [APPLY]: (ref, ...args) => asEntry(APPLY, ref, ...args.map(toEntry)),
       [CONSTRUCT]: (ref, ...args) => asEntry(CONSTRUCT, ref, ...args.map(toEntry)),
