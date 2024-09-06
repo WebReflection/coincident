@@ -33,7 +33,7 @@ import handleEvent from '../window/events.js';
 const { isArray } = Array;
 
 export const toEntry = value => {
-  if (DEBUG) console.log('toEntry', value);
+  if (DEBUG) console.log('toEntry', typeof value);
   const TYPE = typeof value;
   switch (TYPE) {
     case OBJECT: {
@@ -51,6 +51,7 @@ export const toEntry = value => {
 export default (resolve, __worker__) => {
   const proxies = new Map;
   const onGC = ref => {
+    if (DEBUG) console.info('main collecting', ref);
     proxies.delete(ref);
     __worker__(DESTRUCT, ref);
   }
@@ -98,7 +99,10 @@ export default (resolve, __worker__) => {
   const asImport = name => import(resolve(name));
 
   return (TRAP, ref, ...args) => {
-    if (TRAP === DESTRUCT) drop(ref);
+    if (TRAP === DESTRUCT) {
+      if (DEBUG) console.info('main dropping', ref);
+      drop(ref);
+    }
     else {
       const method = Reflect[TRAP];
       const target = ref == null ? globalThis : get(ref);

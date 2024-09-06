@@ -106,6 +106,7 @@ export default (__main__, transform) => {
     [SET_PROTOTYPE_OF]: (ref, proto) => asEntry(SET_PROTOTYPE_OF, ref, toEntry(proto)),
 
     [DESTRUCT](ref) {
+      if (DEBUG) console.info('worker collecting', ref);
       proxies.delete(ref);
       __main__(DESTRUCT, ref);
     },
@@ -153,8 +154,10 @@ export default (__main__, transform) => {
             params.map(fromEntry)
           ));
         }
-        case DESTRUCT:
+        case DESTRUCT: {
+          if (DEBUG) console.info('worker dropping', id);
           drop(id);
+        }
       }
     }
   };
