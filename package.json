@@ -22,7 +22,7 @@
     "@rollup/plugin-terser": "^0.4.4",
     "mini-coi": "^0.3.3",
     "rollup": "^4.21.2",
-    "static-handler": "^0.4.3",
+    "static-handler": "^0.5.0",
     "ws": "^8.18.0"
   },
   "type": "module",
