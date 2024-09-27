@@ -33,8 +33,8 @@ import handleEvent from '../window/events.js';
 const { isArray } = Array;
 
 export const toEntry = value => {
-  if (DEBUG) console.log('toEntry', typeof value);
   const TYPE = typeof value;
+  if (DEBUG) console.log('toEntry', TYPE, TYPE === 'function' ? value.name : '');
   switch (TYPE) {
     case OBJECT: {
       if (value === null) return [numeric[NULL], value];
@@ -97,11 +97,12 @@ export default (resolve, __worker__) => {
 
   const asEntry = (method, target, args) => toEntry(method(target, ...args.map(fromEntry)));
   const asImport = name => import(resolve(name));
+  const globals = new Set;
 
   return (TRAP, ref, ...args) => {
     if (TRAP === DESTRUCT) {
-      if (DEBUG) console.info('main dropping', ref);
-      drop(ref);
+      if (DEBUG) console.info(`Main ${globals.has(ref) ? 'ignoring' : 'dropping'}`, ref);
+      if (!globals.has(ref)) drop(ref);
     }
     else {
       const method = Reflect[TRAP];
@@ -123,8 +124,18 @@ export default (resolve, __worker__) => {
         }
         case OWN_KEYS: return [numeric[ARRAY], method(target).map(toEntry)];
         case GET: {
-          if (ref == null && args[0][1] === 'import')
-            return toEntry(asImport);
+          // global references should not be proxied more than once
+          // and should not ever be dropped from the main cache
+          // @see https://github.com/pyscript/pyscript/issues/2185
+          if (ref == null) {
+            const result = args[0][1] === 'import' ?
+              toEntry(asImport) :
+              asEntry(method, target, args)
+            ;
+            globals.add(result[1]);
+            if (DEBUG) console.info('Global', args[0][1], result[1]);
+            return result;
+          }
         }
         default: return asEntry(method, target, args);
       }
