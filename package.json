@@ -18,11 +18,11 @@
   "author": "Andrea Giammarchi",
   "license": "MIT",
   "devDependencies": {
-    "@rollup/plugin-node-resolve": "^15.2.3",
+    "@rollup/plugin-node-resolve": "^15.3.0",
     "@rollup/plugin-terser": "^0.4.4",
-    "mini-coi": "^0.4.0",
-    "rollup": "^4.21.2",
-    "static-handler": "^0.5.1",
+    "mini-coi": "^0.4.2",
+    "rollup": "^4.22.4",
+    "static-handler": "^0.5.3",
     "ws": "^8.18.0"
   },
   "type": "module",
