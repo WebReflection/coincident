@@ -20,7 +20,7 @@ import {
 
 import DEBUG from '../debug.js';
 
-import { drop, get, hold } from 'js-proxy/heap';
+import { create as heap } from 'js-proxy/heap';
 import { TypedArray } from 'sabayon/shared';
 
 import numeric from '../window/types.js';
@@ -32,29 +32,31 @@ import handleEvent from '../window/events.js';
 
 const { isArray } = Array;
 
-export const toEntry = value => {
-  const TYPE = typeof value;
-  if (DEBUG) console.log('toEntry', TYPE, TYPE === 'function' ? value.name : '');
-  switch (TYPE) {
-    case OBJECT: {
-      if (value === null) return [numeric[NULL], value];
-      if (value === globalThis) return [numeric[OBJECT], null];
-      if (isArray(value)) return [numeric[ARRAY], hold(value)];
-      return [numeric[OBJECT], value instanceof TypedArray ? value : hold(value)];
-    }
-    case FUNCTION: return [numeric[FUNCTION], hold(value)];
-    case SYMBOL: return [numeric[SYMBOL], toSymbol(value)];
-    default: return [numeric[TYPE], value];
-  }
-};
-
 export default (resolve, __worker__) => {
+  const { drop, get, hold } = heap();
   const proxies = new Map;
+
   const onGC = ref => {
     if (DEBUG) console.info('main collecting', ref);
     proxies.delete(ref);
     __worker__(DESTRUCT, ref);
   }
+
+  const toEntry = value => {
+    const TYPE = typeof value;
+    if (DEBUG) console.log('toEntry', TYPE, TYPE === 'function' ? value.name : '');
+    switch (TYPE) {
+      case OBJECT: {
+        if (value === null) return [numeric[NULL], value];
+        if (value === globalThis) return [numeric[OBJECT], null];
+        if (isArray(value)) return [numeric[ARRAY], hold(value)];
+        return [numeric[OBJECT], value instanceof TypedArray ? value : hold(value)];
+      }
+      case FUNCTION: return [numeric[FUNCTION], hold(value)];
+      case SYMBOL: return [numeric[SYMBOL], toSymbol(value)];
+      default: return [numeric[TYPE], value];
+    }
+  };
 
   const fromEntry = ([numericTYPE, value]) => {
     switch (numericTYPE) {
@@ -97,12 +99,11 @@ export default (resolve, __worker__) => {
 
   const asEntry = (method, target, args) => toEntry(method(target, ...args.map(fromEntry)));
   const asImport = name => import(resolve(name));
-  const globals = new Set;
 
   return (TRAP, ref, ...args) => {
     if (TRAP === DESTRUCT) {
-      if (DEBUG) console.info(`Main ${globals.has(ref) ? 'ignoring' : 'dropping'}`, ref);
-      if (!globals.has(ref)) drop(ref);
+      if (DEBUG) console.info('main dropping', ref);
+      drop(ref);
     }
     else {
       const method = Reflect[TRAP];
@@ -124,18 +125,8 @@ export default (resolve, __worker__) => {
         }
         case OWN_KEYS: return [numeric[ARRAY], method(target).map(toEntry)];
         case GET: {
-          // global references should not be proxied more than once
-          // and should not ever be dropped from the main cache
-          // @see https://github.com/pyscript/pyscript/issues/2185
-          if (ref == null) {
-            const result = args[0][1] === 'import' ?
-              toEntry(asImport) :
-              asEntry(method, target, args)
-            ;
-            globals.add(result[1]);
-            if (DEBUG) console.info('Global', args[0][1], result[1]);
-            return result;
-          }
+          if (ref == null && args[0][1] === 'import')
+            return toEntry(asImport);
         }
         default: return asEntry(method, target, args);
       }
