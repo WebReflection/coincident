@@ -44,7 +44,7 @@
   },
   "dependencies": {
     "gc-hook": "^0.4.1",
-    "js-proxy": "^0.5.0",
+    "js-proxy": "^0.5.1",
     "sabayon": "^0.5.2"
   },
   "repository": {

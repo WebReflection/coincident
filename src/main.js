@@ -44,10 +44,9 @@ export default /** @type {Coincident} */ ({
 } = JSON) => {
   const waitLength = actionLength(stringify, transform);
 
-  const CHANNEL = crypto.randomUUID();
-
   class Worker extends $Worker {
     constructor(url, options) {
+      const CHANNEL = crypto.randomUUID();
       const map = new Map;
       const results = new Map;
       super(url, options);

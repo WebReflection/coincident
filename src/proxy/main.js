@@ -19,6 +19,7 @@ import {
 } from 'js-proxy/types';
 
 import DEBUG from '../debug.js';
+import { DESTROY } from './traps.js';
 
 import { create as heap } from 'js-proxy/heap';
 import { TypedArray } from 'sabayon/shared';
@@ -33,7 +34,7 @@ import handleEvent from '../window/events.js';
 const { isArray } = Array;
 
 export default (resolve, __worker__) => {
-  const { drop, get, hold } = heap();
+  const { clear, drop, get, hold } = heap();
   const proxies = new Map;
 
   const onGC = ref => {
@@ -101,8 +102,12 @@ export default (resolve, __worker__) => {
   const asImport = name => import(resolve(name));
 
   return (TRAP, ref, ...args) => {
-    if (TRAP === DESTRUCT) {
-      if (DEBUG) console.info('main dropping', ref);
+    if (TRAP === DESTROY) {
+      if (DEBUG) console.warn('HEAP erased');
+      clear();
+    }
+    else if (TRAP === DESTRUCT) {
+      if (DEBUG) console.info('main dropping', get(ref));
       drop(ref);
     }
     else {

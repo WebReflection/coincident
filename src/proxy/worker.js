@@ -155,7 +155,7 @@ export default (__main__, transform) => {
           ));
         }
         case DESTRUCT: {
-          if (DEBUG) console.info('worker dropping', id);
+          if (DEBUG) console.info('worker dropping', get(id));
           drop(id);
         }
       }

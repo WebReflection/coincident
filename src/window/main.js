@@ -1,4 +1,5 @@
 import { DESTRUCT } from 'js-proxy/traps';
+import { DESTROY } from '../proxy/traps.js';
 
 import { MAIN, WORKER } from './constants.js';
 import DEBUG from '../debug.js';
@@ -31,6 +32,10 @@ export default /** @type {import('../main.js').Coincident} */ options => {
           return result;
         };
       }
+    }
+    terminate() {
+      this.proxy[MAIN](DESTROY);
+      super.terminate();
     }
   }
 

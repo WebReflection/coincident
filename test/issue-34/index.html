@@ -13,6 +13,11 @@
     globalThis.object = {a: 1};
 
     new Worker('./worker.js', { serviceWorker: '../sw.js' });
+
+    setTimeout(() => {
+      globalThis.array = null;
+      globalThis.object = null;
+    }, 2000);
   </script>
 </head>
 </html>
