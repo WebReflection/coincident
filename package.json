@@ -1,6 +1,6 @@
 {
   "name": "coincident",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "description": "An Atomics based Proxy to simplify, and synchronize, Worker related tasks",
   "scripts": {
     "build": "node build/index.cjs && node build/constants.cjs && rollup --config build/dist.js && sabayon ./test/sw.js && npm run size",
