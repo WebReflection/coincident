@@ -222,7 +222,9 @@ console.log(os.platform());
 
 - - -
 
-#### A note about performance
+<details id="performance">
+  <summary><strong>A note about performance</strong></summary>
+  <div markdown=1>
 
 Every single property retrieved via the `window` reference is a whole *worker* ↔ *main* roundtrip and this is inevitable. There is no "*smart caching*" ability backed in the project, because everytrhing could be suddenly different at any point in time due side effects that both the worker, or the main thread, could have around previously retrieved references.
 
@@ -243,6 +245,10 @@ body.textContent = 'Hello World 👋';
 ```
 
 Please note that because those references won't likely ever change on the *main* thread, there are also no *memory leaks* hazard, and that's true with every other reference that might live forefer on the *main* thread.
+
+
+  </div>
+</details>
 
 - - -
 
@@ -273,7 +279,7 @@ This is the preferred way to use this module or any module depending on it, mean
   * use the *ServiceWorker* logic enabled out of the box by passing the file `npx sabayon ./public/sw.js` to *Worker* constructors, so that such *SW* can be used to polyfill the *sync* case
   * provide your own *ServiceWorker* file whenever a *Worker* is created, out of the `{ serviceWorker: '../sw.js' }` extra option, as long as it imports utilities from [sabayon](https://github.com/WebReflection/sabayon#readme), as explained in its [ServiceWorker related details](https://github.com/WebReflection/sabayon?tab=readme-ov-file#service-worker)
 
-The latter 2 points will inevitably fallback to a *polyfilled* version of the native possible performance but it should be *god enough* to enable your logic around *workers* invoking, or reaching, synchronous *main* thread related tasks.
+The latter 2 points will inevitably fallback to a *polyfilled* version of the native possible performance but it should be *good enough* to enable your logic around *workers* invoking, or reaching, synchronous *main* thread related tasks.
 
 #### Enable only async SharedArrayBuffer features
 
