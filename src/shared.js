@@ -79,7 +79,7 @@ const invoke = (
   if (deadlock && seppuku[0] !== '=' && seppuku[0] !== '-')
     timer = warn(name, seppuku);
   const id = uid++;
-  const transfer = [];
+  let transfer = [];
   if (buffers.has(args.at(-1) || transfer))
     buffers.delete(transfer = args.pop());
   const data = ignore(transform ? args.map(transform) : args);

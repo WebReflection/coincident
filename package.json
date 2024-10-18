@@ -21,7 +21,7 @@
     "@rollup/plugin-node-resolve": "^15.3.0",
     "@rollup/plugin-terser": "^0.4.4",
     "mini-coi": "^0.4.2",
-    "rollup": "^4.22.5",
+    "rollup": "^4.24.0",
     "static-handler": "^0.5.3",
     "ws": "^8.18.0"
   },
