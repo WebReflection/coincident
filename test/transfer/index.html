@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <script type="module">
+      import coincident from '../../dist/window/main.js';
+      const { Worker } = coincident();
+      const worker = new Worker('./transfer.js');
+      worker.proxy.transfer = (...args) => !console.log(args);
+    </script>
+  </head>
+</html>
