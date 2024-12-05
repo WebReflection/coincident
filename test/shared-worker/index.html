@@ -9,16 +9,23 @@
       const { SharedWorker, Worker } = coincident();
       new Worker('./worker.js');
 
-      setTimeout(() => {
+      setTimeout(async () => {
         const { proxy } = new SharedWorker('./shared-worker.js');
+
         proxy.greetings = async () => {
           console.log('Greetings from main!');
           const value = await proxy.valueBack();
-          console.log(value);
+          console.log('inner', value);
           return value;
         };
 
+        const value = await proxy.valueBack();
+        console.log('outer', value);
+
         new Worker('./worker.js');
+
+
+        console.log(await proxy.other());
       }, 250);
     </script>
   </head>

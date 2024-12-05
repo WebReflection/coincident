@@ -23,13 +23,29 @@ import {
   withResolvers,
 } from './shared.js';
 
-export default ({
-  parse,
-  stringify,
+/**
+ * @typedef {Object} SharedWorkerOptions
+ * @prop {(text: string, ...args:any) => any} [parse=JSON.parse]
+ * @prop {(value: any, ...args:any) => string} [stringify=JSON.stringify]
+ * @prop {(value: any) => any} [transform]
+ * @prop {Record<string,function>} [proxy]
+ */
+
+/**
+ * @callback Coincident
+ * @param {SharedWorkerOptions} [options]
+ * @returns {WeakMap<MessagePort, Promise<import("./ts.js").Proxy>>}
+ */
+
+export default /** @type {Coincident} */ ({
+  parse = JSON.parse,
+  stringify = JSON.stringify,
   transform,
+  proxy,
 } = JSON) => {
   const waitLength = actionLength(stringify, transform);
   const proxies = new WeakMap;
+  const { assign } = Object;
   addEventListener('connect', ({ ports }) => {
     for (const port of ports) {
       let CHANNEL = '';
@@ -44,19 +60,22 @@ export default ({
             case ACTION_INIT: {
               CHANNEL = _;
               resolve(
-                createProxy(
-                  [
-                    CHANNEL,
-                    bytes => new Int32Array(new SharedArrayBuffer(bytes)),
-                    ignore,
-                    false,
-                    parse,
-                    polyfill,
-                    (...args) => port.postMessage(...args),
-                    transform,
-                    Atomics.waitAsync,
-                  ],
-                  map,
+                assign(
+                  createProxy(
+                    [
+                      CHANNEL,
+                      bytes => new Int32Array(new SharedArrayBuffer(bytes)),
+                      ignore,
+                      false,
+                      parse,
+                      polyfill,
+                      (...args) => port.postMessage(...args),
+                      transform,
+                      Atomics.waitAsync,
+                    ],
+                    map,
+                  ),
+                  proxy,
                 )
               );
               break;

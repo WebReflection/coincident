@@ -1,5 +1,5 @@
 import coincident from '../../dist/window/worker.js';
-const { window, isWindowProxy } = await coincident();
+const { window } = await coincident();
 
 const { document } = window;
 

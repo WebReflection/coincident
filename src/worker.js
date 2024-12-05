@@ -43,8 +43,8 @@ const { wait, waitAsync } = Atomics;
  */
 
 export default /** @type {Coincident} */ ({
-  parse,
-  stringify,
+  parse = JSON.parse,
+  stringify = JSON.stringify,
   transform,
   interrupt,
 } = JSON) => {

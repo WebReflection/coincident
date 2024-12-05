@@ -35,12 +35,12 @@ import {
 /**
  * @callback Coincident
  * @param {MainOptions} [options]
- * @returns {{Worker: import('./ts.js').CoincidentWorker, polyfill: boolean, transfer: (...args: Transferable[]) => Transferable[]}}
+ * @returns {{SharedWorker: import('./ts.js').CoincidentSharedWorker, Worker: import('./ts.js').CoincidentWorker, polyfill: boolean, transfer: (...args: Transferable[]) => Transferable[]}}
  */
 
 export default /** @type {Coincident} */ ({
-  parse,
-  stringify,
+  parse = JSON.parse,
+  stringify = JSON.stringify,
   transform,
 } = JSON) => {
   const waitLength = actionLength(stringify, transform);
