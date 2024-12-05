@@ -21,7 +21,7 @@
     "@rollup/plugin-node-resolve": "^15.3.0",
     "@rollup/plugin-terser": "^0.4.4",
     "mini-coi": "^0.4.2",
-    "rollup": "^4.24.0",
+    "rollup": "^4.28.0",
     "static-handler": "^0.5.3",
     "ws": "^8.18.0"
   },
@@ -45,7 +45,8 @@
   "dependencies": {
     "gc-hook": "^0.4.1",
     "js-proxy": "^0.5.1",
-    "sabayon": "^0.5.2"
+    "sabayon": "^0.6.1",
+    "sabayon-shared-worker": "^0.6.1"
   },
   "repository": {
     "type": "git",

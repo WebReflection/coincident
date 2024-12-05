@@ -4,10 +4,11 @@ import {
   Atomics,
   Int32Array,
   SharedArrayBuffer,
+  SharedWorker as $SharedWorker,
   Worker as $Worker,
   ignore,
   polyfill,
-} from 'sabayon/main';
+} from 'sabayon-shared-worker/main';
 
 import {
   ACTION_INIT,
@@ -44,46 +45,59 @@ export default /** @type {Coincident} */ ({
 } = JSON) => {
   const waitLength = actionLength(stringify, transform);
 
-  class Worker extends $Worker {
-    constructor(url, options) {
-      const CHANNEL = crypto.randomUUID();
-      const map = new Map;
-      const results = new Map;
-      super(url, options);
-      this.proxy = createProxy(
-        [
-          CHANNEL,
-          bytes => new Int32Array(new SharedArrayBuffer(bytes)),
-          ignore,
-          false,
-          parse,
-          polyfill,
-          (...args) => this.postMessage(...args),
-          transform,
-          Atomics.waitAsync,
-        ],
-        map,
-      );
-      this.postMessage(ignore([CHANNEL, ACTION_INIT, options]));
-      this.addEventListener('message', event => {
-        if (isChannel(event, CHANNEL)) {
-          const [_, ACTION, ...rest] = event.data;
-          switch (ACTION) {
-            case ACTION_WAIT: {
-              actionWait(waitLength, results, map, rest);
-              break;
-            }
-            case ACTION_NOTIFY: {
-              actionFill(results, rest);
-              break;
-            }
+  const bootstrap = (port, options) => {
+    const CHANNEL = crypto.randomUUID();
+    const map = new Map;
+    const results = new Map;
+    port.addEventListener('message', event => {
+      if (isChannel(event, CHANNEL)) {
+        const [_, ACTION, ...rest] = event.data;
+        switch (ACTION) {
+          case ACTION_WAIT: {
+            actionWait(waitLength, results, map, rest);
+            break;
+          }
+          case ACTION_NOTIFY: {
+            actionFill(results, rest);
+            break;
           }
         }
-      });
+      }
+    });
+    port.postMessage(ignore([CHANNEL, ACTION_INIT, options]));
+    return createProxy(
+      [
+        CHANNEL,
+        bytes => new Int32Array(new SharedArrayBuffer(bytes)),
+        ignore,
+        false,
+        parse,
+        polyfill,
+        (...args) => port.postMessage(...args),
+        transform,
+        Atomics.waitAsync,
+      ],
+      map,
+    );
+  }
+
+  class SharedWorker extends $SharedWorker {
+    constructor(url, options) {
+      const { port } = super(url, options);
+      port.start();
+      this.proxy = bootstrap(port, options);
+    }
+  }
+
+  class Worker extends $Worker {
+    constructor(url, options) {
+      super(url, options);
+      this.proxy = bootstrap(this, options);
     }
   }
 
   return {
+    SharedWorker,
     Worker,
     polyfill,
     transfer,

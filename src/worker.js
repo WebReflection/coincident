@@ -8,7 +8,7 @@ import {
   postMessage,
   ignore,
   polyfill,
-} from 'sabayon/worker';
+} from 'sabayon-shared-worker/worker';
 
 import {
   ACTION_INIT,

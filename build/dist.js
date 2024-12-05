@@ -14,6 +14,14 @@ export default [
   },
   {
     plugins,
+    input: './src/shared-worker.js',
+    output: {
+      esModule: true,
+      file: './dist/shared-worker.js',
+    }
+  },
+  {
+    plugins,
     input: './src/worker.js',
     output: {
       esModule: true,
