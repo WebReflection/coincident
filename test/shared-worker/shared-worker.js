@@ -6,6 +6,6 @@ addEventListener('connect', async ({ ports }) => {
   for (const port of ports) {
     const proxy = await proxies.get(port);
     proxy.valueBack = () => Math.random();
-    await proxy.greetings();
+    console.log(await proxy.greetings());
   }
 });

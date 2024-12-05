@@ -1,5 +1,5 @@
 {
-  "name": "coincident",
+  "name": "coincident-shared-worker",
   "version": "2.2.3",
   "description": "An Atomics based Proxy to simplify, and synchronize, Worker related tasks",
   "scripts": {
@@ -33,12 +33,14 @@
     "./window/worker": "./src/window/worker.js",
     "./main": "./src/main.js",
     "./server": "./src/server.js",
+    "./shared-worker": "./src/shared-worker.js",
     "./worker": "./src/worker.js",
     "./dist/server/main": "./dist/server/main.js",
     "./dist/server/worker": "./dist/server/worker.js",
     "./dist/window/main": "./dist/window/main.js",
     "./dist/window/worker": "./dist/window/worker.js",
     "./dist/main": "./dist/main.js",
+    "./dist/shared-worker": "./dist/shared-worker.js",
     "./dist/worker": "./dist/worker.js",
     "./package.json": "./package.json"
   },
@@ -46,7 +48,7 @@
     "gc-hook": "^0.4.1",
     "js-proxy": "^0.5.1",
     "sabayon": "^0.6.1",
-    "sabayon-shared-worker": "^0.6.1"
+    "sabayon-shared-worker": "^0.6.2"
   },
   "repository": {
     "type": "git",

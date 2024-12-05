@@ -11,7 +11,9 @@
       const { proxy } = globalThis.worker;
       proxy.greetings = async () => {
         console.log('Greetings from main!');
-        console.log(await proxy.valueBack());
+        const value = await proxy.valueBack();
+        console.log(value);
+        return value;
       };
     </script>
   </head>
