@@ -1,6 +1,6 @@
 {
   "name": "coincident-shared-worker",
-  "version": "2.2.3",
+  "version": "2.2.4",
   "description": "An Atomics based Proxy to simplify, and synchronize, Worker related tasks",
   "scripts": {
     "build": "node build/index.cjs && node build/constants.cjs && rollup --config build/dist.js && sabayon ./test/sw.js && npm run size",
@@ -48,7 +48,7 @@
     "gc-hook": "^0.4.1",
     "js-proxy": "^0.5.1",
     "sabayon": "^0.6.1",
-    "sabayon-shared-worker": "^0.6.2"
+    "sabayon-shared-worker": "^0.6.4"
   },
   "repository": {
     "type": "git",

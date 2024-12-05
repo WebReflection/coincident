@@ -6,15 +6,20 @@
     <script type="module">
       import coincident from '../../dist/window/main.js';
 
-      const { SharedWorker } = coincident();
-      globalThis.worker = new SharedWorker('./shared-worker.js');
-      const { proxy } = globalThis.worker;
-      proxy.greetings = async () => {
-        console.log('Greetings from main!');
-        const value = await proxy.valueBack();
-        console.log(value);
-        return value;
-      };
+      const { SharedWorker, Worker } = coincident();
+      new Worker('./worker.js');
+
+      setTimeout(() => {
+        const { proxy } = new SharedWorker('./shared-worker.js');
+        proxy.greetings = async () => {
+          console.log('Greetings from main!');
+          const value = await proxy.valueBack();
+          console.log(value);
+          return value;
+        };
+
+        new Worker('./worker.js');
+      }, 250);
     </script>
   </head>
 </html>
