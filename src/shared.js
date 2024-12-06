@@ -7,7 +7,7 @@ import {
   Atomics,
   isChannel,
   withResolvers,
-} from 'sabayon/shared';
+} from 'sabayon-shared-worker/shared';
 
 const { BYTES_PER_ELEMENT: I32_BYTES } = Int32Array;
 const { BYTES_PER_ELEMENT: UI16_BYTES } = Uint16Array;

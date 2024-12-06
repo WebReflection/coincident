@@ -5,7 +5,7 @@ import DEBUG from '../debug.js';
 import {
   isChannel,
   withResolvers,
-} from 'sabayon/shared';
+} from 'sabayon-shared-worker/shared';
 
 import mainProxy from './main.js';
 

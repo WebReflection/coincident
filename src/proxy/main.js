@@ -22,7 +22,7 @@ import DEBUG from '../debug.js';
 import { DESTROY } from './traps.js';
 
 import { create as heap } from 'js-proxy/heap';
-import { TypedArray } from 'sabayon/shared';
+import { TypedArray } from 'sabayon-shared-worker/shared';
 
 import numeric from '../window/types.js';
 import { fromSymbol, toSymbol } from '../window/symbol.js';

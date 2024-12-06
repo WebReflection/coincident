@@ -8,7 +8,7 @@ import {
   postMessage,
   ignore,
   polyfill,
-} from 'sabayon/worker';
+} from 'sabayon-shared-worker/worker';
 
 import {
   ACTION_INIT,
@@ -43,8 +43,8 @@ const { wait, waitAsync } = Atomics;
  */
 
 export default /** @type {Coincident} */ ({
-  parse,
-  stringify,
+  parse = JSON.parse,
+  stringify = JSON.stringify,
   transform,
   interrupt,
 } = JSON) => {

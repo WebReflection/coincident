@@ -8,7 +8,7 @@ import {
   ACTION_INIT,
   isChannel,
   withResolvers,
-} from 'sabayon/shared';
+} from 'sabayon-shared-worker/shared';
 
 import coincident from '../window/main.js';
 

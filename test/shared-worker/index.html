@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <script type="module">
+      import coincident from '../../dist/window/main.js';
+
+      const { SharedWorker, Worker } = coincident();
+      new Worker('./worker.js');
+
+      setTimeout(async () => {
+        const { proxy } = new SharedWorker('./shared-worker.js');
+
+        proxy.greetings = async () => {
+          console.log('Greetings from main!');
+          const value = await proxy.valueBack();
+          console.log('inner', value);
+          return value;
+        };
+
+        const value = await proxy.valueBack();
+        console.log('outer', value);
+
+        new Worker('./worker.js');
+
+
+        console.log(await proxy.other());
+      }, 250);
+    </script>
+  </head>
+</html>
