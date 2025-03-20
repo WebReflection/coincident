@@ -18,12 +18,12 @@
   "author": "Andrea Giammarchi",
   "license": "MIT",
   "devDependencies": {
-    "@rollup/plugin-node-resolve": "^15.3.0",
+    "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-terser": "^0.4.4",
     "mini-coi": "^0.4.2",
-    "rollup": "^4.24.0",
+    "rollup": "^4.36.0",
     "static-handler": "^0.5.3",
-    "ws": "^8.18.0"
+    "ws": "^8.18.1"
   },
   "type": "module",
   "exports": {
@@ -44,8 +44,8 @@
   },
   "dependencies": {
     "gc-hook": "^0.4.1",
-    "js-proxy": "^0.5.1",
-    "sabayon": "^0.5.2"
+    "js-proxy": "^0.5.2",
+    "sabayon": "^0.7.1"
   },
   "repository": {
     "type": "git",
