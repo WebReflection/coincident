@@ -1,10 +1,10 @@
 import coincident from '../../dist/main.js';
 
-const { Worker, polyfill } = coincident();
+const { Worker, native } = coincident();
 
-console.info('main', { polyfill });
+console.info('main', { native });
 
-const w = new Worker('./worker.js', { serviceWorker: '../sw.js' });
+const w = new Worker('./worker.js', { type: 'module' });
 
 w.proxy.alert = (...args) => {
   console.info('main', 'alert', args);
