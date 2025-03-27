@@ -11,4 +11,4 @@ w.proxy.alert = (...args) => {
   return args.join('-');
 };
 
-console.log('async', await w.proxy.log(4, 5, 6));
+console.log('worker: async', await w.proxy.log(4, 5, 6));

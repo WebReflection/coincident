@@ -13,18 +13,9 @@ const { wait, waitAsync } = Atomics;
 // wait for the channel before resolving
 const bootstrap = withResolvers();
 
-// @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
-let WORKAROUND = false, ID = '', port;
-
 addEventListener(
   'message',
-  event => {
-    // @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
-    ID = event.data;
-    WORKAROUND = native && !!ID;
-    [port] = event.ports;
-    bootstrap.resolve();
-  },
+  ({ data, ports }) => bootstrap.resolve([data, ports[0]]),
   { once: true }
 );
 
@@ -32,6 +23,7 @@ const callbacks = new Map;
 
 export default async options => {
   const $ = (result, name) => {
+    // TODO: investigate why this happens
     if (result !== 'ok') console.warn(`Atomics.notify ${name} ${result}`);
     return i32a[1] ? decode(ui8a) : void 0;
   };
@@ -45,6 +37,10 @@ export default async options => {
     assign({}, options, defaults)
   );
 
+  const [ID, channel] = await bootstrap.promise;
+  // @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
+  const WORKAROUND = native && !!ID;
+
   const transform = options?.transform;
   const proxied = create(null);
   const proxy = new Proxy(proxied, {
@@ -52,11 +48,10 @@ export default async options => {
       let cb = callbacks.get(name);
       if (!cb) {
         callbacks.set(name, cb = (...args) => {
-          i32a[0] = 0;
           const data = [i32a, name, transform ? args.map(transform) : args];
-          // @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
-          if (WORKAROUND) postMessage({ id: ID, data });
-          else port.postMessage(data);
+          i32a[0] = 0;
+          if (WORKAROUND) postMessage({ ID, data });
+          else channel.postMessage(data);
           if (native)
             return $(wait(i32a, 0), name);
           else {
@@ -79,16 +74,14 @@ export default async options => {
     )
   );
 
-  await bootstrap.promise;
-
-  port.onmessage = async ({ data: [uid, name, args] }) => {
+  channel.onmessage = async ({ data: [uid, name, args] }) => {
     const response = [uid, null, null];
     try {
       const result = await proxied[name](...args);
       response[1] = transform ? transform(result) : result;
     }
     catch (error) { response[2] = error }
-    port.postMessage(response);
+    channel.postMessage(response);
   };
 
   return { native, proxy };
