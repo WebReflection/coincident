@@ -1,4 +1,4 @@
-export { create, withResolvers } from 'sabayon/lite/utils';
+export { create, stop, withResolvers } from 'sabayon/lite/utils';
 
 const { assign } = Object;
 

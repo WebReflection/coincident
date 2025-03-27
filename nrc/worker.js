@@ -12,10 +12,16 @@ const { wait, waitAsync } = Atomics;
 
 // wait for the channel before resolving
 const bootstrap = withResolvers();
-let port;
+
+// @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
+let WORKAROUND = false, ID = '', port;
+
 addEventListener(
   'message',
   event => {
+    // @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
+    ID = event.data;
+    WORKAROUND = native && !!ID;
     [port] = event.ports;
     bootstrap.resolve();
   },
@@ -30,8 +36,7 @@ export default async options => {
     return i32a[1] ? decode(ui8a) : void 0;
   };
 
-  const bufferAndViews = buffer => [
-    buffer,
+  const views = buffer => [
     new Uint8Array(buffer, defaults.byteOffset),
     new Int32Array(buffer),
   ];
@@ -48,12 +53,15 @@ export default async options => {
       if (!cb) {
         callbacks.set(name, cb = (...args) => {
           i32a[0] = 0;
-          port.postMessage([buffer, name, transform ? args.map(transform) : args]);
+          const data = [i32a, name, transform ? args.map(transform) : args];
+          // @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
+          if (WORKAROUND) postMessage({ id: ID, data });
+          else port.postMessage(data);
           if (native)
             return $(wait(i32a, 0), name);
           else {
             return waitAsync(i32a, 0).value.then(result => {
-              [buffer, ui8a, i32a] = bufferAndViews(i32a.buffer);
+              [ui8a, i32a] = views(i32a.buffer);
               return $(result, name);
             });
           }
@@ -64,7 +72,7 @@ export default async options => {
     set
   });
 
-  let [buffer, ui8a, i32a] = bufferAndViews(
+  let [ui8a, i32a] = views(
     new SharedArrayBuffer(
       options?.minByteLength || 0xFFFF,
       { maxByteLength: options?.maxByteLength || 0x1000000 }
