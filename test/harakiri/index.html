@@ -8,7 +8,7 @@
       import coincident from '../../dist/main.js';
 
       const { Worker } = coincident();
-      const { proxy } = new Worker('./worker.js', { type: 'module', serviceWorker: '../sw.js' });
+      const { proxy } = new Worker('./worker.js', { serviceWorker: '../sw.js' });
 
       proxy.main = async () => {
         console.log(1);

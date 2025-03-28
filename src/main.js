@@ -1,3 +1,5 @@
+import { Encoder } from 'buffered-clone/encoder';
+
 import {
   Atomics,
   MessageChannel,
@@ -5,9 +7,16 @@ import {
   native
 } from 'sabayon/lite/main';
 
-import { Encoder } from 'buffered-clone/encoder';
-
-import { assign, create, defaults, set, stop, withResolvers } from './utils.js';
+import {
+  assign,
+  create,
+  defaults,
+  set,
+  stop,
+  transfer,
+  transferable,
+  withResolvers,
+} from './utils.js';
 
 const { notify } = Atomics;
 
@@ -21,26 +30,46 @@ export default options => {
     assign({}, options, defaults)
   );
 
+  const deadlock = (wr, resolving, name) => {
+    const t = setTimeout(
+      console.warn,
+      3e3,
+      `💀🔒 - is proxy.${resolving}() awaiting proxy.${name}() ?`
+    );
+    return wr.promise.then(
+      result => {
+        clearTimeout(t);
+        return result;
+      },
+      error => {
+        clearTimeout(t);
+        return Promise.reject(error);
+      },
+    );
+  };
+
   const transform = options?.transform;
 
   class Worker extends W {
-    constructor(...args) {
+    constructor(url, options) {
       const { port1: channel, port2 } = new MessageChannel;
       const callbacks = new Map;
       const promises = new Map;
       const proxied = create(null);
-      let id = 0, resolving = false;
-      super(...args).proxy = new Proxy(proxied, {
+      let id = 0, resolving = '';
+      super(url, assign({ type: 'module' }, options)).proxy = new Proxy(proxied, {
         get: (_, name) => {
           let cb = callbacks.get(name);
           if (!cb) {
             callbacks.set(name, cb = (...args) => {
-              if (resolving) console.warn(`💀🔒 - proxy.${name}(...args)`);
               const uid = id++;
               const wr = withResolvers();
               promises.set(uid, wr);
-              channel.postMessage([uid, name, transform ? args.map(transform) : args]);
-              return wr.promise;
+              channel.postMessage(
+                [uid, name, transform ? args.map(transform) : args],
+                transferable(args),
+              );
+              return resolving ? deadlock(wr, resolving, name) : wr.promise;
             });
           }
           return cb;
@@ -57,7 +86,7 @@ export default options => {
           else wr.resolve(name);
         }
         else {
-          resolving = true;
+          resolving = name;
           let result;
           try {
             result = await proxied[name](...args);
@@ -66,7 +95,7 @@ export default options => {
           catch (error) {
             result = error;
           }
-          resolving = false;
+          resolving = '';
 
           // at index 1 we store the written length or 0, if undefined
           i32[1] = result === void 0 ? 0 : encode(result, i32.buffer);
@@ -91,5 +120,6 @@ export default options => {
   return {
     Worker,
     native,
+    transfer,
   };
 };

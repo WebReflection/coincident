@@ -1,12 +1,21 @@
+import { Decoder } from 'buffered-clone/decoder';
+
 import {
   SharedArrayBuffer,
   Atomics,
   native,
 } from 'sabayon/lite/worker';
 
-import { Decoder } from 'buffered-clone/decoder';
-
-import { assign, create, defaults, set, withResolvers } from './utils.js';
+import {
+  assign,
+  create,
+  defaults,
+  set,
+  stop,
+  transfer,
+  transferable,
+  withResolvers,
+} from './utils.js';
 
 const { wait, waitAsync } = Atomics;
 
@@ -15,7 +24,10 @@ const bootstrap = withResolvers();
 
 addEventListener(
   'message',
-  ({ data, ports }) => bootstrap.resolve([data, ports[0]]),
+  event => {
+    stop(event);
+    bootstrap.resolve([event.data, event.ports[0]])
+  },
   { once: true }
 );
 
@@ -24,7 +36,7 @@ const callbacks = new Map;
 export default async options => {
   const $ = (result, name) => {
     // TODO: investigate why this happens
-    if (result !== 'ok') console.warn(`Atomics.notify ${name} ${result}`);
+    // if (result !== 'ok') console.warn(`Atomics.notify ${name} ${result}`);
     return i32a[1] ? decode(ui8a) : void 0;
   };
 
@@ -51,8 +63,8 @@ export default async options => {
         callbacks.set(name, cb = (...args) => {
           const data = [i32a, name, transform ? args.map(transform) : args];
           i32a[0] = 0;
-          if (WORKAROUND) postMessage({ ID, data });
-          else channel.postMessage(data);
+          if (WORKAROUND) postMessage({ ID, data }, transferable(args));
+          else channel.postMessage(data, transferable(args));
           if (native)
             return $(waitSync(i32a, 0), name);
           else {
@@ -96,5 +108,5 @@ export default async options => {
     channel.postMessage(response);
   };
 
-  return { native, proxy };
+  return { native, proxy, transfer };
 };

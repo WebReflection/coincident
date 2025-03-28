@@ -1,30 +1,3 @@
-import {
-  ARRAY,
-  BIGINT,
-  BOOLEAN,
-  FUNCTION,
-  NULL,
-  NUMBER,
-  OBJECT,
-  STRING,
-  SYMBOL,
-  UNDEFINED,
-} from 'js-proxy/types';
-
-// ℹ️ boosts common keys performance
-export const mirrored = [
-  ARRAY,
-  BIGINT,
-  BOOLEAN,
-  FUNCTION,
-  NULL,
-  NUMBER,
-  OBJECT,
-  STRING,
-  SYMBOL,
-  UNDEFINED,
-];
-
 export { create, stop, withResolvers } from 'sabayon/lite/utils';
 
 const { assign } = Object;
@@ -46,4 +19,21 @@ export const set = (proxied, name, callback) => {
     return true;
   }
   return false;
+};
+
+
+const transferred = new Set;
+export const transfer = (...args) => {
+  transferred.add(args);
+  return args;
+};
+
+const empty = [];
+export const transferable = args => {
+  const l = args.length;
+  if (l && transferred.has(args[l - 1])) {
+    transferred.delete(args[l - 1]);
+    return args.pop();
+  }
+  return empty;
 };

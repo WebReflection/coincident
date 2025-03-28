@@ -6,16 +6,14 @@ import DEBUG from '../debug.js';
 import coincident from '../worker.js';
 import proxyWorker from '../proxy/worker.js';
 
-import { assign, mirrored } from '../utils.js';
-
 /**
  * @callback Coincident
  * @param {import('../worker.js').WorkerOptions} [options]
- * @returns {Promise<{polyfill: boolean, sync: boolean, transfer: (...args: Transferable[]) => Transferable[], proxy: {}, window: Window, isWindowProxy: (value: any) => boolean}>}
+ * @returns {Promise<{native: boolean, transfer: (...args: Transferable[]) => Transferable[], proxy: {}, window: Window, isWindowProxy: (value: any) => boolean}>}
  */
 
 export default /** @type {Coincident} */ async options => {
-  const exports = await coincident(assign({ mirrored }, options));
+  const exports = await coincident(options);
 
   const { isProxy, global, method } = proxyWorker(
     exports.proxy[MAIN],
