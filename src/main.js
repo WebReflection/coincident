@@ -1,91 +1,95 @@
-// (c) Andrea Giammarchi - MIT
-
 import {
   Atomics,
-  Int32Array,
-  SharedArrayBuffer,
-  Worker as $Worker,
-  ignore,
-  polyfill,
-} from 'sabayon/main';
+  MessageChannel,
+  Worker as W,
+  native
+} from 'sabayon/lite/main';
 
-import {
-  ACTION_INIT,
-  ACTION_WAIT,
-  ACTION_NOTIFY,
+import { Encoder } from 'buffered-clone/encoder';
 
-  actionLength,
-  actionFill,
-  actionWait,
+import { assign, create, defaults, set, stop, withResolvers } from './utils.js';
 
-  createProxy,
+const { notify } = Atomics;
 
-  isChannel,
-  transfer,
-} from './shared.js';
+// @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
+// Note: InstallTrigger is deprecated so once it's gone I do hope
+//       this workaround would be gone too!
+const ID = 'InstallTrigger' in globalThis ? crypto.randomUUID() : '';
 
-/**
- * @typedef {Object} MainOptions
- * @prop {(text: string, ...args:any) => any} [parse=JSON.parse]
- * @prop {(value: any, ...args:any) => string} [stringify=JSON.stringify]
- * @prop {(value: any) => any} [transform]
- */
+export default options => {
+  const { encode } = new Encoder(
+    assign({}, options, defaults)
+  );
 
-/**
- * @callback Coincident
- * @param {MainOptions} [options]
- * @returns {{Worker: import('./ts.js').CoincidentWorker, polyfill: boolean, transfer: (...args: Transferable[]) => Transferable[]}}
- */
+  const transform = options?.transform;
 
-export default /** @type {Coincident} */ ({
-  parse,
-  stringify,
-  transform,
-} = JSON) => {
-  const waitLength = actionLength(stringify, transform);
-
-  class Worker extends $Worker {
-    constructor(url, options) {
-      const CHANNEL = crypto.randomUUID();
-      const map = new Map;
-      const results = new Map;
-      super(url, options);
-      this.proxy = createProxy(
-        [
-          CHANNEL,
-          bytes => new Int32Array(new SharedArrayBuffer(bytes)),
-          ignore,
-          false,
-          parse,
-          polyfill,
-          (...args) => this.postMessage(...args),
-          transform,
-          Atomics.waitAsync,
-        ],
-        map,
-      );
-      this.postMessage(ignore([CHANNEL, ACTION_INIT, options]));
-      this.addEventListener('message', event => {
-        if (isChannel(event, CHANNEL)) {
-          const [_, ACTION, ...rest] = event.data;
-          switch (ACTION) {
-            case ACTION_WAIT: {
-              actionWait(waitLength, results, map, rest);
-              break;
-            }
-            case ACTION_NOTIFY: {
-              actionFill(results, rest);
-              break;
-            }
+  class Worker extends W {
+    constructor(...args) {
+      const { port1: channel, port2 } = new MessageChannel;
+      const callbacks = new Map;
+      const promises = new Map;
+      const proxied = create(null);
+      let id = 0, resolving = false;
+      super(...args).proxy = new Proxy(proxied, {
+        get: (_, name) => {
+          let cb = callbacks.get(name);
+          if (!cb) {
+            callbacks.set(name, cb = (...args) => {
+              if (resolving) console.warn(`💀🔒 - proxy.${name}(...args)`);
+              const uid = id++;
+              const wr = withResolvers();
+              promises.set(uid, wr);
+              channel.postMessage([uid, name, transform ? args.map(transform) : args]);
+              return wr.promise;
+            });
           }
-        }
+          return cb;
+        },
+        set
       });
+      super.postMessage(ID, [port2]);
+      channel.onmessage = async ({ data }) => {
+        const [i32, name, args] = data;
+        if (typeof i32 === 'number') {
+          const wr = promises.get(i32);
+          promises.delete(i32);
+          if (args) wr.reject(args);
+          else wr.resolve(name);
+        }
+        else {
+          resolving = true;
+          let result;
+          try {
+            result = await proxied[name](...args);
+            if (transform) result = transform(result);
+          }
+          catch (error) {
+            result = error;
+          }
+          resolving = false;
+
+          // at index 1 we store the written length or 0, if undefined
+          i32[1] = result === void 0 ? 0 : encode(result, i32.buffer);
+          // at index 0 we set the SharedArrayBuffer as ready
+          i32[0] = 1;
+          notify(i32, 0);
+        }
+      };
+      // @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
+      if (native && ID) {
+        super.addEventListener('message', event => {
+          const { data } = event;
+          if (data?.ID === ID) {
+            stop(event);
+            channel.onmessage(data);
+          }
+        });
+      }
     }
   }
 
   return {
     Worker,
-    polyfill,
-    transfer,
+    native,
   };
 };

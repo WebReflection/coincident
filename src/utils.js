@@ -1,3 +1,30 @@
+import {
+  ARRAY,
+  BIGINT,
+  BOOLEAN,
+  FUNCTION,
+  NULL,
+  NUMBER,
+  OBJECT,
+  STRING,
+  SYMBOL,
+  UNDEFINED,
+} from 'js-proxy/types';
+
+// ℹ️ boosts common keys performance
+export const mirrored = [
+  ARRAY,
+  BIGINT,
+  BOOLEAN,
+  FUNCTION,
+  NULL,
+  NUMBER,
+  OBJECT,
+  STRING,
+  SYMBOL,
+  UNDEFINED,
+];
+
 export { create, stop, withResolvers } from 'sabayon/lite/utils';
 
 const { assign } = Object;

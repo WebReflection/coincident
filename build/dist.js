@@ -6,7 +6,7 @@ const plugins = [nodeResolve()].concat(process.env.NO_MIN ? [] : [terser()]);
 export default [
   {
     plugins,
-    input: './nrc/main.js',
+    input: './src/main.js',
     output: {
       esModule: true,
       file: './dist/main.js',
@@ -14,7 +14,7 @@ export default [
   },
   {
     plugins,
-    input: './nrc/worker.js',
+    input: './src/worker.js',
     output: {
       esModule: true,
       file: './dist/worker.js',

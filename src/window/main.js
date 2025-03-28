@@ -7,9 +7,11 @@ import DEBUG from '../debug.js';
 import coincident from '../main.js';
 import proxyMain from '../proxy/main.js';
 
+import { assign, mirrored } from '../utils.js';
+
 export default /** @type {import('../main.js').Coincident} */ options => {
   const esm = options?.import;
-  const exports = coincident(options);
+  const exports = coincident(assign({ mirrored }, options));
 
   class Worker extends exports.Worker {
     constructor(url, options) {

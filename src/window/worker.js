@@ -6,6 +6,8 @@ import DEBUG from '../debug.js';
 import coincident from '../worker.js';
 import proxyWorker from '../proxy/worker.js';
 
+import { assign, mirrored } from '../utils.js';
+
 /**
  * @callback Coincident
  * @param {import('../worker.js').WorkerOptions} [options]
@@ -13,7 +15,7 @@ import proxyWorker from '../proxy/worker.js';
  */
 
 export default /** @type {Coincident} */ async options => {
-  const exports = await coincident(options);
+  const exports = await coincident(assign({ mirrored }, options));
 
   const { isProxy, global, method } = proxyWorker(
     exports.proxy[MAIN],
