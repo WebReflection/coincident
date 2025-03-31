@@ -13,14 +13,10 @@ export const defaults = {
   circular: true,
 };
 
-export const set = (proxied, name, callback) => {
-  if (typeof callback === 'function') {
-    proxied[name] = callback;
-    return true;
-  }
-  return false;
+export const set = (proxied, name, value) => {
+  proxied[name] = value;
+  return true;
 };
-
 
 const transferred = new Set;
 export const transfer = (...args) => {

@@ -22,7 +22,6 @@ import DEBUG from '../debug.js';
 import { DESTROY } from './traps.js';
 
 import { create as heap } from 'js-proxy/heap';
-import { TypedArray } from 'sabayon/shared';
 
 import numeric from '../window/types.js';
 import { fromSymbol, toSymbol } from '../window/symbol.js';
@@ -32,6 +31,7 @@ import { create } from 'gc-hook';
 import handleEvent from '../window/events.js';
 
 const { isArray } = Array;
+const { isView } = ArrayBuffer;
 
 export default (resolve, __worker__) => {
   const { clear, drop, get, hold } = heap();
@@ -51,7 +51,7 @@ export default (resolve, __worker__) => {
         if (value === null) return [numeric[NULL], value];
         if (value === globalThis) return [numeric[OBJECT], null];
         if (isArray(value)) return [numeric[ARRAY], hold(value)];
-        return [numeric[OBJECT], value instanceof TypedArray ? value : hold(value)];
+        return [numeric[OBJECT], isView(value) ? value : hold(value)];
       }
       case FUNCTION: return [numeric[FUNCTION], hold(value)];
       case SYMBOL: return [numeric[SYMBOL], toSymbol(value)];
@@ -64,7 +64,7 @@ export default (resolve, __worker__) => {
       case numeric[OBJECT]: {
         if (value === null) return globalThis;
         if (typeof value === NUMBER) return get(value);
-        if (!(value instanceof TypedArray)) {
+        if (!(isView(value))) {
           for (const key in value)
             value[key] = fromEntry(value[key]);
         }

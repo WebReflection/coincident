@@ -60,6 +60,9 @@ export default options => {
       super(url, assign({ type: 'module' }, options)).proxy = new Proxy(proxied, {
         get: (_, name) => {
           let cb = callbacks.get(name);
+          // the curse of potentially awaiting proxies in the wild
+          // requires this ugly guard around `then`
+          // if (name !== 'then' && !cb) {
           if (!cb) {
             callbacks.set(name, cb = (...args) => {
               const uid = id++;

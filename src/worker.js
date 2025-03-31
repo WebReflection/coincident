@@ -34,16 +34,18 @@ addEventListener(
 const callbacks = new Map;
 
 export default async options => {
-  const $ = (result, name) => {
-    // TODO: investigate why this happens
-    // if (result !== 'ok') console.warn(`Atomics.notify ${name} ${result}`);
-    return i32a[1] ? decode(ui8a) : void 0;
-  };
+  const sab = () => new SharedArrayBuffer(
+    options?.minByteLength || 0xFFFF,
+    { maxByteLength: options?.maxByteLength || 0x1000000 }
+  );
 
   const views = buffer => [
     new Uint8Array(buffer, defaults.byteOffset),
     new Int32Array(buffer),
   ];
+
+  const reviews = () => native ? same : views(sab());
+  const same = views(sab());
 
   const { decode } = new Decoder(
     assign({}, options, defaults)
@@ -52,26 +54,31 @@ export default async options => {
   const [ID, channel] = await bootstrap.promise;
   // @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
   const WORKAROUND = native && !!ID;
-
   const interrupt = options?.interrupt;
   const transform = options?.transform || false;
   const proxied = create(null);
   const proxy = new Proxy(proxied, {
     get(_, name) {
       let cb = callbacks.get(name);
+      // the curse of potentially awaiting proxies in the wild
+      // requires this ugly guard around `then`
+      // if (name !== 'then' && !cb) {
       if (!cb) {
         callbacks.set(name, cb = (...args) => {
+          const [ui8a, i32a] = reviews();
+          const transfer = transferable(args);
           const data = [i32a, name, transform ? args.map(transform) : args];
-          i32a[0] = 0;
-          if (WORKAROUND) postMessage({ ID, data }, transferable(args));
-          else channel.postMessage(data, transferable(args));
-          if (native)
-            return $(waitSync(i32a, 0), name);
+          if (WORKAROUND) postMessage({ ID, data }, transfer);
+          else channel.postMessage(data, transfer);
+          if (native) {
+            waitSync(i32a, 0);
+            i32a[0] = 0;
+            return i32a[1] ? decode(ui8a) : void 0;
+          }
           else {
-            return waitAsync(i32a, 0).value.then(result => {
-              [ui8a, i32a] = views(i32a.buffer);
-              return $(result, name);
-            });
+            return waitAsync(i32a, 0).value.then(() => (
+              i32a[1] ? decode(ui8a) : void 0
+            ));
           }
         });
       }
@@ -79,13 +86,6 @@ export default async options => {
     },
     set
   });
-
-  let [ui8a, i32a] = views(
-    new SharedArrayBuffer(
-      options?.minByteLength || 0xFFFF,
-      { maxByteLength: options?.maxByteLength || 0x1000000 }
-    )
-  );
 
   // ℹ️ for backward compatibility (never used to date)
   let waitSync = wait;
