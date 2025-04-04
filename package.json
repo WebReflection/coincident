@@ -1,13 +1,14 @@
 {
-  "name": "coincident",
-  "version": "2.2.3",
+  "name": "@webreflection/coincident",
+  "version": "0.1.0",
   "description": "An Atomics based Proxy to simplify, and synchronize, Worker related tasks",
   "scripts": {
-    "build": "node build/index.cjs && node build/constants.cjs && rollup --config build/dist.js && sabayon ./test/sw.js && npm run size",
+    "build": "node build/index.cjs && node build/variants.js && rollup --config build/dist.js && rm src/main_*.js && rm src/worker_*.js",
     "coi": "npx mini-coi .",
     "server": "static-handler .",
     "server:bun": "bun test/server/bun.js",
     "server:node": "node test/server/node.js",
+    "cover": "c8 node test/cover/flatted.js",
     "size": "echo -e \"\\x1b[1mfile          size\\x1b[0m\";echo \"server/main   $(cat dist/server/main.js | brotli | wc -c)\";echo \"server/worker $(cat dist/server/worker.js | brotli | wc -c)\";echo \"window/main   $(cat dist/window/main.js | brotli | wc -c)\";echo \"window/worker $(cat dist/window/worker.js | brotli | wc -c)\";echo \"main          $(cat dist/main.js | brotli | wc -c)\";echo \"worker        $(cat dist/worker.js | brotli | wc -c)\""
   },
   "keywords": [
@@ -20,6 +21,7 @@
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-terser": "^0.4.4",
+    "c8": "^10.1.3",
     "mini-coi": "^0.4.2",
     "rollup": "^4.37.0",
     "static-handler": "^0.5.3",
@@ -34,6 +36,21 @@
     "./main": "./src/main.js",
     "./server": "./src/server.js",
     "./worker": "./src/worker.js",
+    "./main/buffered": "./dist/main_buffered.js",
+    "./worker/buffered": "./dist/worker_buffered.js",
+    "./buffered/encoder": "./dist/buffered_encoder.js",
+    "./buffered/decoder": "./dist/buffered_decoder.js",
+    "./main/flatted": "./dist/main_flatted.js",
+    "./flatted/encoder": "./dist/flatted_encoder.js",
+    "./flatted/decoder": "./dist/flatted_decoder.js",
+    "./worker/flatted": "./dist/worker_flatted.js",
+    "./main/structured": "./dist/main_structured.js",
+    "./worker/structured": "./dist/worker_structured.js",
+    "./structured/encoder": "./dist/structured_encoder.js",
+    "./structured/decoder": "./dist/structured_decoder.js",
+    "./flatted": "./dist/flatted.js",
+    "./structured": "./dist/structured.js",
+    "./buffered": "./dist/buffered.js",
     "./dist/server/main": "./dist/server/main.js",
     "./dist/server/worker": "./dist/server/worker.js",
     "./dist/window/main": "./dist/window/main.js",
@@ -43,6 +60,7 @@
     "./package.json": "./package.json"
   },
   "dependencies": {
+    "@ungap/structured-clone": "^1.3.0",
     "buffered-clone": "^0.8.3",
     "gc-hook": "^0.4.1",
     "js-proxy": "^0.5.2",

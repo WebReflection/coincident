@@ -1,4 +1,4 @@
-import coincident from '../../dist/worker.js';
+import coincident from '../../dist/worker_json.js';
 
 const D = false;
 const BUG = console.log;

@@ -1,128 +1,116 @@
-import { Encoder } from 'buffered-clone/encoder';
+import { encoder } from './json/encoder.js';
 
 import {
-  Atomics,
-  MessageChannel,
-  Worker as W,
-  native
-} from 'sabayon/lite/main';
-
-import {
+  ID,
   assign,
   create,
   defaults,
+  native,
+  result,
+  rtr,
   set,
   stop,
-  transfer,
-  transferable,
-  withResolvers,
+  ui8View,
 } from './utils.js';
-
-const { notify } = Atomics;
 
 // @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
 // Note: InstallTrigger is deprecated so once it's gone I do hope
 //       this workaround would be gone too!
-const ID = 'InstallTrigger' in globalThis ? crypto.randomUUID() : '';
+const UID = 'InstallTrigger' in globalThis ? ID : '';
+
+const { notify } = Atomics;
 
 export default options => {
-  const { encode } = new Encoder(
-    assign({}, options, defaults)
-  );
-
-  const deadlock = (wr, resolving, name) => {
-    const t = setTimeout(
-      console.warn,
-      3e3,
-      `💀🔒 - is proxy.${resolving}() awaiting proxy.${name}() ?`
-    );
-    return wr.promise.then(
-      result => {
-        clearTimeout(t);
-        return result;
-      },
-      error => {
-        clearTimeout(t);
-        return Promise.reject(error);
-      },
-    );
-  };
-
   const transform = options?.transform;
+  const encode = (options?.encoder || encoder)(defaults);
 
-  class Worker extends W {
+  class Worker extends globalThis.Worker {
     constructor(url, options) {
       const { port1: channel, port2 } = new MessageChannel;
+      const [ next, resolve ] = rtr();
       const callbacks = new Map;
-      const promises = new Map;
       const proxied = create(null);
-      let id = 0, resolving = '';
+
+      let resolving = '';
+
+      const deadlock = ({ promise }, name) => {
+        if (resolving) {
+          const t = setTimeout(
+            console.warn,
+            3e3,
+            `💀🔒 - is proxy.${resolving}() awaiting proxy.${name}() ?`
+          );
+          promise = promise.then(
+            result => {
+              clearTimeout(t);
+              return result;
+            },
+            error => {
+              clearTimeout(t);
+              return Promise.reject(error);
+            },
+          );
+        }
+        return promise;
+      };
+
       super(url, assign({ type: 'module' }, options)).proxy = new Proxy(proxied, {
         get: (_, name) => {
-          let cb = callbacks.get(name);
           // the curse of potentially awaiting proxies in the wild
           // requires this ugly guard around `then`
-          // if (name !== 'then' && !cb) {
+          if (name === 'then') return;
+          let cb = callbacks.get(name);
           if (!cb) {
             callbacks.set(name, cb = (...args) => {
-              const uid = id++;
-              const wr = withResolvers();
-              promises.set(uid, wr);
-              channel.postMessage(
-                [uid, name, transform ? args.map(transform) : args],
-                transferable(args),
-              );
-              return resolving ? deadlock(wr, resolving, name) : wr.promise;
+              const [uid, wr] = next();
+              channel.postMessage([uid, name, transform ? args.map(transform) : args]);
+              return deadlock(wr, name);
             });
           }
           return cb;
         },
         set
       });
-      super.postMessage(ID, [port2]);
-      channel.onmessage = async ({ data }) => {
-        const [i32, name, args] = data;
-        if (typeof i32 === 'number') {
-          const wr = promises.get(i32);
-          promises.delete(i32);
-          if (args) wr.reject(args);
-          else wr.resolve(name);
-        }
-        else {
-          resolving = name;
-          let result;
-          try {
-            result = await proxied[name](...args);
-            if (transform) result = transform(result);
-          }
-          catch (error) {
-            result = error;
-          }
-          resolving = '';
 
-          // at index 1 we store the written length or 0, if undefined
-          i32[1] = result === void 0 ? 0 : encode(result, i32.buffer);
-          // at index 0 we set the SharedArrayBuffer as ready
-          i32[0] = 1;
-          notify(i32, 0);
-        }
-      };
+      super.postMessage(UID, [port2]);
+
       // @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
-      if (native && ID) {
+      if (native && UID) {
         super.addEventListener('message', event => {
           const { data } = event;
-          if (data?.ID === ID) {
+          if (data?.ID === UID) {
             stop(event);
             channel.onmessage(data);
           }
         });
       }
+
+      channel.onmessage = async ({ data }) => {
+        const [i32, name, args] = data;
+        const type = typeof i32;
+        if (type === 'number')
+          resolve(i32, name, args);
+        else {
+          resolving = name;
+          const response = await result(i32, proxied[name], args, transform);
+          resolving = '';
+          if (type === 'string')
+            channel.postMessage(response);
+          else {
+            const result = response[2] || response[1];
+            // at index 1 we store the written length or 0, if undefined
+            i32[1] = result === void 0 ? 0 : encode(result, ui8View(i32.buffer));
+            // at index 0 we set the SharedArrayBuffer as ready
+            i32[0] = 1;
+            notify(i32, 0);
+          }
+        }
+      };
     }
   }
 
   return {
     Worker,
     native,
-    transfer,
   };
 };

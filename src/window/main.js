@@ -1,4 +1,3 @@
-import { DESTRUCT } from 'js-proxy/traps';
 import { DESTROY } from '../proxy/traps.js';
 
 import { MAIN, WORKER } from './constants.js';
