@@ -19,7 +19,6 @@ import { ARRAY, FUNCTION, NUMBER, OBJECT, SYMBOL } from 'js-proxy/types';
 
 import define from 'js-proxy';
 import { drop, get, hold } from 'js-proxy/heap';
-import { TypedArray } from 'sabayon/shared';
 
 import numeric from '../window/types.js';
 import { fromSymbol, toSymbol } from '../window/symbol.js';
@@ -27,6 +26,8 @@ import { fromSymbol, toSymbol } from '../window/symbol.js';
 import DEBUG from '../debug.js';
 
 const { isArray } = Array;
+const { isView } = ArrayBuffer;
+
 const { [APPLY]: apply } = Reflect;
 
 export default (__main__, transform) => {
@@ -62,7 +63,7 @@ export default (__main__, transform) => {
     switch (TYPE) {
       case OBJECT: {
         if (ref == globalThis || ref == null) ref = null;
-        else if ((typeof ref === OBJECT) && !(ref instanceof TypedArray)) {
+        else if ((typeof ref === OBJECT) && !(isView(ref))) {
           ref = transform(ref);
           if (isArray(ref)) ref = ref.map(toEntry);
           else for (const key in ref) ref[key] = toEntry(ref[key]);

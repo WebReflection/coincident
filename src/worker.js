@@ -1,62 +1,95 @@
-// (c) Andrea Giammarchi - MIT
+import { Decoder } from 'buffered-clone/decoder';
 
 import {
-  Atomics,
-  Int32Array,
   SharedArrayBuffer,
-  addEventListener,
-  postMessage,
-  ignore,
-  polyfill,
-} from 'sabayon/worker';
+  Atomics,
+  native,
+} from 'sabayon/lite/worker';
 
 import {
-  ACTION_INIT,
-  ACTION_WAIT,
-  ACTION_NOTIFY,
-
-  actionLength,
-  actionFill,
-  actionWait,
-
-  createProxy,
-
-  isChannel,
+  assign,
+  create,
+  defaults,
+  set,
+  stop,
   transfer,
+  transferable,
   withResolvers,
-} from './shared.js';
+} from './utils.js';
 
 const { wait, waitAsync } = Atomics;
 
-/**
- * @typedef {Object} WorkerOptions
- * @prop {(text: string, ...args:any) => any} [parse=JSON.parse]
- * @prop {(value: any, ...args:any) => string} [stringify=JSON.stringify]
- * @prop {(value: any) => any} [transform]
- * @prop {{handler: () => void, timeout?: number}} [interrupt]
- */
+// wait for the channel before resolving
+const bootstrap = withResolvers();
 
-/**
- * @callback Coincident
- * @param {WorkerOptions} [options]
- * @returns {Promise<{polyfill: boolean, sync: boolean, transfer: (...args: Transferable[]) => Transferable[], proxy: {}}>}
- */
+addEventListener(
+  'message',
+  event => {
+    stop(event);
+    bootstrap.resolve([event.data, event.ports[0]])
+  },
+  { once: true }
+);
 
-export default /** @type {Coincident} */ ({
-  parse,
-  stringify,
-  transform,
-  interrupt,
-} = JSON) => {
-  const waitLength = actionLength(stringify, transform);
+const callbacks = new Map;
 
-  const ready = withResolvers();
-  const map = new Map;
-  const results = new Map;
+export default async options => {
+  const sab = () => new SharedArrayBuffer(
+    options?.minByteLength || 0xFFFF,
+    { maxByteLength: options?.maxByteLength || 0x1000000 }
+  );
 
-  let CHANNEL = '';
+  const views = buffer => [
+    new Uint8Array(buffer, defaults.byteOffset),
+    new Int32Array(buffer),
+  ];
+
+  const reviews = () => native ? same : views(sab());
+  const same = views(sab());
+
+  const { decode } = new Decoder(
+    assign({}, options, defaults)
+  );
+
+  const [ID, channel] = await bootstrap.promise;
+  // @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
+  const WORKAROUND = native && !!ID;
+  const interrupt = options?.interrupt;
+  const transform = options?.transform || false;
+  const proxied = create(null);
+  const proxy = new Proxy(proxied, {
+    get(_, name) {
+      let cb = callbacks.get(name);
+      // the curse of potentially awaiting proxies in the wild
+      // requires this ugly guard around `then`
+      // if (name !== 'then' && !cb) {
+      if (!cb) {
+        callbacks.set(name, cb = (...args) => {
+          const [ui8a, i32a] = reviews();
+          const transfer = transferable(args);
+          const data = [i32a, name, transform ? args.map(transform) : args];
+          if (WORKAROUND) postMessage({ ID, data }, transfer);
+          else channel.postMessage(data, transfer);
+          if (native) {
+            waitSync(i32a, 0);
+            i32a[0] = 0;
+            return i32a[1] ? decode(ui8a) : void 0;
+          }
+          else {
+            return waitAsync(i32a, 0).value.then(() => (
+              i32a[1] ? decode(ui8a) : void 0
+            ));
+          }
+        });
+      }
+      return cb;
+    },
+    set
+  });
+
+  // ℹ️ for backward compatibility (never used to date)
   let waitSync = wait;
-  if (wait && interrupt) {
+  if (interrupt) {
     const { handler, timeout = 42 } = interrupt;
     waitSync = (sb, index, result) => {
       while ((result = wait(sb, index, 0, timeout)) === 'timed-out')
@@ -65,49 +98,15 @@ export default /** @type {Coincident} */ ({
     };
   }
 
-  addEventListener('message', event => {
-    if (isChannel(event, CHANNEL)) {
-      const [_, ACTION, ...rest] = event.data;
-      switch (ACTION) {
-        case ACTION_INIT: {
-          const sync = !!wait;
-          CHANNEL = _;
-          ready.resolve({
-            polyfill,
-            sync,
-            transfer,
-            proxy: createProxy(
-              [
-                CHANNEL,
-                bytes => new Int32Array(new SharedArrayBuffer(bytes)),
-                ignore,
-                sync,
-                parse,
-                polyfill,
-                postMessage,
-                transform,
-                sync ?
-                  (...args) => ({ value: { then: fn => fn(waitSync(...args)) } }) :
-                  waitAsync,
-              ],
-              map,
-            ),
-          });
-          break;
-        }
-        case ACTION_WAIT: {
-          // give the code a chance to finish running (serviceWorker mode)
-          if (!map.size) setTimeout(actionWait, 0, waitLength, results, map, rest);
-          else actionWait(waitLength, results, map, rest);
-          break;
-        }
-        case ACTION_NOTIFY: {
-          actionFill(results, rest);
-          break;
-        }
-      }
+  channel.onmessage = async ({ data: [uid, name, args] }) => {
+    const response = [uid, null, null];
+    try {
+      const result = await proxied[name](...args);
+      response[1] = transform ? transform(result) : result;
     }
-  });
+    catch (error) { response[2] = error }
+    channel.postMessage(response);
+  };
 
-  return ready.promise;
+  return { native, proxy, transfer };
 };

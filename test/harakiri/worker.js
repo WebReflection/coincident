@@ -1,4 +1,4 @@
-import coincident from '../../dist/window/worker.js';
+import coincident from '../../dist/worker.js';
 const { proxy } = await coincident();
 
 proxy.worker = () => '🔥 this is fine 🔥';
