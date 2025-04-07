@@ -10,7 +10,6 @@ import {
   rtr,
   set,
   stop,
-  ui8View,
   withResolvers,
 } from './utils.js';
 
@@ -32,13 +31,12 @@ export default async options => {
   const transform = options?.transform;
   const decode = (options?.decoder || decoder)(defaults);
 
-  let ui8a, i32a, waitSync;
+  let i32a, waitSync;
   if (native) {
     const sab = new SharedArrayBuffer(
       options?.minByteLength || minByteLength,
       { maxByteLength: options?.maxByteLength || maxByteLength }
     );
-    ui8a = ui8View(sab);
     i32a = new Int32Array(sab);
     waitSync = Atomics.wait;
 
@@ -72,7 +70,7 @@ export default async options => {
             else channel.postMessage(data);
             waitSync(i32a, 0);
             i32a[0] = 0;
-            const result = i32a[1] ? decode(i32a[1], ui8a) : void 0;
+            const result = i32a[1] ? decode(i32a[1], i32a.buffer) : void 0;
             if (result instanceof Error) throw result;
             return result;
           }

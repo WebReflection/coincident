@@ -18,12 +18,12 @@ var arr = [i32a, new Uint8Array(buffer)];
 var result = decode(encode(arr));
 console.assert(result[0].buffer === result[1].buffer, 20);
 
-let line = 22;
+let line = 21;
 console.assert(encode(1) === '[3,1]', ++line);
 console.assert(encode(true) === '[5]', ++line);
 console.assert(encode(false) === '[6]', ++line);
 console.assert(encode(null) === '[7]', ++line);
-console.assert(encode(undefined) === '[]', ++line);
+console.assert(encode(undefined) === '[13]', ++line);
 console.assert(encode(NaN) === '[3,null]', ++line);
 console.assert(encode(Infinity) === '[3,null]', ++line);
 console.assert(encode(-Infinity) === '[3,null]', ++line);
@@ -103,3 +103,17 @@ class TestError extends Error {
 console.assert(decode(encode(new TestError)).name === 'Error', 104);
 console.assert(decode(encode(new TestError('test', { cause: 'because' }))).cause === 'because', 105);
 console.assert(decode(encode(new TestError('test', { cause: 'because' }))).message === 'test', 106);
+
+var decoded = decode(encode([re, {toJSON: () => re}]));
+console.assert(decoded[0] === decoded[1], 108);
+
+var decoded = decode(encode([error, {toJSON: () => error}]));
+console.assert(decoded[0] === decoded[1], 111);
+
+console.assert(decode('[13]') === void 0, 107);
+try {
+  decode('[127]')
+}
+catch (_) {
+  console.log('OK');
+}

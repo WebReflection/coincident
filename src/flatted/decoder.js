@@ -87,16 +87,16 @@ const unflatten = arr => {
       const source = arr[i++];
       const flags = arr[i++];
       const regexp = new RegExp(source, flags);
-      arr[i - 4] = regexp;
+      arr[i - 3] = regexp;
       return regexp;
     }
     case types.error: {
       const Class = globalThis[arr[i++]] || Error;
       const message = arr[i++];
+      const value = arr[i++];
       const cause = arr[i++];
-      const stack = arr[i++];
       const error = new Class(message, { cause });
-      arr[i - 5] = defineProperty(error, 'stack', { value: stack });
+      arr[i - 5] = defineProperty(error, 'stack', { value });
       return error;
     }
     default:

@@ -68,8 +68,6 @@ const stop = event => {
   event.preventDefault();
 };
 
-const ui8View = buffer => new Uint8Array(buffer, byteOffset);
-
 const withResolvers = () => Promise.withResolvers();
 
 export {
@@ -84,6 +82,5 @@ export {
   rtr,
   set,
   stop,
-  ui8View,
   withResolvers,
 };

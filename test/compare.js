@@ -2,6 +2,8 @@ import * as structured from '../dist/structured.js';
 import * as flatted from '../dist/flatted.js';
 import * as buffered from '../dist/buffered.js';
 
+const sab = new SharedArrayBuffer(0xFFFF);
+
 const recursive = { a: 1, b: 2, c: 3 };
 recursive.d = recursive;
 const data = {
@@ -30,7 +32,7 @@ const data = {
 
 console.log('structured', structured.encode(data).length);
 console.log('flatted', flatted.encode(data).length);
-console.log('buffered', buffered.encode(data).length);
+console.log('buffered', buffered.encode(data, sab));
 
 console.time('structured');
 structured.decode(structured.encode(data))
@@ -41,8 +43,10 @@ flatted.decode(flatted.encode(data))
 console.timeEnd('flatted');
 
 console.time('buffered');
-buffered.decode(buffered.encode(data))
+buffered.encode(data, sab);
+buffered.decode(sab);
 console.timeEnd('buffered');
 
 const evil = structured.decode('[[1,[1,2]],[0,9],[-1]]');
-console.log(evil, buffered.decode(buffered.encode(evil)));
+buffered.encode(evil, sab);
+console.log(evil, buffered.decode(sab));

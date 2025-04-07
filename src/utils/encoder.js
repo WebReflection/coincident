@@ -1,6 +1,6 @@
 import { minByteLength } from '../utils.js';
 
-export default encode => ({ byteOffset }) => (value, { buffer }) => {
+export default encode => ({ byteOffset }) => (value, buffer) => {
   const string = encode(value);
   const length = string.length;
   if (buffer.byteLength < (length * 2 + byteOffset))

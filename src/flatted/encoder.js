@@ -1,11 +1,11 @@
 import createEncoder from '../utils/encoder.js';
 import types from './types.js';
 import { minByteLength } from '../utils.js';
+import { toType } from '../utils/shared.js';
 
 const { isArray } = Array;
 const { isView } = ArrayBuffer;
 const { stringify } = JSON;
-const { keys } = Object;
 
 const toCache = (arr, cache, value) => {
   const index = cache.get(value);
@@ -13,25 +13,8 @@ const toCache = (arr, cache, value) => {
     arr.push(types.ref, index);
     return true;
   }
+  cache.set(value, arr.length);
   return false;
-}
-
-const toSymbol = value => {
-  const name = value.toString().slice(7, -1);
-  return name.startsWith('Symbol.') || Symbol.keyFor(value) ? name : '';
-}
-
-const toType = value => {
-  const type = typeof value;
-  switch (type) {
-    case 'function':
-    case 'undefined':
-      return '';
-    case 'object':
-      return value === null ? 'null' : 'object';
-    default:
-      return type;
-  }
 };
 
 const flatten = (arr, cache, value, type = toType(value)) => {
@@ -42,28 +25,22 @@ const flatten = (arr, cache, value, type = toType(value)) => {
     }
     case 'object': {
       if (toCache(arr, cache, value)) break;
-      cache.set(value, arr.length);
       switch (true) {
         case isArray(value): {
           const length = value.length;
           arr.push(types.array, length);
-          for (let i = 0; i < length; i++) {
-            const v = value[i];
-            const t = toType(v);
-            if (t) flatten(arr, cache, v, t);
-            else arr.push(types.undefined);
-          }
+          for (let i = 0; i < length; i++)
+            flatten(arr, cache, value[i]);
           break;
         }
         case isView(value): {
-          const length = arr.push(
+          arr.push(
             types.view,
             value.constructor.name,
             value.byteOffset
           );
           value = value.buffer;
           if (toCache(arr, cache, value)) break;
-          cache.set(value, length);
         }
         case value instanceof ArrayBuffer: {
           const byteLength = value.byteLength;
@@ -113,7 +90,7 @@ const flatten = (arr, cache, value, type = toType(value)) => {
           break;
         }
         case value instanceof Error: {
-          arr.push(types.error, value.name, value.message, value.cause, value.stack);
+          arr.push(types.error, value.name, value.message, value.stack, value.cause);
           break;
         }
         default: {
@@ -124,7 +101,7 @@ const flatten = (arr, cache, value, type = toType(value)) => {
               break;
             }
             value = other;
-            cache.set(value, arr.length);
+            if (toCache(arr, cache, value)) break;
           }
           const length = arr.push(types.object, 0);
           let i = 0;
@@ -149,7 +126,6 @@ const flatten = (arr, cache, value, type = toType(value)) => {
     }
     case 'string': {
       if (toCache(arr, cache, value)) break;
-      cache.set(value, arr.length);
       arr.push(types.string, value);
       break;
     }
@@ -158,11 +134,15 @@ const flatten = (arr, cache, value, type = toType(value)) => {
       break;
     }
     case 'symbol': {
-      const name = toSymbol(value);
-      if (name) arr.push(types[type], name);
+      const name = value.toString().slice(7, -1);
+      if (name.startsWith('Symbol.') || Symbol.keyFor(value))
+        arr.push(types[type], name);
       break;
     }
-    case '': break;
+    case '': {
+      arr.push(types.undefined);
+      break;
+    }
     default: {
       arr.push(types[type], value);
       break;
