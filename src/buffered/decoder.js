@@ -1,3 +1,4 @@
+import { toSymbolValue } from '../utils/shared.js';
 import { minByteLength } from '../utils.js';
 import littleEndian from './endian.js';
 import types from './types.js';
@@ -7,8 +8,9 @@ const { defineProperty } = Object;
 const { fromCharCode } = String;
 
 const toFloat = data => {
+  const value = data.getFloat64(i, littleEndian);
   i += 8;
-  return data.getFloat64(i - 8, littleEndian);
+  return value;
 };
 
 const toUint = data => {
@@ -16,12 +18,14 @@ const toUint = data => {
     case types.u8:
       return data.getUint8(i++);
     case types.u16: {
+      const value = data.getUint16(i, littleEndian);
       i += 2;
-      return data.getUint16(i - 2, littleEndian);
+      return value;
     }
     case types.u32: {
+      const value = data.getUint32(i, littleEndian);
       i += 4;
-      return data.getUint32(i - 4, littleEndian);
+      return value;
     }
     default: return toFloat(data);
   }
@@ -78,7 +82,10 @@ const unflatten = (data, cache) => {
     case types.view: {
       const name = unflatten(data, cache);
       const byteOffset = toUint(data);
-      const view = new globalThis[name](unflatten(data, cache), byteOffset);
+      const length = toUint(data);
+      const args = [unflatten(data, cache), byteOffset];
+      if (length) args.push(length);
+      const view = new globalThis[name](...args);
       cache.set(index, view);
       return view;
     }
@@ -128,32 +135,33 @@ const unflatten = (data, cache) => {
     // no cache needed for these
     case types.i8: return data.getInt8(i++);
     case types.i16: {
+      const value = data.getInt16(i, littleEndian);
       i += 2;
-      return data.getInt16(i - 2, littleEndian);
+      return value;
     }
     case types.i32: {
+      const value = data.getInt32(i, littleEndian);
       i += 4;
-      return data.getInt32(i - 4, littleEndian);
+      return value;
     }
     case types.f64: {
+      const value = data.getFloat64(i, littleEndian);
       i += 8;
-      return data.getFloat64(i - 8, littleEndian);
+      return value;
     }
     case types.b64: {
+      const value = data.getBigInt64(i, littleEndian);
       i += 8;
-      return data.getBigInt64(i - 8, littleEndian);
+      return value;
     }
     case types.true: return true;
     case types.false: return false;
     case types.null: return null;
     case types.undefined: return void 0;
     case types.ignore: return ignored;
-    case types.symbol: {
-      const name = unflatten(data, cache);
-      return name.startsWith('Symbol.') ? Symbol[name.split('.')[1]] : Symbol.for(name);
-    }
-    default:
-      throw new Error(`Unknown type: ${data.getUint8(i - 1)}`);
+    case types.symbol: return toSymbolValue(unflatten(data, cache));
+    /* c8 ignore next */
+    default: throw new Error(`Unknown type: ${data.getUint8(i - 1)}`);
   }
 };
 
@@ -161,9 +169,9 @@ const ignored = Symbol();
 
 let i = 0;
 
-export const decode = (buffer, byteOffset = 0) => {
+export const decode = (buffer, { byteOffset = 0 } = {}) => {
   i = byteOffset;
   return unflatten(new DataView(buffer), new Map);
 };
 
-export const decoder = ({ byteOffset }) => (_, buffer) => decode(buffer, byteOffset);
+export const decoder = options => (_, buffer) => decode(buffer, options);

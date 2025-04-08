@@ -1,7 +1,7 @@
 import { minByteLength } from '../utils.js';
 import littleEndian from './endian.js';
 import types from './types.js';
-import { toType } from '../utils/shared.js';
+import { toConstructorName, toSymbolName, toType } from '../utils/shared.js';
 
 const { isArray } = Array;
 const { isView } = ArrayBuffer;
@@ -9,57 +9,62 @@ const { isInteger, isFinite } = Number;
 const { entries } = Object;
 
 // numbers
-const toInt = (buffer, value) => {
+const toInt = (data, value) => {
   if (-128 <= value && value < 128) {
-    resize(buffer, i += 2);
-    data.setUint8(i - 2, types.i8);
-    data.setInt8(i - 1, value);
+    resize(data, i + 2);
+    data.setUint8(i++, types.i8);
+    data.setInt8(i++, value);
   }
   else if (-32768 <= value && value < 32768) {
-    resize(buffer, i += 3);
-    data.setUint8(i - 3, types.i16);
-    data.setInt16(i - 2, value, littleEndian);
+    resize(data, i + 3);
+    data.setUint8(i++, types.i16);
+    data.setInt16(i, value, littleEndian);
+    i += 2;
   }
   else if (-2147483648 <= value && value < 2147483648) {
-    resize(buffer, i += 5);
-    data.setUint8(i - 5, types.i32);
-    data.setInt32(i - 4, value, littleEndian);
+    resize(data, i + 5);
+    data.setUint8(i++, types.i32);
+    data.setInt32(i, value, littleEndian);
+    i += 4;
   }
-  else toFloat(buffer, value);
+  else toFloat(data, value);
 };
 
-const toUint = (buffer, value) => {
+const toUint = (data, value) => {
   if (value < 256) {
-    resize(buffer, i += 2);
-    data.setUint8(i - 2, types.u8);
-    data.setUint8(i - 1, value);
+    resize(data, i + 2);
+    data.setUint8(i++, types.u8);
+    data.setUint8(i++, value);
   }
   else if (value < 65536) {
-    resize(buffer, i += 3);
-    data.setUint8(i - 3, types.u16);
-    data.setUint16(i - 2, value, littleEndian);
+    resize(data, i + 3);
+    data.setUint8(i++, types.u16);
+    data.setUint16(i, value, littleEndian);
+    i += 2;
   }
   else if (value < 4294967296) {
-    resize(buffer, i += 5);
-    data.setUint8(i - 5, types.u32);
-    data.setUint32(i - 4, value, littleEndian);
+    resize(data, i + 5);
+    data.setUint8(i++, types.u32);
+    data.setUint32(i, value, littleEndian);
+    i += 4;
   }
-  else toFloat(buffer, value);
+  else toFloat(data, value);
 };
 
-const toFloat = (buffer, value) => {
-  resize(buffer, i += 9);
-  data.setUint8(i - 9, types.f64);
-  data.setFloat64(i - 8, value, littleEndian);
+const toFloat = (data, value) => {
+  resize(data, i + 9);
+  data.setUint8(i++, types.f64);
+  data.setFloat64(i, value, littleEndian);
+  i += 8;
 };
 
 // cache
-const toCache = (buffer, cache, value) => {
+const toCache = (data, cache, value) => {
   const index = cache.get(value);
   if (typeof index === 'number') {
-    resize(buffer, i += 1);
-    data.setUint8(i - 1, types.ref);
-    toUint(buffer, index);
+    resize(data, i + 1);
+    data.setUint8(i++, types.ref);
+    toUint(data, index);
     return true;
   }
   cache.set(value, i);
@@ -67,128 +72,131 @@ const toCache = (buffer, cache, value) => {
 };
 
 // common
-const toLength = (buffer, type, length, factor) => {
-  resize(buffer, i + 10 + length * factor);
+const toLength = (data, type, length, factor) => {
+  resize(data, i + 10 + length * factor);
   data.setUint8(i++, type);
-  toUint(buffer, length);
+  toUint(data, length);
 };
 
 // utils
-const ignore = buffer => {
-  resize(buffer, i += 1);
-  data.setUint8(i - 1, types.ignore);
+const ignore = data => {
+  resize(data, i + 1);
+  data.setUint8(i++, types.ignore);
 };
 
-const one = (buffer, type) => {
-  resize(buffer, i += 1);
-  data.setUint8(i - 1, type);
+const one = (data, type) => {
+  resize(data, i + 1);
+  data.setUint8(i++, type);
 };
 
-const resize = (buffer, length) => {
+const resize = (data, length) => {
   if (byteLength < length) {
     byteLength += length + minByteLength;
-    buffer.grow(byteLength);
+    data.buffer.grow(byteLength);
   }
 };
 
-let i = 0, byteLength = i, data;
+let i = 0, byteLength = i;
 
-const flatten = (buffer, cache, value, type = toType(value)) => {
+const flatten = (data, cache, value, type = toType(value)) => {
   switch (type) {
     case 'null': {
-      one(buffer, types.null);
+      one(data, types.null);
       break;
     }
     case 'object': {
-      if (toCache(buffer, cache, value)) break;
+      if (toCache(data, cache, value)) break;
       switch (true) {
         case isArray(value): {
           const length = value.length;
-          toLength(buffer, types.array, length, 1);
+          toLength(data, types.array, length, 1);
           for (let j = 0; j < length; j++)
-            flatten(buffer, cache, value[j]);
+            flatten(data, cache, value[j]);
           break;
         }
         case isView(value): {
-          one(buffer, types.view);
-          flatten(buffer, cache, value.constructor.name, 'string');
-          toUint(buffer, value.byteOffset);
-          value = value.buffer;
-          if (toCache(buffer, cache, value)) break;
+          const { BYTES_PER_ELEMENT, buffer, byteOffset, length } = value;
+          one(data, types.view);
+          flatten(data, cache, toConstructorName(value.constructor), 'string');
+          toUint(data, byteOffset);
+          toUint(data, length !== ((buffer.byteLength - byteOffset) / BYTES_PER_ELEMENT) ? length : 0);
+          if (toCache(data, cache, buffer)) break;
+          value = buffer;
         }
         case value instanceof ArrayBuffer: {
           const byteLength = value.byteLength;
           const maxByteLength = value.resizable ? value.maxByteLength : 0;
-          toLength(buffer, types.buffer, byteLength, 1);
-          toUint(buffer, maxByteLength);
+          toLength(data, types.buffer, byteLength, 1);
+          toUint(data, maxByteLength);
           if (byteLength) {
-            resize(buffer, i += byteLength);
-            new Uint8Array(buffer).set(new Uint8Array(value), i - byteLength);
+            resize(data, i += byteLength);
+            const ui8a = new Uint8Array(value, 0, byteLength);
+            new Uint8Array(data.buffer).set(ui8a, i - byteLength);
           }
           break;
         }
         case value instanceof Date: {
-          one(buffer, types.date);
-          toUint(buffer, +value);
+          one(data, types.date);
+          toUint(data, +value);
           break;
         }
         case value instanceof Map: {
-          toLength(buffer, types.map, value.size, 1);
+          toLength(data, types.map, value.size, 1);
           for (const [k, v] of value) {
             const tk = toType(k);
             const tv = toType(v);
             if (tk && tv) {  
-              flatten(buffer, cache, k, tk);
-              flatten(buffer, cache, v, tv);
+              flatten(data, cache, k, tk);
+              flatten(data, cache, v, tv);
             }
-            else ignore(buffer);
+            else ignore(data);
           }
           break;
         }
         case value instanceof Set: {
-          toLength(buffer, types.set, value.size, 1);
+          toLength(data, types.set, value.size, 1);
           for (const v of value) {
             const t = toType(v);
-            if (t) flatten(buffer, cache, v, t);
-            else ignore(buffer);
+            if (t) flatten(data, cache, v, t);
+            else ignore(data);
           }
           break;
         }
         case value instanceof RegExp: {
-          one(buffer, types.regexp);
-          flatten(buffer, cache, value.source, 'string');
-          flatten(buffer, cache, value.flags, 'string');
+          one(data, types.regexp);
+          flatten(data, cache, value.source, 'string');
+          flatten(data, cache, value.flags, 'string');
           break;
         }
         case value instanceof Error: {
-          one(buffer, types.error);
-          flatten(buffer, cache, value.name, 'string');
-          flatten(buffer, cache, value.message, 'string');
-          flatten(buffer, cache, value.stack, 'string');
+          one(data, types.error);
+          flatten(data, cache, value.name, 'string');
+          flatten(data, cache, value.message, 'string');
+          flatten(data, cache, value.stack, 'string');
           break;
         }
         default: {
           if ('toJSON' in value) {
             const other = value.toJSON();
             if (other === value) {
-              one(buffer, types.object);
-              toUint(buffer, 0);
+              one(data, types.object);
+              toUint(data, 0);
               break;
             }
             value = other;
-            if (toCache(buffer, cache, value)) break;
+            if (toCache(data, cache, value)) break;
           }
           const items = entries(value);
           const length = items.length;
-          toLength(buffer, types.object, length, 1);
+          toLength(data, types.object, length, 1);
           for (let j = 0; j < length; j++) {
             const pair = items[j];
             const t = toType(pair[1]);
             if (t) {
-              flatten(buffer, cache, pair[0], 'string');
-              flatten(buffer, cache, pair[1], t);
+              flatten(data, cache, pair[0], 'string');
+              flatten(data, cache, pair[1], t);
             }
-            else ignore(buffer);
+            else ignore(data);
           }
           break;
         }
@@ -196,19 +204,19 @@ const flatten = (buffer, cache, value, type = toType(value)) => {
       break;
     }
     case 'boolean': {
-      one(buffer, value ? types.true : types.false);
+      one(data, value ? types.true : types.false);
       break;
     }
     case 'number': {
-      if (isInteger(value)) toInt(buffer, value);
-      else if (isFinite(value)) toFloat(buffer, value);
-      else one(buffer, types.null);
+      if (isInteger(value)) toInt(data, value);
+      else if (isFinite(value)) toFloat(data, value);
+      else one(data, types.null);
       break;
     }
     case 'string': {
-      if (toCache(buffer, cache, value)) break;
+      if (toCache(data, cache, value)) break;
       const length = value.length;
-      toLength(buffer, types.string, length, 2);
+      toLength(data, types.string, length, 2);
       for (let j = 0; j < length; j++) {
         data.setUint16(i, value.charCodeAt(j), littleEndian);
         i += 2;
@@ -216,39 +224,34 @@ const flatten = (buffer, cache, value, type = toType(value)) => {
       break;
     }
     case 'bigint': {
-      resize(buffer, i += 9);
-      data.setUint8(i - 9, types.bigint);
-      data.setBigInt64(i - 8, value, littleEndian);
+      resize(data, i + 9);
+      data.setUint8(i++, types.b64);
+      data.setBigInt64(i, value, littleEndian);
+      i += 8;
       break;
     }
     case 'symbol': {
-      const name = value.toString().slice(7, -1);
-      if (name.startsWith('Symbol.') || Symbol.keyFor(value)) {
-        one(buffer, types.symbol);
-        flatten(buffer, cache, name, 'string');
+      const name = toSymbolName(value);
+      if (name) {
+        one(data, types.symbol);
+        flatten(data, cache, name, 'string');
+        break;
       }
-      break;
     }
     case '': {
-      one(buffer, types.undefined);
+      one(data, types.undefined);
       break;
     }
-    default: {
-      throw new Error(`Unsupported type: ${type}`);
-    }
+    /* c8 ignore next */
+    default: throw new Error(`Unsupported type: ${type}`);
   }
 };
 
-export const encode = (value, buffer, byteOffset = 0) => {
-  data = new DataView(buffer);
+export const encode = (value, buffer, { byteOffset = 0 } = {}) => {
   const current = i = byteOffset;
   byteLength = buffer.byteLength;
-  flatten(buffer, new Map, value);
-  data = null;
+  flatten(new DataView(buffer), new Map, value);
   return i - current;
 };
 
-export const encoder = defaults => {
-  const byteOffset = defaults?.byteOffset || 0;
-  return (value, buffer) => encode(value, buffer, byteOffset);
-};
+export const encoder = options => (value, buffer) => encode(value, buffer, options);

@@ -2,7 +2,7 @@ import coincident from '../../dist/worker_flatted.js';
 
 const D = false;
 const BUG = console.log;
-const ROUNDTRIPS = 20;
+const ROUNDTRIPS = 100;
 
 const { proxy, native } = await coincident();
 

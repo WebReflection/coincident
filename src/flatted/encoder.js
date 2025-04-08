@@ -1,7 +1,7 @@
 import createEncoder from '../utils/encoder.js';
 import types from './types.js';
 import { minByteLength } from '../utils.js';
-import { toType } from '../utils/shared.js';
+import { toConstructorName, toSymbolName, toType } from '../utils/shared.js';
 
 const { isArray } = Array;
 const { isView } = ArrayBuffer;
@@ -34,20 +34,22 @@ const flatten = (arr, cache, value, type = toType(value)) => {
           break;
         }
         case isView(value): {
+          const { BYTES_PER_ELEMENT, buffer, byteOffset, length } = value;
           arr.push(
             types.view,
-            value.constructor.name,
-            value.byteOffset
+            toConstructorName(value.constructor),
+            byteOffset,
+            length !== ((buffer.byteLength - byteOffset) / BYTES_PER_ELEMENT) ? length : 0
           );
-          value = value.buffer;
-          if (toCache(arr, cache, value)) break;
+          if (toCache(arr, cache, buffer)) break;
+          value = buffer;
         }
         case value instanceof ArrayBuffer: {
           const byteLength = value.byteLength;
           const maxByteLength = value.resizable ? value.maxByteLength : 0;
           arr.push(types.buffer, byteLength, maxByteLength);
           if (byteLength) {
-            const ui8a = new Uint8Array(value);
+            const ui8a = new Uint8Array(value, 0, byteLength);
             for (let i = 0; i < ui8a.length; i += minByteLength)
               arr.push.apply(arr, ui8a.subarray(i, i + minByteLength));
           }
@@ -134,10 +136,11 @@ const flatten = (arr, cache, value, type = toType(value)) => {
       break;
     }
     case 'symbol': {
-      const name = value.toString().slice(7, -1);
-      if (name.startsWith('Symbol.') || Symbol.keyFor(value))
+      const name = toSymbolName(value);
+      if (name) {
         arr.push(types[type], name);
-      break;
+        break;
+      }
     }
     case '': {
       arr.push(types.undefined);

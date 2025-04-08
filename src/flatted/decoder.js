@@ -1,3 +1,4 @@
+import { toSymbolValue } from '../utils/shared.js';
 import createDecoder from '../utils/decoder.js';
 import types from './types.js';
 
@@ -34,26 +35,28 @@ const unflatten = arr => {
     case types.null: return null;
     case types.undefined: return void 0;
     case types.buffer: {
-      const length = arr[i++];
+      const byteLength = arr[i++];
       const maxByteLength = arr[i++];
-      const args = [length];
+      const args = [byteLength];
       if (maxByteLength) args.push({ maxByteLength });
       const buffer = new ArrayBuffer(...args);
       arr[i - 3] = buffer;
-      const ui8a = new Uint8Array(buffer);
-      for (let j = 0; j < length; j++) ui8a[j] = arr[i++];
+      const ui8a = new Uint8Array(buffer, 0, byteLength);
+      for (let j = 0; j < byteLength; j++) ui8a[j] = arr[i++];
       return buffer;
     }
     case types.view: {
       const name = arr[i++];
       const byteOffset = arr[i++];
-      const view = new globalThis[name](unflatten(arr), byteOffset);
-      arr[i - 3] = view;
+      const length = arr[i++];
+      const args = [unflatten(arr), byteOffset];
+      if (length) args.push(length);
+      const view = new globalThis[name](...args);
+      arr[i - 4] = view;
       return view;
     }
     case types.symbol: {
-      const name = arr[i++];
-      return name.startsWith('Symbol.') ? Symbol[name.split('.')[1]] : Symbol.for(name);
+      return toSymbolValue(arr[i++]);
     }
     case types.date: {
       const date = new Date(arr[i++]);

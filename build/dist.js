@@ -20,22 +20,22 @@ export default [
       file: './dist/window/worker.js',
     }
   },
-  {
-    plugins,
-    input: './src/server/main.js',
-    output: {
-      esModule: true,
-      file: './dist/server/main.js',
-    }
-  },
-  {
-    plugins,
-    input: './src/server/worker.js',
-    output: {
-      esModule: true,
-      file: './dist/server/worker.js',
-    }
-  },
+  // {
+  //   plugins,
+  //   input: './src/server/main.js',
+  //   output: {
+  //     esModule: true,
+  //     file: './dist/server/main.js',
+  //   }
+  // },
+  // {
+  //   plugins,
+  //   input: './src/server/worker.js',
+  //   output: {
+  //     esModule: true,
+  //     file: './dist/server/worker.js',
+  //   }
+  // },
   {
     plugins,
     input: './src/main.js',

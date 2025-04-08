@@ -69,10 +69,10 @@ console.assert(JSON.stringify(decode('[2,0]')) === '{}', 69);
 
 var obj = { ok: true };
 var wrap = { toJSON(){ return obj }};
-console.assert(encode(wrap) === '[2,1,4,"ok",5]', 73);
-console.assert(encode([wrap, obj, wrap]) === '[1,3,2,1,4,"ok",5,0,2,0,2]', 74);
-console.assert(decode(encode([wrap, obj, wrap])).every((v, i, arr) => v === arr[0]), 75);
-console.assert(encode(Symbol()) === '[]', 76);
+console.assert(encode(wrap) === '[2,1,4,"ok",5]', 72);
+console.assert(encode([wrap, obj, wrap]) === '[1,3,2,1,4,"ok",5,0,2,0,2]', 73);
+console.assert(decode(encode([wrap, obj, wrap])).every((v, i, arr) => v === arr[0]), 74);
+console.assert(encode(Symbol()) === '[13]', 75);
 
 
 var set = new Set([1, void 0, 2]);
@@ -117,3 +117,10 @@ try {
 catch (_) {
   console.log('OK');
 }
+
+class UI8A extends Uint8Array {}
+const ab = new ArrayBuffer(10);
+console.assert(decode(encode(new UI8A(2))) instanceof Uint8Array, 123);
+console.assert(decode(encode(new UI8A(ab, 2, 4))) instanceof Uint8Array, 124);
+console.assert(decode(encode(new Uint8Array(ab, 2, 4))).byteOffset === 2, 125);
+console.assert(decode(encode(new Uint8Array(ab, 2, 4))).length === 4, 126);

@@ -1,14 +1,14 @@
 {
   "name": "@webreflection/coincident",
-  "version": "0.1.2",
+  "version": "0.2.4",
   "description": "An Atomics based Proxy to simplify, and synchronize, Worker related tasks",
   "scripts": {
-    "build": "node build/index.cjs && node build/variants.js && rollup --config build/dist.js && rm src/main_*.js && rm src/worker_*.js",
+    "build": "node build/index.cjs && node build/variants.js && rollup --config build/dist.js && rm src/main_*.js && rm src/worker_*.js && npm run cover",
     "coi": "npx mini-coi .",
     "server": "static-handler .",
     "server:bun": "bun test/server/bun.js",
     "server:node": "node test/server/node.js",
-    "cover": "c8 node test/cover/flatted.js",
+    "cover": "c8 node test/cover/flatted.js && c8 node test/cover/buffered.js",
     "size": "echo -e \"\\x1b[1mfile          size\\x1b[0m\";echo \"server/main   $(cat dist/server/main.js | brotli | wc -c)\";echo \"server/worker $(cat dist/server/worker.js | brotli | wc -c)\";echo \"window/main   $(cat dist/window/main.js | brotli | wc -c)\";echo \"window/worker $(cat dist/window/worker.js | brotli | wc -c)\";echo \"main          $(cat dist/main.js | brotli | wc -c)\";echo \"worker        $(cat dist/worker.js | brotli | wc -c)\""
   },
   "keywords": [
@@ -23,7 +23,7 @@
     "@rollup/plugin-terser": "^0.4.4",
     "c8": "^10.1.3",
     "mini-coi": "^0.4.2",
-    "rollup": "^4.37.0",
+    "rollup": "^4.39.0",
     "static-handler": "^0.5.3",
     "ws": "^8.18.1"
   },
@@ -61,10 +61,8 @@
   },
   "dependencies": {
     "@ungap/structured-clone": "^1.3.0",
-    "buffered-clone": "^0.8.3",
     "gc-hook": "^0.4.1",
-    "js-proxy": "^0.5.2",
-    "sabayon": "^0.7.2"
+    "js-proxy": "^0.5.2"
   },
   "repository": {
     "type": "git",
