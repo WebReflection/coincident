@@ -29,8 +29,7 @@ const defaults = {
 };
 
 const map = new Map;
-const identity = value => value;
-const rtr = ($ = identity, id = 0) => [
+const rtr = ($, id = 0) => [
   uid => {
     const wr = withResolvers();
     do { uid = $(id++) }
@@ -46,14 +45,13 @@ const rtr = ($ = identity, id = 0) => [
   },
 ];
 
-const result = async (uid, callback, args, transform) => {
-  const response = [uid, null, null];
+const result = async (data, proxied, transform) => {
   try {
-    const result = await callback(...args);
-    response[1] = transform ? transform(result) : result;
+    const result = await proxied[data[1]].apply(null, data[2]);
+    data[1] = transform ? transform(result) : result;
+    data[2] = null;
   }
-  catch (error) { response[2] = error }
-  return response;
+  catch (error) { data[2] = error }
 };
 
 const set = (proxied, name, callback) => {

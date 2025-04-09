@@ -1,13 +1,12 @@
 import { DESTROY } from '../proxy/traps.js';
 
 import { encoder as jsonEncoder } from '../json/encoder.js';
+import { encoder as minimalEncoder } from '../proxy/encoder.js';
 
 import { MAIN, WORKER } from './constants.js';
 
 import coincident from '../main.js';
 import callback from '../proxy/main.js';
-
-import minimalEncoder from '../minimal/encoder.js';
 
 export default /** @type {import('../main.js').Coincident} */ options => {
   let tracking = false;
@@ -39,9 +38,8 @@ export default /** @type {import('../main.js').Coincident} */ options => {
       );
 
       proxy[MAIN] = function (...args) {
-        const result = main.apply(this, args);
-        tracking = result !== void 0;
-        return result;
+        tracking = true;
+        return main.apply(this, args);
       };
     }
     terminate() {

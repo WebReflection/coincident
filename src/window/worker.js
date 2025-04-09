@@ -1,11 +1,10 @@
 import { MAIN, WORKER } from './constants.js';
 
 import { decoder as jsonDecoder } from '../json/decoder.js';
+import { decoder as minimalDecoder } from '../proxy/decoder.js';
 
 import coincident from '../worker.js';
 import proxyWorker from '../proxy/worker.js';
-
-import minimalDecoder from '../minimal/decoder.js';
 
 /**
  * @callback Coincident

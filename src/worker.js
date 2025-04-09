@@ -77,12 +77,12 @@ export default async options => {
     set
   });
 
-  channel.onmessage = async ({ data: [uid, name, args] }) => {
-    if (typeof uid === 'string')
-      resolve(uid, name, args);
+  channel.onmessage = async ({ data }) => {
+    if (typeof data[0] === 'string')
+      resolve.apply(null, data);
     else {
-      const response = await result(uid, proxied[name], args, transform);
-      channel.postMessage(response);
+      await result(data, proxied, transform);
+      channel.postMessage(data);
     }
   };
 
