@@ -1,6 +1,6 @@
 {
   "name": "@webreflection/coincident",
-  "version": "0.2.4",
+  "version": "0.2.7",
   "description": "An Atomics based Proxy to simplify, and synchronize, Worker related tasks",
   "scripts": {
     "build": "node build/index.cjs && node build/variants.js && rollup --config build/dist.js && rm src/main_*.js && rm src/worker_*.js && npm run cover",
