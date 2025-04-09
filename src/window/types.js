@@ -31,4 +31,5 @@ export default Object.fromEntries([
   STRING,
   SYMBOL,
   UNDEFINED,
+  'view',
 ].map((k, i) => [k, i]));

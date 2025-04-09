@@ -51,7 +51,8 @@ export default (resolve, __worker__) => {
         if (value === null) return [numeric[NULL], value];
         if (value === globalThis) return [numeric[OBJECT], null];
         if (isArray(value)) return [numeric[ARRAY], hold(value)];
-        return [numeric[OBJECT], isView(value) ? value : hold(value)];
+        if (isView(value)) return [numeric.view, value];
+        return [numeric[OBJECT], hold(value)];
       }
       case FUNCTION: return [numeric[FUNCTION], hold(value)];
       case SYMBOL: return [numeric[SYMBOL], toSymbol(value)];
@@ -64,10 +65,8 @@ export default (resolve, __worker__) => {
       case numeric[OBJECT]: {
         if (value === null) return globalThis;
         if (typeof value === NUMBER) return get(value);
-        if (!(isView(value))) {
-          for (const key in value)
-            value[key] = fromEntry(value[key]);
-        }
+        for (const key in value)
+          value[key] = fromEntry(value[key]);
         return value;
       };
       case numeric[ARRAY]: {

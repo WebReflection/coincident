@@ -1,7 +1,11 @@
 import { MAIN, WORKER } from './constants.js';
 
+import { decoder as jsonDecoder } from '../json/decoder.js';
+
 import coincident from '../worker.js';
 import proxyWorker from '../proxy/worker.js';
+
+import minimalDecoder from '../minimal/decoder.js';
 
 /**
  * @callback Coincident
@@ -10,10 +14,30 @@ import proxyWorker from '../proxy/worker.js';
  */
 
 export default /** @type {Coincident} */ async options => {
-  const exports = await coincident(options);
+  let tracking = false;
+  const decoder = options?.decoder || jsonDecoder;
+  const exports = await coincident({
+    ...options,
+    decoder(options) {
+      const original = decoder(options);
+      const minimal = minimalDecoder(options);
+      return (length, buffer) => {
+        if (tracking) {
+          tracking = false;
+          return minimal(length, buffer);
+        }
+        return original(length, buffer);
+      };
+    }
+  });
+
+  const main = exports.proxy[MAIN];
 
   const { isProxy, global, method } = proxyWorker(
-    exports.proxy[MAIN],
+    function (...args) {
+      tracking = true;
+      return main.apply(this, args);
+    },
     options?.transform || ((o) => o)
   );
 
