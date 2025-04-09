@@ -49,10 +49,11 @@ const unflatten = arr => {
       const name = arr[i++];
       const byteOffset = arr[i++];
       const length = arr[i++];
+      const index = i - 4;
       const args = [unflatten(arr), byteOffset];
       if (length) args.push(length);
       const view = new globalThis[name](...args);
-      arr[i - 4] = view;
+      arr[index] = view;
       return view;
     }
     case types.symbol: {
@@ -103,7 +104,7 @@ const unflatten = arr => {
       return error;
     }
     default:
-      throw new Error(`Unknown type: ${arr[i - 1]}`);
+      throw new TypeError(`Unknown type: ${arr[i - 1]}`);
   }
 };
 
@@ -111,10 +112,11 @@ const { parse } = JSON;
 
 let i = 0;
 
-export const decode = json => {
+export const raw = arr => {
   i = 0;
-  const arr = parse(json);
   return arr.length ? unflatten(arr) : void 0;
 };
+
+export const decode = json => raw(parse(json));
 
 export const decoder = createDecoder(decode);

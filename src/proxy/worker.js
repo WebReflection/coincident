@@ -63,10 +63,17 @@ export default (__main__, transform) => {
     switch (TYPE) {
       case OBJECT: {
         if (ref == globalThis || ref == null) ref = null;
-        else if ((typeof ref === OBJECT) && !(isView(ref))) {
+        else if ((typeof ref === OBJECT)) {
           ref = transform(ref);
-          if (isArray(ref)) ref = ref.map(toEntry);
-          else for (const key in ref) ref[key] = toEntry(ref[key]);
+          // this happens with proxies recognized as objects
+          // but that could reveal an array underneath
+          if (isArray(ref)) return [numeric[ARRAY], ref.map(toEntry)];
+          if (isView(ref)) return [numeric.view, ref];
+          else {
+            const result = {};
+            for (const key in ref) result[key] = toEntry(ref[key]);
+            ref = result;
+          }
         }
         return [numeric[OBJECT], ref];
       }

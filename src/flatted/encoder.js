@@ -153,10 +153,12 @@ const flatten = (arr, cache, value, type = toType(value)) => {
   }
 };
 
-export const encode = value => {
+export const raw = value => {
   const arr = [];
   flatten(arr, new Map, value);
-  return stringify(arr);
+  return arr;
 };
+
+export const encode = value => stringify(raw(value));
 
 export const encoder = createEncoder(encode);

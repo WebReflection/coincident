@@ -1,5 +1,7 @@
 import { decoder } from './json/decoder.js';
 
+import * as transferred from './transfer.js';
+
 import {
   create,
   defaults,
@@ -30,6 +32,7 @@ export default async options => {
   const WORKAROUND = native && !!ID;
   const transform = options?.transform;
   const decode = (options?.decoder || decoder)(defaults);
+  const checkTransferred = options?.transfer !== false;
 
   let i32a, wait;
   if (native) {
@@ -52,11 +55,12 @@ export default async options => {
       let cb = callbacks.get(name);
       if (!cb) {
         callbacks.set(name, cb = (...args) => {
+          const transfer = transferred.get(checkTransferred, args);
           const data = [i32a, name, transform ? args.map(transform) : args];
           // synchronous request
           if (native) {
-            if (WORKAROUND) postMessage({ ID, data });
-            else channel.postMessage(data);
+            if (WORKAROUND) postMessage({ ID, data }, transfer);
+            else channel.postMessage(data, transfer);
             wait(i32a, 0);
             i32a[0] = 0;
             const result = i32a[1] ? decode(i32a[1], i32a.buffer) : void 0;
@@ -67,7 +71,7 @@ export default async options => {
           else {
             const [uid, wr] = next();
             data[0] = uid;
-            channel.postMessage(data);
+            channel.postMessage(data, transfer);
             return wr.promise;
           }
         });
@@ -77,14 +81,18 @@ export default async options => {
     set
   });
 
-  channel.onmessage = async ({ data: [uid, name, args] }) => {
-    if (typeof uid === 'string')
-      resolve(uid, name, args);
+  channel.onmessage = async ({ data }) => {
+    if (typeof data[0] === 'string')
+      resolve.apply(null, data);
     else {
-      const response = await result(uid, proxied[name], args, transform);
-      channel.postMessage(response);
+      await result(data, proxied, transform);
+      channel.postMessage(data);
     }
   };
 
-  return { native, proxy };
+  return {
+    native,
+    proxy,
+    transfer: transferred.set,
+  };
 };

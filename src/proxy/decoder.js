@@ -1,12 +1,11 @@
 import { BIGINT, UNDEFINED } from 'js-proxy/types';
-
+import createDecoder from '../utils/decoder.js';
 import numeric from '../window/types.js';
 
 const { parse } = JSON;
 
-export default ({ byteOffset }) => (length, buffer) => {
-  const ui16a = new Uint16Array(buffer, byteOffset, length);
-  const result = parse(String.fromCharCode.apply(null, ui16a));
+export const decode = json => {
+  const result = parse(json);
   switch (result[0]) {
     case numeric.view: {
       const [name, buffer] = result[1];
@@ -25,3 +24,5 @@ export default ({ byteOffset }) => (length, buffer) => {
   }
   return result;
 };
+
+export const decoder = createDecoder(decode);

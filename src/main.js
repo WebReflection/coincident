@@ -1,5 +1,7 @@
 import { encoder } from './json/encoder.js';
 
+import * as transferred from './transfer.js';
+
 import {
   ID,
   assign,
@@ -19,14 +21,17 @@ const UID = 'InstallTrigger' in globalThis ? ID : '';
 
 const { notify } = Atomics;
 
+const Number = value => value;
+
 export default options => {
   const transform = options?.transform;
   const encode = (options?.encoder || encoder)(defaults);
+  const checkTransferred = options?.transfer !== false;
 
   class Worker extends globalThis.Worker {
     constructor(url, options) {
       const { port1: channel, port2 } = new MessageChannel;
-      const [ next, resolve ] = rtr();
+      const [ next, resolve ] = rtr(Number);
       const callbacks = new Map;
       const proxied = create(null);
 
@@ -61,8 +66,12 @@ export default options => {
           let cb = callbacks.get(name);
           if (!cb) {
             callbacks.set(name, cb = (...args) => {
+              const transfer = transferred.get(checkTransferred, args);
               const [uid, wr] = next();
-              channel.postMessage([uid, name, transform ? args.map(transform) : args]);
+              channel.postMessage(
+                [uid, name, transform ? args.map(transform) : args],
+                transfer
+              );
               return deadlock(wr, name);
             });
           }
@@ -85,18 +94,18 @@ export default options => {
       }
 
       channel.onmessage = async ({ data }) => {
-        const [i32, name, args] = data;
+        const i32 = data[0];
         const type = typeof i32;
         if (type === 'number')
-          resolve(i32, name, args);
+          resolve.apply(null, data);
         else {
-          resolving = name;
-          const response = await result(i32, proxied[name], args, transform);
+          resolving = data[1];
+          await result(data, proxied, transform);
           resolving = '';
           if (type === 'string')
-            channel.postMessage(response);
+            channel.postMessage(data);
           else {
-            const result = response[2] || response[1];
+            const result = data[2] || data[1];
             // at index 1 we store the written length or 0, if undefined
             i32[1] = result === void 0 ? 0 : encode(result, i32.buffer);
             // at index 0 we set the SharedArrayBuffer as ready
@@ -111,5 +120,6 @@ export default options => {
   return {
     Worker,
     native,
+    transfer: transferred.set,
   };
 };

@@ -1,9 +1,9 @@
 {
   "name": "@webreflection/coincident",
-  "version": "0.2.8",
+  "version": "0.2.13",
   "description": "An Atomics based Proxy to simplify, and synchronize, Worker related tasks",
   "scripts": {
-    "build": "node build/index.cjs && node build/variants.js && rollup --config build/dist.js && rm src/main_*.js && rm src/worker_*.js && npm run cover",
+    "build": "node build/constants.cjs && node build/index.cjs && node build/variants.js && rollup --config build/dist.js && rm src/main_*.js && rm src/worker_*.js && npm run cover",
     "coi": "npx mini-coi .",
     "server": "static-handler .",
     "server:bun": "bun test/server/bun.js",

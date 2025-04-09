@@ -5,9 +5,16 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <script type="module">
       import coincident from '../../dist/window/main.js';
-      const { Worker } = coincident();
+      const { Worker, transfer } = coincident();
       const worker = new Worker('./transfer.js');
+
       worker.proxy.transfer = (...args) => !console.log(args);
+
+      const uInt8Array = new Uint8Array(1024 * 1024 * 8).map((_, i) => i);
+      console.assert(uInt8Array.byteLength === 8388608, 'expected original length');
+      worker.proxy.receive([1, 2], {array: uInt8Array}, transfer(uInt8Array.buffer));
+      console.assert(uInt8Array.byteLength === 0, 'expected transfered length');
+      console.log('Main: OK');
     </script>
   </head>
 </html>

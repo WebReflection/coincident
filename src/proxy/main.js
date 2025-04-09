@@ -146,5 +146,6 @@ export default (resolve, __worker__) => {
         default: return asEntry(method, target, args);
       }
     }
+    return [numeric[UNDEFINED], void 0];
   };
 };
