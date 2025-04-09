@@ -10,17 +10,17 @@ import callback from '../proxy/main.js';
 import minimalEncoder from '../minimal/encoder.js';
 
 export default /** @type {import('../main.js').Coincident} */ options => {
-  let tracking = null;
+  let tracking = false;
   const esm = options?.import;
-  const encoder = options?.encoder || jsonEncoder;
+  const defaultEncoder = options?.encoder || jsonEncoder;
   const exports = coincident({
     ...options,
     encoder(options) {
-      const original = encoder(options);
+      const original = defaultEncoder(options);
       const minimal = minimalEncoder(options);
       return (value, buffer) => {
-        if (tracking === value) {
-          tracking = null;
+        if (tracking) {
+          tracking = false;
           return minimal(value, buffer);
         }
         return original(value, buffer);
@@ -39,7 +39,9 @@ export default /** @type {import('../main.js').Coincident} */ options => {
       );
 
       proxy[MAIN] = function (...args) {
-        return (tracking = main.apply(this, args));
+        const result = main.apply(this, args);
+        tracking = result !== void 0;
+        return result;
       };
     }
     terminate() {

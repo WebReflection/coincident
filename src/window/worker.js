@@ -15,11 +15,11 @@ import minimalDecoder from '../minimal/decoder.js';
 
 export default /** @type {Coincident} */ async options => {
   let tracking = false;
-  const decoder = options?.decoder || jsonDecoder;
+  const defaultDecoder = options?.decoder || jsonDecoder;
   const exports = await coincident({
     ...options,
     decoder(options) {
-      const original = decoder(options);
+      const original = defaultDecoder(options);
       const minimal = minimalDecoder(options);
       return (length, buffer) => {
         if (tracking) {

@@ -31,25 +31,14 @@ export default async options => {
   const transform = options?.transform;
   const decode = (options?.decoder || decoder)(defaults);
 
-  let i32a, waitSync;
+  let i32a, wait;
   if (native) {
     const sab = new SharedArrayBuffer(
       options?.minByteLength || minByteLength,
       { maxByteLength: options?.maxByteLength || maxByteLength }
     );
     i32a = new Int32Array(sab);
-    waitSync = Atomics.wait;
-
-    // ℹ️ for backward compatibility (never used to date)
-    const interrupt = options?.interrupt;
-    if (interrupt) {
-      const { handler, timeout = 42 } = interrupt;
-      waitSync = (sb, index, result) => {
-        while ((result = wait(sb, index, 0, timeout)) === 'timed-out')
-          handler();
-        return result;
-      };
-    }
+    wait = Atomics.wait;
   }
 
   const [ next, resolve ] = rtr(String);
@@ -68,7 +57,7 @@ export default async options => {
           if (native) {
             if (WORKAROUND) postMessage({ ID, data });
             else channel.postMessage(data);
-            waitSync(i32a, 0);
+            wait(i32a, 0);
             i32a[0] = 0;
             const result = i32a[1] ? decode(i32a[1], i32a.buffer) : void 0;
             if (result instanceof Error) throw result;
