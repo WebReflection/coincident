@@ -8,7 +8,7 @@ writeFileSync(
   CHANNEL,
   readFileSync(CHANNEL).toString().replace(
     /const CHANNEL = (['"]).*?\1;/,
-    `const CHANNEL = $1${randomUUID()}$1;`
+    `const CHANNEL = $1${randomUUID().split('-')[0]}$1;`
   )
 );
 

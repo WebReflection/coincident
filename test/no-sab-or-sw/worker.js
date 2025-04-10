@@ -1,7 +1,7 @@
 import coincident from '../../dist/window/worker.js';
-const { proxy, polyfill, sync } = await coincident();
+const { proxy, native } = await coincident();
 
-console.table({ polyfill, sync });
+console.table({ native });
 
 proxy.sum = (...args) => args.reduce((p, c) => (p + c), 0);
 

@@ -1,4 +1,4 @@
-import coincident from '../../dist/worker.js';
+import coincident from '../../dist/worker_structured.js';
 import { set } from '../../src/utils.js';
 
 const D = false;
