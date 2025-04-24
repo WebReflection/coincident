@@ -8,7 +8,7 @@ import { MAIN, WORKER } from './constants.js';
 import coincident from '../main.js';
 import callback from '../proxy/main.js';
 
-export default /** @type {import('../main.js').Coincident} */ options => {
+export default options => {
   let tracking = false;
   const esm = options?.import;
   const defaultEncoder = options?.encoder || jsonEncoder;
