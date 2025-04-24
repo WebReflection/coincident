@@ -32,7 +32,6 @@ export default options => {
       const { proxy } = super(url, options);
 
       const main = callback(
-        // options.import = name => valid(name) && name
         options?.import || esm || (name => new URL(name, location.href)),
         proxy[WORKER]
       );
