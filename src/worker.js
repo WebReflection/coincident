@@ -1,113 +1,98 @@
-// (c) Andrea Giammarchi - MIT
+import { decoder } from './json/decoder.js';
+
+import * as transferred from './transfer.js';
 
 import {
-  Atomics,
-  Int32Array,
-  SharedArrayBuffer,
-  addEventListener,
-  postMessage,
-  ignore,
-  polyfill,
-} from 'sabayon/worker';
-
-import {
-  ACTION_INIT,
-  ACTION_WAIT,
-  ACTION_NOTIFY,
-
-  actionLength,
-  actionFill,
-  actionWait,
-
-  createProxy,
-
-  isChannel,
-  transfer,
+  create,
+  defaults,
+  maxByteLength,
+  minByteLength,
+  native,
+  result,
+  rtr,
+  set,
+  stop,
   withResolvers,
-} from './shared.js';
+} from './utils.js';
 
-const { wait, waitAsync } = Atomics;
+// wait for the channel before resolving
+const bootstrap = withResolvers();
 
-/**
- * @typedef {Object} WorkerOptions
- * @prop {(text: string, ...args:any) => any} [parse=JSON.parse]
- * @prop {(value: any, ...args:any) => string} [stringify=JSON.stringify]
- * @prop {(value: any) => any} [transform]
- * @prop {{handler: () => void, timeout?: number}} [interrupt]
- */
+addEventListener(
+  'message',
+  event => {
+    stop(event);
+    bootstrap.resolve([event.data, event.ports[0]])
+  },
+  { once: true }
+);
 
-/**
- * @callback Coincident
- * @param {WorkerOptions} [options]
- * @returns {Promise<{polyfill: boolean, sync: boolean, transfer: (...args: Transferable[]) => Transferable[], proxy: {}}>}
- */
+export default async options => {
+  const [ID, channel] = await bootstrap.promise;
+  const WORKAROUND = native && !!ID;
+  const transform = options?.transform;
+  const decode = (options?.decoder || decoder)(defaults);
+  const checkTransferred = options?.transfer !== false;
 
-export default /** @type {Coincident} */ ({
-  parse,
-  stringify,
-  transform,
-  interrupt,
-} = JSON) => {
-  const waitLength = actionLength(stringify, transform);
-
-  const ready = withResolvers();
-  const map = new Map;
-  const results = new Map;
-
-  let CHANNEL = '';
-  let waitSync = wait;
-  if (wait && interrupt) {
-    const { handler, timeout = 42 } = interrupt;
-    waitSync = (sb, index, result) => {
-      while ((result = wait(sb, index, 0, timeout)) === 'timed-out')
-        handler();
-      return result;
-    };
+  let i32a, wait;
+  if (native) {
+    const sab = new SharedArrayBuffer(
+      options?.minByteLength || minByteLength,
+      { maxByteLength: options?.maxByteLength || maxByteLength }
+    );
+    i32a = new Int32Array(sab);
+    wait = Atomics.wait;
   }
 
-  addEventListener('message', event => {
-    if (isChannel(event, CHANNEL)) {
-      const [_, ACTION, ...rest] = event.data;
-      switch (ACTION) {
-        case ACTION_INIT: {
-          const sync = !!wait;
-          CHANNEL = _;
-          ready.resolve({
-            polyfill,
-            sync,
-            transfer,
-            proxy: createProxy(
-              [
-                CHANNEL,
-                bytes => new Int32Array(new SharedArrayBuffer(bytes)),
-                ignore,
-                sync,
-                parse,
-                polyfill,
-                postMessage,
-                transform,
-                sync ?
-                  (...args) => ({ value: { then: fn => fn(waitSync(...args)) } }) :
-                  waitAsync,
-              ],
-              map,
-            ),
-          });
-          break;
-        }
-        case ACTION_WAIT: {
-          // give the code a chance to finish running (serviceWorker mode)
-          if (!map.size) setTimeout(actionWait, 0, waitLength, results, map, rest);
-          else actionWait(waitLength, results, map, rest);
-          break;
-        }
-        case ACTION_NOTIFY: {
-          actionFill(results, rest);
-          break;
-        }
+  const [ next, resolve ] = rtr(String);
+  const callbacks = new Map;
+  const proxied = create(null);
+  const proxy = new Proxy(proxied, {
+    get(_, name) {
+      // the curse of potentially awaiting proxies in the wild
+      // requires this ugly guard around `then`
+      if (name === 'then') return;
+      let cb = callbacks.get(name);
+      if (!cb) {
+        callbacks.set(name, cb = (...args) => {
+          const transfer = transferred.get(checkTransferred, args);
+          const data = [i32a, name, transform ? args.map(transform) : args];
+          // synchronous request
+          if (native) {
+            if (WORKAROUND) postMessage({ ID, data }, transfer);
+            else channel.postMessage(data, transfer);
+            wait(i32a, 0);
+            i32a[0] = 0;
+            const result = i32a[1] ? decode(i32a[1], i32a.buffer) : void 0;
+            if (result instanceof Error) throw result;
+            return result;
+          }
+          // postMessage based request
+          else {
+            const [uid, wr] = next();
+            data[0] = uid;
+            channel.postMessage(data, transfer);
+            return wr.promise;
+          }
+        });
       }
-    }
+      return cb;
+    },
+    set
   });
 
-  return ready.promise;
+  channel.onmessage = async ({ data }) => {
+    if (typeof data[0] === 'string')
+      resolve.apply(null, data);
+    else {
+      await result(data, proxied, transform);
+      channel.postMessage(data);
+    }
+  };
+
+  return {
+    native,
+    proxy,
+    transfer: transferred.set,
+  };
 };

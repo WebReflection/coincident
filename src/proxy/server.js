@@ -1,81 +1,56 @@
-import { APPLY } from 'js-proxy/traps';
+import { MAIN_WS } from '../server/constants.js';
 
-import DEBUG from '../debug.js';
-
-import {
-  isChannel,
-  withResolvers,
-} from 'sabayon/shared';
+import { decode, encode } from '../flatted/index.js';
+import { rtr } from '../utils.js';
 
 import mainProxy from './main.js';
 
-const $ = String;
-const { parse: p, stringify: s } = JSON;
-
-const initValues = () => ['', true, 0, null];
-
-const event = {
-  data: null,
-  stopImmediatePropagation() {},
-  preventDefault() {},
-};
+const { String } = globalThis;
+const { isArray } = Array;
 
 export default (ws, options) => {
-  const { parse = p, stringify = s } = options;
-  const resolvers = new Map;
-  let [CHANNEL, init, id, __main__] = initValues();
+  const [ next, resolve ] = rtr(String);
+  const esm = options?.import || String;
+  const resolvers = new Set;
+  let coincident = -1, main;
   return {
     onclose: () => {
-      for (const [_, resolve] of resolvers) resolve();
+      for (const resolve of resolvers) resolve();
       resolvers.clear();
-      [CHANNEL, init, id, __main__] = initValues();
+      coincident = 0;
     },
     onmessage: async (buffer) => {
-      try {
-        const data = parse($(buffer));
-        event.data = data;
-        if (isChannel(event, CHANNEL)) {
-          if (init) {
-            init = false;
-            [CHANNEL] = data;
-            __main__ = mainProxy(
-              // options.import = name => valid(name) && name
-              options?.import || $,
-              (TRAP, ref, ...args) => {
-                let promise, resolve;
-                if (TRAP === APPLY) {
-                  ({ promise, resolve } = withResolvers());
-                  resolvers.set(id, resolve);
-                  args.push(id++);
-                }
-                ws.send(stringify([CHANNEL, null, [TRAP, ref, ...args]]));
-                return promise;
-              }
-            );
-            ws.send('');
-          }
-          else {
-            const [_, id, TRAP, ref, ...args] = data;
-            if (id == null) {
-              resolvers.get(ref)(...args);
-              resolvers.delete(ref);
-            }
-            else {
-              let result;
-              try {
-                if (DEBUG) console.log('awaiting', TRAP, ref, ...args);
-                result = await __main__(TRAP, ref, ...args);
-                if (DEBUG) console.log('returned', result);
-              }
-              catch (_) {
-                result = _;
-              }
-              ws.send(stringify([CHANNEL, id, result]));
-            }
+      if (coincident < 0) {
+        coincident = 0;
+        try {
+          const data = decode(String(buffer));
+          if (isArray(data) && data.at(0) === MAIN_WS) {
+            coincident = 1;
+            main = mainProxy(esm, (...args) => {
+              const [uid, wr] = next();
+              ws.send(encode([uid, args]));
+              resolvers.add(wr.resolve);
+              return wr.promise;
+            });
           }
         }
+        catch(_) {}
       }
-      catch(_) {}
+      else if (coincident > 0) {
+        const data = decode(String(buffer));
+        if (typeof data[0] === 'string')
+          resolve.apply(null, data);
+        else {
+          try {
+            data[1] = await main(...data[1]);
+          }
+          catch(error) {
+            data[1] = null;
+            data[2] = error;
+          }
+          ws.send(encode(data));
+        }
+      }
     }
   };
 };

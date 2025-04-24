@@ -5,14 +5,14 @@
     <meta name="viewport" content="width=device-width,initial-scale=1">
     <!-- <script src="../mini-coi.js"></script> -->
     <script type="module">
-      import coincident from '../../dist/window/main.js';
+      import coincident from '../../dist/main.js';
 
       const { Worker } = coincident();
-      const { proxy } = new Worker('./worker.js', { serviceWorker: '../sw.js' });
+      const { proxy } = new Worker('./worker.js');
 
       proxy.main = async () => {
         console.log(1);
-        // try this instead to see the warning
+        // try this instead to see it stuck
         // await proxy.worker();
         proxy.worker().then(console.log);
         console.log(2);

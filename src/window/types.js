@@ -20,15 +20,16 @@ import {
 // object literal ... that's it.
 // TBD: should this be part of js-proxy? it feels
 //      to me like it would rather belong in there.
-export default Object.fromEntries([
-  ARRAY,
-  BIGINT,
-  BOOLEAN,
-  FUNCTION,
-  NULL,
-  NUMBER,
-  OBJECT,
-  STRING,
-  SYMBOL,
-  UNDEFINED,
-].map((k, i) => [k, i]));
+export default {
+  [ARRAY]: 0,
+  [BIGINT]: 1,
+  [BOOLEAN]: 2,
+  [FUNCTION]: 3,
+  [NULL]: 4,
+  [NUMBER]: 5,
+  [OBJECT]: 6,
+  [STRING]: 7,
+  [SYMBOL]: 8,
+  [UNDEFINED]: 9,
+  view: 10,
+};
