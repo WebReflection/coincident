@@ -13,11 +13,10 @@ import {
   result,
   set,
   stop,
-  withResolvers,
 } from './utils.js';
 
 // wait for the channel before resolving
-const bootstrap = withResolvers();
+const bootstrap = Promise.withResolvers();
 
 addEventListener(
   'message',

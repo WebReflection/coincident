@@ -49,8 +49,6 @@ const stop = event => {
   event.preventDefault();
 };
 
-const withResolvers = () => Promise.withResolvers();
-
 export {
   ID,
   assign,
@@ -62,5 +60,4 @@ export {
   result,
   set,
   stop,
-  withResolvers,
 };
