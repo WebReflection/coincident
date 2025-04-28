@@ -4,7 +4,89 @@
 
 An [Atomics](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Atomics) based [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) to simplify, and synchronize, [Worker](https://developer.mozilla.org/en-US/docs/Web/API/Worker) related tasks.
 
-## API
+
+# Coincident V3
+
+### New
+
+  * performance improved 2.5X on average up to 5X for regular *async* operations
+  * there is a single roundtrip to resolve *sync* operations
+  * different encoders and decoders are accepted to satisfy different scenarios where *JSON* encoder is the fast and minimal default but *flatted*, *buffered* or *structured* are also provided/available to bypass recursion limitation and provide more types
+  * the amount of memory used for the growable *SharedArrayBuffer* is now arbitrary but with sane defaults (32K minimum size, 16M maximum)
+
+### Breaking
+
+  * *sabayon* is gone for good, the *ServiceWorker* fallback is not used + asynchronous utilities will never need to be serialized as binary
+  * because of the previous point, the `polyfill` detail is no more provided: it's either *native* *SharedArrayBuffer* or no *sync* operation will be ever possible
+  * because of the previous point, `sync` has been renamed to `native` which indicates if there is native support for *SharedArrayBuffer*
+
+### API
+
+##### main
+
+```js
+import coincident from 'coincident/main';
+
+const {
+  // the Worker to be used (this extends the global one and add proxy)
+  Worker:globalThis.Worker & { proxy: Proxy },
+  // true if SharedArrayBuffer and sync operations are usable
+  native:boolean,
+  // a utility to transfer buffers directly via `postMessage`
+  // use this at the end of any proxied function signature/call
+  transfer:(...buffers:ArrayBuffer[]) => buffers,
+} = coincident({
+  // an optional way to transform values before sending these elsewhere
+  transform: value => any,
+  // an optional way to encode any value as binary
+  // (json as default, flatted, buffered, structured are options)
+  encoder: JSONEncoder,
+  // if `false` disable/ignore the transfer ability (perf boost)
+  transfer:boolean,
+});
+```
+
+##### worker
+
+```js
+import coincident from 'coincident/worker';
+
+const {
+  // the proxy to invoke sync or async main thread exposed utility
+  // it can expose utilities itself too that the main can invoke
+  proxy: Proxy,
+  // true if SharedArrayBuffer and sync operations are usable
+  native:boolean,
+  // a utility to transfer buffers directly via `postMessage`
+  // use this at the end of any proxied function signature/call
+  transfer:(...buffers:ArrayBuffer[]) => buffers,
+} = coincident({
+  // an optional way to transform values before sending these elsewhere
+  transform: value => any,
+  // an optional way to decode any bonary as value
+  // (json as default, flatted, buffered, structured are options)
+  decoder: JSONDecoder,
+  // if `false` disable/ignore the transfer ability (perf boost)
+  transfer:boolean,
+  // optional minimum SharedArrayBuffer size
+  minByteLength: 0x7FFF,
+  // optional maximum SharedArrayBuffer size
+  maxByteLength: 0x1000000,
+});
+```
+
+#### window/worker
+
+It returns as part of the object literal also `window`, usable only when `native` is `true`, and `isWindowProxy` which returns `true` or `false` accordingly if the tested reference is from the main thread or not.
+
+
+#### server/worker
+
+It returns as part of the object literal what `window/worker` returns but also `server`, usable only when `native` is `true`, and `isServerProxy` which returns `true` or `false` accordingly if the tested reference is from the backend or not.
+
+- - -
+
+## V2 API
 
 Following the description of all different imports to use either on the *main* or the *worker* thread.
 

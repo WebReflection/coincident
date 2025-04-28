@@ -1,3 +1,5 @@
+import nextResolver from 'next-resolver';
+
 import { encoder } from './json/encoder.js';
 
 import * as transferred from './transfer.js';
@@ -9,7 +11,6 @@ import {
   defaults,
   native,
   result,
-  rtr,
   set,
   stop,
 } from './utils.js';
@@ -31,13 +32,13 @@ export default options => {
   class Worker extends globalThis.Worker {
     constructor(url, options) {
       const { port1: channel, port2 } = new MessageChannel;
-      const [ next, resolve ] = rtr(Number);
+      const [ next, resolve ] = nextResolver(Number);
       const callbacks = new Map;
       const proxied = create(null);
 
       let resolving = '';
 
-      const deadlock = ({ promise }, name) => {
+      const deadlock = (promise, name) => {
         if (resolving) {
           const t = setTimeout(
             console.warn,
@@ -67,12 +68,12 @@ export default options => {
           if (!cb) {
             callbacks.set(name, cb = (...args) => {
               const transfer = transferred.get(checkTransferred, args);
-              const [uid, wr] = next();
+              const [uid, promise] = next();
               channel.postMessage(
                 [uid, name, transform ? args.map(transform) : args],
                 transfer
               );
-              return deadlock(wr, name);
+              return deadlock(promise, name);
             });
           }
           return cb;

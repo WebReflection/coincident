@@ -1,3 +1,5 @@
+import nextResolver from 'next-resolver';
+
 import { decoder } from './json/decoder.js';
 
 import * as transferred from './transfer.js';
@@ -9,7 +11,6 @@ import {
   minByteLength,
   native,
   result,
-  rtr,
   set,
   stop,
   withResolvers,
@@ -44,7 +45,7 @@ export default async options => {
     wait = Atomics.wait;
   }
 
-  const [ next, resolve ] = rtr(String);
+  const [ next, resolve ] = nextResolver(String);
   const callbacks = new Map;
   const proxied = create(null);
   const proxy = new Proxy(proxied, {
@@ -69,10 +70,10 @@ export default async options => {
           }
           // postMessage based request
           else {
-            const [uid, wr] = next();
+            const [uid, promise] = next();
             data[0] = uid;
             channel.postMessage(data, transfer);
-            return wr.promise;
+            return promise;
           }
         });
       }

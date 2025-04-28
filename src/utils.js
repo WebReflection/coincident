@@ -16,7 +16,7 @@ catch (_) {
 /* c8 ignore end */
 
 const byteOffset = 2 * Int32Array.BYTES_PER_ELEMENT;
-const minByteLength = 0xFFFF;
+const minByteLength = 0x7FFF; // throws at 0xFFFF via .apply(...)
 const maxByteLength = 0x1000000;
 
 const defaults = {
@@ -27,23 +27,6 @@ const defaults = {
   // ⚠️ mandatory: to satisfy circular/cyclic data
   circular: true,
 };
-
-const map = new Map;
-const rtr = ($, id = 0) => [
-  uid => {
-    const wr = withResolvers();
-    do { uid = $(id++) }
-    while (map.has(uid));
-    map.set(uid, wr);
-    return [uid, wr];
-  },
-  (uid, value, error) => {
-    const wr = map.get(uid);
-    map.delete(uid);
-    if (error) wr.reject(error);
-    else wr.resolve(value);
-  },
-];
 
 const result = async (data, proxied, transform) => {
   try {
@@ -77,7 +60,6 @@ export {
   minByteLength,
   native,
   result,
-  rtr,
   set,
   stop,
   withResolvers,

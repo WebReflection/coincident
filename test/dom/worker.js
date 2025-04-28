@@ -8,7 +8,7 @@ document.body.textContent = 'Testing ...';
 document.addEventListener(
   'click',
   event => {
-    document.body.textContent = event.type;
+    document.body.textContent = event.type + 'ed';
   },
   { once: true }
 );

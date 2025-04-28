@@ -1,7 +1,8 @@
+import nextResolver from 'next-resolver';
+
 import { MAIN_WS, WORKER_WS } from './constants.js';
 
 import { decode, encode } from '../flatted/index.js';
-import { rtr } from '../utils.js';
 
 import coincident from '../window/main.js';
 
@@ -14,7 +15,7 @@ export default options => {
     #ws = null;
     constructor(url, options) {
       const { proxy } = super(url, options);
-      const [ next, resolve ] = rtr(Number);
+      const [ next, resolve ] = nextResolver(Number);
       const [uid, opened] = next();
       const worker = proxy[WORKER_WS];
       const ws = (this.#ws = new WebSocket(websocket));
@@ -41,9 +42,9 @@ export default options => {
       };
       proxy[MAIN_WS] = async (...args) => {
         await opened;
-        const [uid, wr] = next();
+        const [uid, promise] = next();
         ws.send(encode([uid, args]));
-        return wr.promise;
+        return promise;
       };
     }
     terminate() {

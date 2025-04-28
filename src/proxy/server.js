@@ -1,7 +1,8 @@
+import nextResolver from 'next-resolver';
+
 import { MAIN_WS } from '../server/constants.js';
 
 import { decode, encode } from '../flatted/index.js';
-import { rtr } from '../utils.js';
 
 import mainProxy from './main.js';
 
@@ -9,7 +10,7 @@ const { String } = globalThis;
 const { isArray } = Array;
 
 export default (ws, options) => {
-  const [ next, resolve ] = rtr(String);
+  const [ next, resolve ] = nextResolver(String);
   const esm = options?.import || String;
   const resolvers = new Set;
   let coincident = -1, main;
@@ -27,10 +28,10 @@ export default (ws, options) => {
           if (isArray(data) && data.at(0) === MAIN_WS) {
             coincident = 1;
             main = mainProxy(esm, (...args) => {
-              const [uid, wr] = next();
+              const [uid, promise] = next();
               ws.send(encode([uid, args]));
-              resolvers.add(wr.resolve);
-              return wr.promise;
+              resolvers.add(resolve.bind(null, uid));
+              return promise;
             });
           }
         }
