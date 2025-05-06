@@ -34,14 +34,20 @@ export default async options => {
   const decode = (options?.decoder || decoder)(defaults);
   const checkTransferred = options?.transfer !== false;
 
-  let i32a, wait;
+  let i32a, pause, wait;
   if (native) {
     const sab = new SharedArrayBuffer(
       options?.minByteLength || minByteLength,
       { maxByteLength: options?.maxByteLength || maxByteLength }
     );
     i32a = new Int32Array(sab);
-    wait = Atomics.wait;
+    ({ pause, wait } = Atomics);
+    // prefer the fast path when possible
+    if (pause && !(sab instanceof ArrayBuffer)) {
+      wait = (typed, index) => {
+        while (typed[index] < 1) pause();
+      };
+    }
   }
 
   const [ next, resolve ] = nextResolver(String);
