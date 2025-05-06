@@ -43,7 +43,7 @@ export default async options => {
     i32a = new Int32Array(sab);
     ({ pause, wait } = Atomics);
     // prefer the fast path when possible
-    if (pause && !(sab instanceof ArrayBuffer)) {
+    if (pause && !WORKAROUND && !(sab instanceof ArrayBuffer)) {
       wait = (typed, index) => {
         while (typed[index] < 1) pause();
       };
