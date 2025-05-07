@@ -132,13 +132,13 @@ const flatten = (arr, cache, value, type = toType(value)) => {
       break;
     }
     case 'bigint': {
-      arr.push(types[type], value.toString());
+      arr.push(types.bigint, value.toString());
       break;
     }
     case 'symbol': {
       const name = toSymbolName(value);
       if (name) {
-        arr.push(types[type], name);
+        arr.push(types.symbol, name);
         break;
       }
     }

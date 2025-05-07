@@ -44,8 +44,8 @@ export default async options => {
     ({ pause, wait } = Atomics);
     // prefer the fast path when possible
     if (pause && !WORKAROUND && !(sab instanceof ArrayBuffer)) {
-      wait = (typed, index) => {
-        while (typed[index] < 1) pause();
+      wait = (view, index) => {
+        while (view[index] < 1) pause();
       };
     }
   }

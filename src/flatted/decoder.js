@@ -27,13 +27,12 @@ const unflatten = arr => {
       arr[i - 2] = string;
       return string;
     }
-    case types.ref: return arr[arr[i++]];
     case types.number: return arr[i++];
-    case types.bigint: return BigInt(arr[i++]);
     case types.true: return true;
     case types.false: return false;
     case types.null: return null;
     case types.undefined: return void 0;
+    case types.bigint: return BigInt(arr[i++]);
     case types.buffer: {
       const byteLength = arr[i++];
       const maxByteLength = arr[i++];
@@ -55,9 +54,6 @@ const unflatten = arr => {
       const view = new globalThis[name](...args);
       arr[index] = view;
       return view;
-    }
-    case types.symbol: {
-      return toSymbolValue(arr[i++]);
     }
     case types.date: {
       const date = new Date(arr[i++]);
@@ -103,6 +99,8 @@ const unflatten = arr => {
       arr[i - 5] = defineProperty(error, 'stack', { value });
       return error;
     }
+    case types.symbol: return toSymbolValue(arr[i++]);
+    case types.ref: return arr[arr[i++]];
     default:
       throw new TypeError(`Unknown type: ${arr[i - 1]}`);
   }
