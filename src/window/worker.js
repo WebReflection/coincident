@@ -14,11 +14,10 @@ import coincident from '../worker.js';
 
 export default /** @type {Coincident} */ async options => {
   let decoderOptions;
+  const defaultDecoder = options?.decoder || decoder;
   const exports = await coincident({
     ...options,
-    decoder: options => (options?.decoder || decoder)(
-      (decoderOptions = { ...options, direct })
-    ),
+    decoder: options => defaultDecoder((decoderOptions = { ...options, direct })),
   });
 
   // recycle always the same DataView reference ... a bit awkward but

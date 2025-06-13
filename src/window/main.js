@@ -9,9 +9,10 @@ import coincident from '../main.js';
 
 export default options => {
   const esm = options?.import;
+  const defaultEncoder = options?.encoder || encoder;
   const exports = coincident({
     ...options,
-    encoder: options => (options?.encoder || encoder)({ ...options, direct }),
+    encoder: options => defaultEncoder({ ...options, direct }),
   });
 
   class Worker extends exports.Worker {
