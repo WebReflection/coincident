@@ -1,5 +1,5 @@
 import local from 'reflected-ffi/local';
-import remote from 'reflected-ffi/utils/events';
+import events from 'reflected-ffi/utils/events';
 import { encoder } from 'reflected-ffi/encoder';
 import { encode as direct } from 'reflected-ffi/direct/encoder';
 
@@ -21,7 +21,9 @@ export default options => {
 
       const { direct, reflect, terminate } = local({
         ...options,
-        remote,
+        remote(event) {
+          if (event instanceof Event) events(event);
+        },
         buffer: true,
         reflect: proxy[WORKER],
         module: options?.import || esm || (name => new URL(name, location.href)),
