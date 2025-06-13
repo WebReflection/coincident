@@ -1,5 +1,9 @@
 import { MAIN, WORKER } from './constants.js';
 
+import remote from 'reflected-ffi/remote';
+import { decoder } from 'reflected-ffi/decoder';
+import { decoder as directDecoder } from 'reflected-ffi/direct/decoder';
+
 import { decoder as jsonDecoder } from '../json/decoder.js';
 import { decoder as minimalDecoder } from '../proxy/decoder.js';
 

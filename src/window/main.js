@@ -1,48 +1,39 @@
-import { DESTROY } from '../proxy/traps.js';
-
-import { encoder as jsonEncoder } from '../json/encoder.js';
-import { encoder as minimalEncoder } from '../proxy/encoder.js';
+import local from 'reflected-ffi/local';
+import remote from 'reflected-ffi/utils/events';
+import { encoder } from 'reflected-ffi/encoder';
+import { encode as direct } from 'reflected-ffi/direct/encoder';
 
 import { MAIN, WORKER } from './constants.js';
 
 import coincident from '../main.js';
-import callback from '../proxy/main.js';
 
 export default options => {
-  let tracking = false;
   const esm = options?.import;
-  const defaultEncoder = options?.encoder || jsonEncoder;
   const exports = coincident({
     ...options,
-    encoder(options) {
-      const original = defaultEncoder(options);
-      const minimal = minimalEncoder(options);
-      return (value, buffer) => {
-        if (tracking) {
-          tracking = false;
-          return minimal(value, buffer);
-        }
-        return original(value, buffer);
-      };
-    }
+    encoder: options => (options?.encoder || encoder)({ ...options, direct }),
   });
 
   class Worker extends exports.Worker {
+    #terminate;
     constructor(url, options) {
       const { proxy } = super(url, options);
 
-      const main = callback(
-        options?.import || esm || (name => new URL(name, location.href)),
-        proxy[WORKER]
-      );
+      const { direct, reflect, terminate } = local({
+        ...options,
+        remote,
+        buffer: true,
+        reflect: proxy[WORKER],
+        module: options?.import || esm || (name => new URL(name, location.href)),
+      });
 
-      proxy[MAIN] = function (...args) {
-        tracking = true;
-        return main.apply(this, args);
-      };
+      this.#terminate = terminate;
+      this.direct = direct;
+
+      proxy[MAIN] = reflect;
     }
     terminate() {
-      this.proxy[MAIN](DESTROY);
+      this.#terminate();
       super.terminate();
     }
   }
