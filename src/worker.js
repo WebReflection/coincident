@@ -99,6 +99,7 @@ export default async options => {
   return {
     native,
     proxy,
+    view: i32a,
     transfer: transferred.set,
   };
 };

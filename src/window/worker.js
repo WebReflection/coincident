@@ -2,13 +2,9 @@ import { MAIN, WORKER } from './constants.js';
 
 import remote from 'reflected-ffi/remote';
 import { decoder } from 'reflected-ffi/decoder';
-import { decoder as directDecoder } from 'reflected-ffi/direct/decoder';
-
-import { decoder as jsonDecoder } from '../json/decoder.js';
-import { decoder as minimalDecoder } from '../proxy/decoder.js';
+import { decode as direct } from 'reflected-ffi/direct/decoder';
 
 import coincident from '../worker.js';
-import proxyWorker from '../proxy/worker.js';
 
 /**
  * @callback Coincident
@@ -17,36 +13,37 @@ import proxyWorker from '../proxy/worker.js';
  */
 
 export default /** @type {Coincident} */ async options => {
-  let tracking = false;
-  const defaultDecoder = options?.decoder || jsonDecoder;
+  let decoderOptions;
   const exports = await coincident({
     ...options,
-    decoder(options) {
-      const original = defaultDecoder(options);
-      const minimal = minimalDecoder(options);
-      return (length, buffer) => {
-        if (tracking) {
-          tracking = false;
-          return minimal(length, buffer);
-        }
-        return original(length, buffer);
-      };
-    }
+    decoder: options => (options?.decoder || decoder)(
+      (decoderOptions = { ...options, direct })
+    ),
   });
 
-  const main = exports.proxy[MAIN];
+  // recycle always the same DataView reference ... a bit awkward but
+  // I cannot know upfront how to wrap the shared buffer in this case
+  if (exports.native) {
+    decoderOptions.dataView = new DataView(
+      exports.view.buffer,
+      decoderOptions.byteOffset || 0,
+    );
+  }
 
-  const { isProxy, global, method } = proxyWorker(
-    function (...args) {
-      tracking = true;
-      return main.apply(this, args);
-    },
-    options?.transform || ((o) => o)
-  );
+  const ffi = remote({ ...options, reflect: exports.proxy[MAIN] });
 
-  // for the time being this is used only to invoke callbacks
-  // attached as listeners or as references' fields.
-  exports.proxy[WORKER] = method;
+  exports.proxy[WORKER] = ffi.reflect;
 
-  return { ...exports, window: global, isWindowProxy: isProxy };
+  return {
+    ...exports,
+    window: ffi.global,
+    isWindowProxy: ffi.isProxy,
+    ffi: {  
+      assign: ffi.assign,
+      direct: ffi.direct,
+      evaluate: ffi.evaluate,
+      gather: ffi.gather,
+      query: ffi.query,
+    }
+  };
 };
