@@ -1,7 +1,7 @@
 import local from 'reflected-ffi/local';
-import events from 'reflected-ffi/utils/events';
-import { encoder } from 'reflected-ffi/encoder';
-import { encode as direct } from 'reflected-ffi/direct/encoder';
+import polluteEvent from 'reflected-ffi/utils/events';
+// import { encoder } from 'reflected-ffi/encoder';
+import { encode as direct, encoder as directEncoder } from 'reflected-ffi/direct/encoder';
 
 import { MAIN, WORKER } from './constants.js';
 
@@ -9,10 +9,10 @@ import coincident from '../main.js';
 
 export default options => {
   const esm = options?.import;
-  const defaultEncoder = options?.encoder || encoder;
+  // const defaultEncoder = options?.encoder || directEncoder;
   const exports = coincident({
     ...options,
-    encoder: options => defaultEncoder({ ...options, direct }),
+    // encoder: options => defaultEncoder({ ...options, direct }),
   });
 
   class Worker extends exports.Worker {
@@ -23,11 +23,11 @@ export default options => {
       const { direct, reflect, terminate } = local({
         ...options,
         remote(event) {
-          if (event instanceof Event) events(event);
+          if (event instanceof Event) polluteEvent(event);
         },
         buffer: true,
         reflect: proxy[WORKER],
-        module: options?.import || esm || (name => new URL(name, location.href)),
+        module: options?.import || esm || (name => import(new URL(name, location).href)),
       });
 
       this.#terminate = terminate;

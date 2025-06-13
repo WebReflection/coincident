@@ -1,8 +1,8 @@
 import { MAIN, WORKER } from './constants.js';
 
 import remote from 'reflected-ffi/remote';
-import { decoder } from 'reflected-ffi/decoder';
-import { decode as direct } from 'reflected-ffi/direct/decoder';
+//import { decoder } from 'reflected-ffi/decoder';
+import { decode as direct, decoder as directDecoder } from 'reflected-ffi/direct/decoder';
 
 import coincident from '../worker.js';
 
@@ -14,20 +14,20 @@ import coincident from '../worker.js';
 
 export default /** @type {Coincident} */ async options => {
   let decoderOptions;
-  const defaultDecoder = options?.decoder || decoder;
+  // const defaultDecoder = options?.decoder || directDecoder;
   const exports = await coincident({
     ...options,
-    decoder: options => defaultDecoder((decoderOptions = { ...options, direct })),
+    // decoder: options => defaultDecoder((decoderOptions = { ...options, direct })),
   });
 
-  // recycle always the same DataView reference ... a bit awkward but
-  // I cannot know upfront how to wrap the shared buffer in this case
-  if (exports.native) {
-    decoderOptions.dataView = new DataView(
-      exports.view.buffer,
-      decoderOptions.byteOffset || 0,
-    );
-  }
+  // // recycle always the same DataView reference ... a bit awkward but
+  // // I cannot know upfront how to wrap the shared buffer in this case
+  // if (exports.native) {
+  //   decoderOptions.dataView = new DataView(
+  //     exports.view.buffer,
+  //     decoderOptions.byteOffset || 0,
+  //   );
+  // }
 
   const ffi = remote({ ...options, reflect: exports.proxy[MAIN] });
 
