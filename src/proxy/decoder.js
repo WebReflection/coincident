@@ -1,5 +1,5 @@
 import { BIGINT, UNDEFINED } from 'js-proxy/types';
-import createDecoder from '../utils/decoder.js';
+import { decoder } from 'reflected-ffi/direct/decoder.js';
 import numeric from '../window/types.js';
 
 const { parse } = JSON;
@@ -25,4 +25,4 @@ export const decode = json => {
   return result;
 };
 
-export const decoder = createDecoder(decode);
+export const decoder = decoder(decode);

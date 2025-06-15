@@ -18,17 +18,17 @@ import {
   UNDEFINED,
 } from 'js-proxy/types';
 
-import DEBUG from '../debug.js';
-import { DESTROY } from './traps.js';
+// import DEBUG from '../debug.js';
+// import { DESTROY } from './traps.js';
 
-import { create as heap } from 'js-proxy/heap';
+// import { create as heap } from 'js-proxy/heap';
 
-import numeric from '../window/types.js';
-import { fromSymbol, toSymbol } from '../window/symbol.js';
+// import numeric from '../window/types.js';
+// import { fromSymbol, toSymbol } from '../window/symbol.js';
 
-import { create } from 'gc-hook';
+// import { create } from 'gc-hook';
 
-import handleEvent from '../window/events.js';
+// import handleEvent from '../window/events.js';
 
 const { isArray } = Array;
 const { isView } = ArrayBuffer;

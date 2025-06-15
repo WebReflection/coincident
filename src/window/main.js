@@ -1,5 +1,5 @@
 import local from 'reflected-ffi/local';
-import polluteEvent from 'reflected-ffi/utils/events';
+import patchEvent from 'reflected-ffi/utils/events';
 import { encoder as directEncoder } from 'reflected-ffi/direct/encoder';
 
 import { MAIN, WORKER } from './constants.js';
@@ -20,7 +20,7 @@ export default options => {
         ...options,
         buffer: true,
         reflect: proxy[WORKER],
-        remote(event) { if (event instanceof Event) polluteEvent(event); },
+        remote(event) { if (event instanceof Event) patchEvent(event); },
         module: options?.import || esm || (name => import(new URL(name, location).href)),
       });
 

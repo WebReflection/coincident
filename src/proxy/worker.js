@@ -17,13 +17,13 @@ import {
 
 import { ARRAY, FUNCTION, NUMBER, OBJECT, SYMBOL } from 'js-proxy/types';
 
-import define from 'js-proxy';
-import { drop, get, hold } from 'js-proxy/heap';
+// import define from 'js-proxy';
+// import { drop, get, hold } from 'js-proxy/heap';
 
-import numeric from '../window/types.js';
-import { fromSymbol, toSymbol } from '../window/symbol.js';
+// import numeric from '../window/types.js';
+// import { fromSymbol, toSymbol } from '../window/symbol.js';
 
-import DEBUG from '../debug.js';
+// import DEBUG from '../debug.js';
 
 const { isArray } = Array;
 const { isView } = ArrayBuffer;

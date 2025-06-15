@@ -1,10 +1,10 @@
-import nextResolver from 'next-resolver';
+// import nextResolver from 'next-resolver';
 
-import { MAIN_WS } from '../server/constants.js';
+// import { MAIN_WS } from '../server/constants.js';
 
-import { decode, encode } from '../flatted/index.js';
+// import { decode, encode } from '../flatted/index.js';
 
-import mainProxy from './main.js';
+// import mainProxy from './main.js';
 
 const { String } = globalThis;
 const { isArray } = Array;

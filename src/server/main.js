@@ -2,7 +2,8 @@ import nextResolver from 'next-resolver';
 
 import { MAIN_WS, WORKER_WS } from './constants.js';
 
-import { decode, encode } from '../flatted/index.js';
+import { decode } from 'reflected-ffi/direct/decoder.js';
+import { encode } from 'reflected-ffi/direct/encoder.js';
 
 import coincident from '../window/main.js';
 
