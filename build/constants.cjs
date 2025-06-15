@@ -13,6 +13,6 @@ writeFileSync(
 );
 
 writeFileSync(
-  join(__dirname, '..', 'src', 'debug.js'),
+  join(__dirname, '..', 'node_modules', 'reflected-ffi', 'src', 'utils', 'debug.js'),
   `export default ${!!process.env.DEBUG};\n`
 );
