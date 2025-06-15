@@ -12,6 +12,7 @@ export default options => {
   const encoder = options => defaultEncoder({ ...options, buffer: true });
   const exports = coincident({ ...options, encoder });
 
+  /** @type {Worker & { direct: <T>(value: T) => T, proxy: Record<string, function> }} */
   class Worker extends exports.Worker {
     #terminate;
     constructor(url, options) {
