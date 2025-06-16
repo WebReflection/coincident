@@ -54,6 +54,14 @@ export default [
   },
   {
     plugins,
+    input: './src/server/server.js',
+    output: {
+      esModule: true,
+      file: './dist/server/server.js',
+    }
+  },
+  {
+    plugins,
     input: './src/server/worker.js',
     output: {
       esModule: true,

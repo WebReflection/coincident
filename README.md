@@ -4,21 +4,18 @@
 
 An [Atomics](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Atomics) based [Proxy](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Proxy) to simplify, and synchronize, [Worker](https://developer.mozilla.org/en-US/docs/Web/API/Worker) related tasks.
 
+- - -
 
-# Coincident V3
+# Coincident V4
 
-### New
+This is the latest iteration of this module where everything is explained in [the related merge request](https://github.com/WebReflection/coincident/pull/58) and it can be summarized as such:
 
-  * performance improved 2.5X on average up to 5X for regular *async* operations
-  * there is a single roundtrip to resolve *sync* operations
-  * different encoders and decoders are accepted to satisfy different scenarios where *JSON* encoder is the fast and minimal default but *flatted*, *buffered* or *structured* are also provided/available to bypass recursion limitation and provide more types
-  * the amount of memory used for the growable *SharedArrayBuffer* is now arbitrary but with sane defaults (32K minimum size, 16M maximum)
+  * there is one default encoder/decoder that brings the best of all worlds out of the box
+  * there are more utilities that helps reducing roundtrips
+  * views and buffers are compatible and fast by default
+  * the whole *FFI* is now 100% code covered in its dedicated, dependency-free, project
 
-### Breaking
-
-  * *sabayon* is gone for good, the *ServiceWorker* fallback is not used + asynchronous utilities will never need to be serialized as binary
-  * because of the previous point, the `polyfill` detail is no more provided: it's either *native* *SharedArrayBuffer* or no *sync* operation will be ever possible
-  * because of the previous point, `sync` has been renamed to `native` which indicates if there is native support for *SharedArrayBuffer*
+- - -
 
 ### API
 
@@ -39,8 +36,8 @@ const {
   // an optional way to transform values before sending these elsewhere
   transform: value => any,
   // an optional way to encode any value as binary
-  // (json as default, flatted, buffered, structured are options)
-  encoder: JSONEncoder,
+  // reflected-ffi/encoder as default
+  encoder: reflectedFFIEncoder,
   // if `false` disable/ignore the transfer ability (perf boost)
   transfer:boolean,
 });
@@ -60,12 +57,14 @@ const {
   // a utility to transfer buffers directly via `postMessage`
   // use this at the end of any proxied function signature/call
   transfer:(...buffers:ArrayBuffer[]) => buffers,
+  // a way to directly transfer a value as it is
+  direct: value => value,
 } = coincident({
   // an optional way to transform values before sending these elsewhere
   transform: value => any,
   // an optional way to decode any bonary as value
-  // (json as default, flatted, buffered, structured are options)
-  decoder: JSONDecoder,
+  // reflected-ffi/decoder as default
+  decoder: reflectedFFIDirectDecoder,
   // if `false` disable/ignore the transfer ability (perf boost)
   transfer:boolean,
   // optional minimum SharedArrayBuffer size
@@ -100,16 +99,12 @@ import coincident from 'coincident/main';
 const {
   // the Worker to be used (this extends the global one)
   Worker,
-  // a boolean indicating if sabayon is being used
-  polyfill,
+  // a boolean indicating if shared array buffer is supported
+  native,
   // a utility to transfer values directly via `postMessage`
   // (...args: Transferable[]) => Transferable[]
   transfer,
 } = coincident({
-  // a utility to parse text, default: JSON.parse
-  parse: JSON.parse,
-  // a utility to stringify values, default: JSON.stringify
-  stringify: JSON.stringify,
   // an optional utility to transform values (FFI / Proxy related)
   transform: value => value,
 });
@@ -143,22 +138,20 @@ import coincident from 'coincident/worker';
 const {
   // the counter-part of the main worker.proxy reference
   proxy,
-  // a boolean indicating if sabayon is being used
-  polyfill,
-  // a boolean indicating if it's possible to do synchronous operations
-  sync,
+  // a boolean indicating if shared array buffer is supported
+  native,
   // a utility to transfer values directly via `postMessage`
   // (...args: Transferable[]) => Transferable[]
   transfer,
+  // a way to transfer a value directly as it is
+  direct: value => value,
+  // a namespace to batch multiple operations into a single roundtrip
+  ffi: {
+    assign, query, gather, evaluate,
+  }
 } = await coincident({
-  // a utility to parse text, default: JSON.parse
-  parse: JSON.parse,
-  // a utility to stringify values, default: JSON.stringify
-  stringify: JSON.stringify,
   // an optional utility to transform values (FFI / Proxy related)
   transform: value => value,
-  // an optional interrupt reference that is used via `Atomic.wait(sb)`
-  interrupt: { handler() {}, timeout: 42 },
 });
 
 // exposed to the main thread
@@ -201,7 +194,7 @@ import coincident from 'coincident/window/worker';
 //                                 ^^^^^^
 
 const {
-  proxy, polyfill, sync, transfer,
+  proxy, native, transfer,
   // it's a synchronous, Atomic.wait based, Proxy
   // to the actual globalThis reference on the main
   window,
@@ -283,7 +276,7 @@ import coincident from 'coincident/server/worker';
 //                                 ^^^^^^
 
 const {
-  proxy, polyfill, sync, transfer,
+  proxy, native, transfer,
   window, isWindowProxy,
   // it's a synchronous, Atomic.wait based, Proxy
   // to the actual globalThis reference on the server
@@ -292,6 +285,12 @@ const {
   // only when a reference points at the server
   // (value: any) => boolean
   isServerProxy,
+  // a namespace with both FFIs (direct methods are window only)
+  ffi: {
+    assign, gather, query, evaluate,
+    window: { ... }, // replicates above
+    server: { ... }, // brings above to the server
+  }
 } = await coincident();
 
 // direct synchronous access to the main `server`

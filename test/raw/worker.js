@@ -30,7 +30,7 @@ const [dest] = proxy.roundtrip(source);
 console.timeEnd('roundtrip');
 
 for (const key in source) {
-  if (!dest.hasOwnProperty(key))
+  if (!dest.hasOwnProperty(key) && key !== 'undefined')
     throw new Error(`worker: ${key} is missing`);
 
   const sv = source[key];

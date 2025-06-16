@@ -1,6 +1,6 @@
 import nextResolver from 'next-resolver';
 
-import { decoder } from 'reflected-ffi/direct/decoder';
+import { decoder } from 'reflected-ffi/decoder';
 
 import * as transferred from './transfer.js';
 

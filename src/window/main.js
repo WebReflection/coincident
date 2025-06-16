@@ -1,6 +1,6 @@
 import local from 'reflected-ffi/local';
 import patchEvent from 'reflected-ffi/utils/events';
-import { encoder as directEncoder } from 'reflected-ffi/direct/encoder';
+import { encoder as directEncoder } from 'reflected-ffi/encoder';
 
 import { MAIN, WORKER } from './constants.js';
 
@@ -8,9 +8,10 @@ import coincident from '../main.js';
 
 export default options => {
   const esm = options?.import;
-  const defaultEncoder = options?.encoder || directEncoder;
-  const encoder = options => defaultEncoder({ ...options, buffer: true });
-  const exports = coincident({ ...options, encoder });
+  const exports = coincident({
+    ...options,
+    encoder: options?.encoder || directEncoder,
+  });
 
   /** @type {Worker & { direct: <T>(value: T) => T, proxy: Record<string, function> }} */
   class Worker extends exports.Worker {

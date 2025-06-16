@@ -3,12 +3,11 @@
   "version": "3.0.5",
   "description": "An Atomics based Proxy to simplify, and synchronize, Worker related tasks",
   "scripts": {
-    "build": "node build/constants.cjs && node build/index.cjs && rollup --config build/dist.js && rm src/main_*.js && rm src/worker_*.js && npm run cover",
+    "build": "node build/constants.cjs && node build/index.cjs && rollup --config build/dist.js",
     "coi": "npx mini-coi .",
     "server": "static-handler .",
     "server:bun": "bun test/server/bun.js",
     "server:node": "node test/server/node.js",
-    "cover": "c8 node test/cover/flatted.js && c8 node test/cover/buffered.js",
     "size": "echo -e \"\\x1b[1mfile          size\\x1b[0m\";echo \"server/main   $(cat dist/server/main.js | brotli | wc -c)\";echo \"server/worker $(cat dist/server/worker.js | brotli | wc -c)\";echo \"window/main   $(cat dist/window/main.js | brotli | wc -c)\";echo \"window/worker $(cat dist/window/worker.js | brotli | wc -c)\";echo \"main          $(cat dist/main.js | brotli | wc -c)\";echo \"worker        $(cat dist/worker.js | brotli | wc -c)\""
   },
   "keywords": [
@@ -21,7 +20,6 @@
   "devDependencies": {
     "@rollup/plugin-node-resolve": "^16.0.1",
     "@rollup/plugin-terser": "^0.4.4",
-    "@ungap/structured-clone": "^1.3.0",
     "c8": "^10.1.3",
     "mini-coi": "^0.4.2",
     "rollup": "^4.43.0",
@@ -48,7 +46,7 @@
   },
   "dependencies": {
     "next-resolver": "^0.1.3",
-    "reflected-ffi": "^0.3.11"
+    "reflected-ffi": "^0.4.0"
   },
   "repository": {
     "type": "git",

@@ -1,17 +1,26 @@
 import { MAIN_WS, WORKER_WS } from './constants.js';
 
+import remote from 'reflected-ffi/remote';
+
 import coincident from '../window/worker.js';
-import proxyWorker from '../proxy/worker.js';
 
 export default async options => {
   const exports = await coincident(options);
 
-  const { isProxy, global, method } = proxyWorker(
-    exports.proxy[MAIN_WS],
-    options?.transform || ((o) => o)
-  );
+  const ffi = remote({ ...options, buffer: true, reflect: exports.proxy[MAIN_WS] });
+  exports.proxy[WORKER_WS] = ffi.reflect;
 
-  exports.proxy[WORKER_WS] = method;
+  const server = {};
+  for (const key in exports.ffi) server[key] = ffi[key];
 
-  return { ...exports, server: global, isServerProxy: isProxy };
+  return {
+    ...exports,
+    server: ffi.global,
+    isServerProxy: ffi.isProxy,
+    ffi: {
+      ...exports.ffi,
+      window: exports.ffi,
+      server,
+    }
+  };
 };

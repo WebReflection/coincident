@@ -1,6 +1,6 @@
 import { MAIN, WORKER } from './constants.js';
 
-import { decoder as directDecoder } from 'reflected-ffi/direct/decoder';
+import { decoder as directDecoder } from 'reflected-ffi/decoder';
 
 import remote from 'reflected-ffi/remote';
 
@@ -13,11 +13,12 @@ import coincident from '../worker.js';
  */
 
 export default /** @type {Coincident} */ async options => {
-  const defaultDecoder = options?.decoder || directDecoder;
-  const decoder = options => defaultDecoder({ ...options, buffer: true });
-  const exports = await coincident({ ...options, decoder });
+  const exports = await coincident({
+    ...options,
+    decoder: options?.decoder || directDecoder,
+  });
 
-  const ffi = remote({ ...options, reflect: exports.proxy[MAIN] });
+  const ffi = remote({ ...options, buffer: true, reflect: exports.proxy[MAIN] });
   exports.proxy[WORKER] = ffi.reflect;
 
   return {

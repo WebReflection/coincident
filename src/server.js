@@ -1,4 +1,4 @@
-import proxyServer from './proxy/server.js';
+import server from './server/server.js';
 
 export default (options = {}) => {
   const { bun, wss } = options;
@@ -6,7 +6,7 @@ export default (options = {}) => {
     const sockets = new WeakMap;
     return {
       open(ws) {
-        sockets.set(ws, proxyServer(ws, options));
+        sockets.set(ws, server(ws, options));
       },
       close(ws, _, message) {
         sockets.get(ws).onclose(message);
@@ -17,7 +17,7 @@ export default (options = {}) => {
     };
   }
   else if (wss) wss.on('connection', ws => {
-    const { onclose, onmessage } = proxyServer(ws, options);
+    const { onclose, onmessage } = server(ws, options);
     ws.prependListener('close', onclose);
     ws.prependListener('message', onmessage);
   });
