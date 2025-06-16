@@ -1,6 +1,6 @@
 import nextResolver from 'next-resolver';
 
-import { encoder } from './json/encoder.js';
+import { encoder } from 'reflected-ffi/encoder';
 
 import * as transferred from './transfer.js';
 
@@ -29,6 +29,7 @@ export default options => {
   const encode = (options?.encoder || encoder)(defaults);
   const checkTransferred = options?.transfer !== false;
 
+  /** @type {Worker & { proxy: Record<string, function> }} */
   class Worker extends globalThis.Worker {
     constructor(url, options) {
       const { port1: channel, port2 } = new MessageChannel;

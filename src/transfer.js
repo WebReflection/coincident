@@ -24,4 +24,7 @@ export const get = (check, args) => {
  * @param  {...ArrayBuffer} args
  * @returns
  */
-export const set = (...args) => (buffers.add(args), args);
+export const set = (...args) => {
+  buffers.add(args);
+  return args;
+};

@@ -1,48 +1,38 @@
-import { DESTROY } from '../proxy/traps.js';
-
-import { encoder as jsonEncoder } from '../json/encoder.js';
-import { encoder as minimalEncoder } from '../proxy/encoder.js';
+import local from 'reflected-ffi/local';
+import patchEvent from 'reflected-ffi/utils/events';
+import { encoder as directEncoder } from 'reflected-ffi/encoder';
 
 import { MAIN, WORKER } from './constants.js';
 
 import coincident from '../main.js';
-import callback from '../proxy/main.js';
 
 export default options => {
-  let tracking = false;
   const esm = options?.import;
-  const defaultEncoder = options?.encoder || jsonEncoder;
   const exports = coincident({
     ...options,
-    encoder(options) {
-      const original = defaultEncoder(options);
-      const minimal = minimalEncoder(options);
-      return (value, buffer) => {
-        if (tracking) {
-          tracking = false;
-          return minimal(value, buffer);
-        }
-        return original(value, buffer);
-      };
-    }
+    encoder: options?.encoder || directEncoder,
   });
 
+  /** @type {Worker & { direct: <T>(value: T) => T, proxy: Record<string, function> }} */
   class Worker extends exports.Worker {
+    #terminate;
     constructor(url, options) {
       const { proxy } = super(url, options);
+      const { direct, reflect, terminate } = local({
+        ...options,
+        buffer: true,
+        reflect: proxy[WORKER],
+        remote(event) { if (event instanceof Event) patchEvent(event); },
+        module: options?.import || esm || (name => import(new URL(name, location).href)),
+      });
 
-      const main = callback(
-        options?.import || esm || (name => new URL(name, location.href)),
-        proxy[WORKER]
-      );
+      this.#terminate = terminate;
+      this.direct = direct;
 
-      proxy[MAIN] = function (...args) {
-        tracking = true;
-        return main.apply(this, args);
-      };
+      proxy[MAIN] = reflect;
     }
     terminate() {
-      this.proxy[MAIN](DESTROY);
+      this.#terminate();
       super.terminate();
     }
   }

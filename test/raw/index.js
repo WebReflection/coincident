@@ -1,7 +1,6 @@
 import coincident from '../../dist/main.js';
-import { encoder } from '../../dist/flatted_encoder.js';
 
-const { Worker, native } = coincident({ encoder });
+const { Worker, native } = coincident();
 
 console.info('main', { native });
 

@@ -1,16 +1,17 @@
 import nextResolver from 'next-resolver';
 
 import { MAIN_WS, WORKER_WS } from './constants.js';
-
-import { decode, encode } from '../flatted/index.js';
-
+import { encode, decode } from './direct.js';
 import coincident from '../window/main.js';
 
 const { WebSocket } = globalThis;
 
+
 export default options => {
   const { ws: websocket } = options;
   const exports = coincident(options);
+
+  /** @type {Worker & { direct: <T>(value: T) => T, proxy: Record<string, function> }} */
   class Worker extends exports.Worker {
     #ws = null;
     constructor(url, options) {
@@ -26,7 +27,7 @@ export default options => {
         resolve(uid);
       };
       ws.onmessage = async event => {
-        const data = decode(event.data);
+        const data = decode(await event.data.arrayBuffer());
         if (typeof data[0] === 'number')
           resolve.apply(null, data);
         else {

@@ -1,10 +1,10 @@
 import { MAIN, WORKER } from './constants.js';
 
-import { decoder as jsonDecoder } from '../json/decoder.js';
-import { decoder as minimalDecoder } from '../proxy/decoder.js';
+import { decoder as directDecoder } from 'reflected-ffi/decoder';
+
+import remote from 'reflected-ffi/remote';
 
 import coincident from '../worker.js';
-import proxyWorker from '../proxy/worker.js';
 
 /**
  * @callback Coincident
@@ -13,36 +13,24 @@ import proxyWorker from '../proxy/worker.js';
  */
 
 export default /** @type {Coincident} */ async options => {
-  let tracking = false;
-  const defaultDecoder = options?.decoder || jsonDecoder;
   const exports = await coincident({
     ...options,
-    decoder(options) {
-      const original = defaultDecoder(options);
-      const minimal = minimalDecoder(options);
-      return (length, buffer) => {
-        if (tracking) {
-          tracking = false;
-          return minimal(length, buffer);
-        }
-        return original(length, buffer);
-      };
-    }
+    decoder: options?.decoder || directDecoder,
   });
 
-  const main = exports.proxy[MAIN];
+  const ffi = remote({ ...options, buffer: true, reflect: exports.proxy[MAIN] });
+  exports.proxy[WORKER] = ffi.reflect;
 
-  const { isProxy, global, method } = proxyWorker(
-    function (...args) {
-      tracking = true;
-      return main.apply(this, args);
-    },
-    options?.transform || ((o) => o)
-  );
-
-  // for the time being this is used only to invoke callbacks
-  // attached as listeners or as references' fields.
-  exports.proxy[WORKER] = method;
-
-  return { ...exports, window: global, isWindowProxy: isProxy };
+  return {
+    ...exports,
+    window: ffi.global,
+    isWindowProxy: ffi.isProxy,
+    ffi: {  
+      assign: ffi.assign,
+      direct: ffi.direct,
+      evaluate: ffi.evaluate,
+      gather: ffi.gather,
+      query: ffi.query,
+    }
+  };
 };

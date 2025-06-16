@@ -1,7 +1,7 @@
 import coincident from '../../dist/server/worker.js';
 
 console.time('coincident(Worker)');
-const { server, window } = await coincident();
+const { server, window, ffi } = await coincident();
 console.timeEnd('coincident(Worker)');
 
 console.log('coincident', 'Worker');
@@ -12,6 +12,7 @@ console.time('server.import("os")');
 const os = await server.import('os');
 console.timeEnd('server.import("os")');
 
+
 console.time('Server');
 const [
   platform,
@@ -19,13 +20,13 @@ const [
   cpus,
   totalmem,
   freemem,
-] = [
+] = [ // ffi.server.evaluate(os =>
   os.platform(),
   os.arch(),
   os.cpus().length,
   os.totalmem(),
   os.freemem(),
-];
+]; // , os);
 console.timeEnd('Server');
 
 

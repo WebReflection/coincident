@@ -1,7 +1,6 @@
 import coincident from '../../dist/worker.js';
-import { decoder } from '../../dist/flatted_decoder.js';
 
-const { proxy, native } = await coincident({ decoder });
+const { proxy, native } = await coincident();
 
 console.info('worker', { native });
 

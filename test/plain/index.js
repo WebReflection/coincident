@@ -1,9 +1,9 @@
-import coincident from '../../dist/main.js';
+import coincident from '../../dist/window/main.js';
 
 const { Worker } = coincident();
 
-const worker = new Worker('./worker.js');
+const { proxy } = new Worker('./worker.js', { type: 'module' });
 
-worker.proxy.location = () => location.href;
+proxy.location = () => new Float32Array([1, 2, 3]);
 
-await worker.proxy.add(1, 2);
+console.log('async main', await proxy.add(1, 2));
