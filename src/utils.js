@@ -22,10 +22,6 @@ const maxByteLength = 0x1000000;
 const defaults = {
   // ⚠️ mandatory: first int32 to notify, second one to store the written length
   byteOffset,
-  // ⚠️ mandatory: to encode *into* a SharedArrayBuffer
-  useUTF16: true,
-  // ⚠️ mandatory: to satisfy circular/cyclic data
-  circular: true,
 };
 
 const result = async (data, proxied, transform) => {
