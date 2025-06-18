@@ -46,7 +46,7 @@
   },
   "dependencies": {
     "next-resolver": "^0.1.3",
-    "reflected-ffi": "^0.4.4"
+    "reflected-ffi": "^0.4.5"
   },
   "repository": {
     "type": "git",
