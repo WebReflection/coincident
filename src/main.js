@@ -1,3 +1,5 @@
+import { MAIN, WORKER } from './window/constants.js';
+
 import nextResolver from 'next-resolver';
 
 import { encoder } from 'reflected-ffi/encoder';
@@ -24,6 +26,12 @@ const { notify } = Atomics;
 
 const Number = value => value;
 
+const info = name => {
+  if (name === MAIN) return 'main';
+  if (name === WORKER) return 'worker';
+  return name;
+};
+
 export default options => {
   const transform = options?.transform;
   const encode = (options?.encoder || encoder)(defaults);
@@ -44,7 +52,7 @@ export default options => {
           const t = setTimeout(
             console.warn,
             3e3,
-            `💀🔒 - is proxy.${resolving}() awaiting proxy.${name}() ?`
+            `💀🔒 - is proxy.${info(resolving)}() awaiting proxy.${info(name)}() ?`
           );
           promise = promise.then(
             result => {
