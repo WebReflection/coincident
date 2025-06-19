@@ -12,8 +12,9 @@ export default (ws, options) => {
   const [ next, resolve ] = nextResolver(String);
   const module = options?.import || (name => import(name));
   const resolvers = new Set;
-  let coincident = -1, main, end;
+  let move = value => value, coincident = -1, main, end;
   return {
+    direct: value => move(value),
     onclose: () => {
       for (const resolve of resolvers) resolve();
       resolvers.clear();
@@ -39,6 +40,7 @@ export default (ws, options) => {
               },
             });
             main = reflect;
+            move = direct;
             end = terminate;
           }
         }

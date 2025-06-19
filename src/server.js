@@ -2,14 +2,16 @@ import server from './server/server.js';
 
 export default (options = {}) => {
   const { bun, wss } = options;
+  const sockets = new Map;
   if (bun) {
-    const sockets = new WeakMap;
     return {
       open(ws) {
         sockets.set(ws, server(ws, options));
       },
       close(ws, _, message) {
-        sockets.get(ws).onclose(message);
+        const coincident = sockets.get(ws);
+        sockets.delete(ws);
+        coincident.onclose(message);
       },
       message(ws, message) {
         sockets.get(ws).onmessage(message);
@@ -17,8 +19,20 @@ export default (options = {}) => {
     };
   }
   else if (wss) wss.on('connection', ws => {
-    const { onclose, onmessage } = server(ws, options);
-    ws.prependListener('close', onclose);
-    ws.prependListener('message', onmessage);
+    const coincident = server(ws, options);
+    sockets.set(ws, coincident);
+    ws.prependListener('close', (...args) => {
+      sockets.delete(ws);
+      coincident.onclose(...args);
+    });
+    ws.prependListener('message', coincident.onmessage);
   });
+  return {
+    direct(value) {
+      for (const coincident of sockets.values())
+        coincident.direct(value);
+      return value;
+    },
+    sockets,
+  };
 };
