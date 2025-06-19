@@ -1,5 +1,7 @@
 import { MAIN, WORKER } from './window/constants.js';
 
+import * as sabayon from 'sabayon/main';
+
 import nextResolver from 'next-resolver';
 
 import { encoder } from 'reflected-ffi/encoder';
@@ -44,6 +46,9 @@ export default options => {
       const [ next, resolve ] = nextResolver(Number);
       const callbacks = new Map;
       const proxied = create(null);
+      const noServiceWorker = !options?.serviceWorker;
+      const commit = native ? notify : sabayon.Atomics.notify;
+      const OK = native ? UID : ID;
 
       let resolving = '';
 
@@ -68,7 +73,10 @@ export default options => {
         return promise;
       };
 
-      super(url, assign({ type: 'module' }, options)).proxy = new Proxy(proxied, {
+      const arg = assign({ type: 'module' }, options);
+      const self = native ? super(url, arg) : new sabayon.Worker(url, arg);
+
+      self.proxy = new Proxy(proxied, {
         get: (_, name) => {
           // the curse of potentially awaiting proxies in the wild
           // requires this ugly guard around `then`
@@ -90,13 +98,13 @@ export default options => {
         set
       });
 
-      super.postMessage(UID, [port2]);
+      self.postMessage(sabayon.ignore([OK, noServiceWorker]), [port2]);
 
       // @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
-      if (native && UID) {
-        super.addEventListener('message', event => {
+      if (OK) {
+        self.addEventListener('message', event => {
           const { data } = event;
-          if (data?.ID === UID) {
+          if (data?.ID === OK) {
             stop(event);
             channel.onmessage(data);
           }
@@ -120,10 +128,12 @@ export default options => {
             i32[1] = result === void 0 ? 0 : encode(result, i32.buffer);
             // at index 0 we set the SharedArrayBuffer as ready
             i32[0] = 1;
-            notify(i32, 0);
+            commit(i32, 0);
           }
         }
       };
+
+      return self;
     }
   }
 

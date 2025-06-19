@@ -8,7 +8,7 @@
 
     const { Worker } = coincident();
 
-    const { proxy } = new Worker('./worker.js');
+    const { proxy } = new Worker('./worker.js', { serviceWorker: './sw.js' });
 
     proxy.href = () => location.href;
 

@@ -1,3 +1,5 @@
+import * as sabayon from 'sabayon/worker';
+
 import nextResolver from 'next-resolver';
 
 import { decoder } from 'reflected-ffi/decoder';
@@ -18,30 +20,33 @@ import {
 // wait for the channel before resolving
 const bootstrap = Promise.withResolvers();
 
-addEventListener(
+sabayon.addEventListener(
   'message',
   event => {
     stop(event);
-    bootstrap.resolve([event.data, event.ports[0]])
+    const [ID, noServiceWorker] = event.data;
+    const channel = event.ports[0];
+    bootstrap.resolve({ ID, SW: !noServiceWorker, channel })
   },
   { once: true }
 );
 
 export default async options => {
-  const [ID, channel] = await bootstrap.promise;
-  const WORKAROUND = native && !!ID;
+  const { ID, SW, channel } = await bootstrap.promise;
+  const WORKAROUND = !!ID;
+  const direct = native || SW;
   const transform = options?.transform;
   const decode = (options?.decoder || decoder)(defaults);
   const checkTransferred = options?.transfer !== false;
 
   let i32a, pause, wait;
-  if (native) {
-    const sab = new SharedArrayBuffer(
+  if (direct) {
+    const sab = new sabayon.SharedArrayBuffer(
       options?.minByteLength || minByteLength,
       { maxByteLength: options?.maxByteLength || maxByteLength }
     );
-    i32a = new Int32Array(sab);
-    ({ pause, wait } = Atomics);
+    i32a = new sabayon.Int32Array(sab);
+    ({ pause, wait } = sabayon.Atomics);
     // prefer the fast path when possible
     if (pause && !WORKAROUND && !(sab instanceof ArrayBuffer)) {
       wait = (view, index) => {
@@ -64,8 +69,8 @@ export default async options => {
           const transfer = transferred.get(checkTransferred, args);
           const data = [i32a, name, transform ? args.map(transform) : args];
           // synchronous request
-          if (native) {
-            if (WORKAROUND) postMessage({ ID, data }, transfer);
+          if (direct) {
+            if (WORKAROUND) sabayon.postMessage({ ID, data }, transfer);
             else channel.postMessage(data, transfer);
             wait(i32a, 0);
             i32a[0] = 0;
