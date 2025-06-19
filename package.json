@@ -1,6 +1,6 @@
 {
   "name": "coincident",
-  "version": "4.0.5",
+  "version": "4.0.6",
   "description": "An Atomics based Proxy to simplify, and synchronize, Worker related tasks",
   "scripts": {
     "build": "node build/constants.cjs && node build/index.cjs && rollup --config build/dist.js",
