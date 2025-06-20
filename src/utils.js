@@ -1,18 +1,12 @@
+import { native } from '@webreflection/utils/shared-array-buffer';
+
 const {
   assign,
   create,
 } = Object;
 
 /* c8 ignore start */
-let ID = 'coincident-', native = true;
-try {
-  new SharedArrayBuffer(4, { maxByteLength: 8 });
-  ID += crypto.randomUUID();
-}
-catch (_) {
-  native = false;
-  ID += Math.random().toString(36).substring(2);
-}
+const ID = `coincident-${native ? crypto.randomUUID() : Math.random().toString(36).substring(2)}`;
 /* c8 ignore end */
 
 const byteOffset = 2 * Int32Array.BYTES_PER_ELEMENT;

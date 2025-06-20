@@ -8,7 +8,10 @@
 
     const { Worker } = coincident();
 
-    const { proxy } = new Worker('./worker.js', { serviceWorker: './sw.js' });
+    const options = { type: 'module' };
+    if (location.search === '?sw') options.serviceWorker = './sw.js';
+
+    const { proxy } = new Worker('./worker.js', options);
 
     proxy.href = () => location.href;
 

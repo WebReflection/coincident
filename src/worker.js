@@ -104,6 +104,7 @@ export default async options => {
   return {
     native,
     proxy,
+    sync: direct,
     transfer: transferred.set,
   };
 };
