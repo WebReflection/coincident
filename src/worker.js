@@ -34,7 +34,7 @@ sabayon.addEventListener(
 export default async options => {
   const { ID, SW, channel } = await bootstrap.promise;
   const WORKAROUND = !!ID;
-  const direct = native || SW;
+  const direct = native || !!SW;
   const transform = options?.transform;
   const decode = (options?.decoder || decoder)(defaults);
   const checkTransferred = options?.transfer !== false;
