@@ -1,12 +1,12 @@
 import { MAIN, WORKER } from './window/constants.js';
 
-import * as sabayon from 'sabayon/main';
-
 import nextResolver from 'next-resolver';
 
 import { encoder } from 'reflected-ffi/encoder';
 
 import * as transferred from './transfer.js';
+
+import * as sabayon from './sabayon/index.js';
 
 import {
   ID,
@@ -24,8 +24,6 @@ import {
 //       this workaround would be gone too!
 const UID = 'InstallTrigger' in globalThis ? ID : '';
 
-const { notify } = Atomics;
-
 const Number = value => value;
 
 const info = name => {
@@ -40,15 +38,19 @@ export default options => {
   const checkTransferred = options?.transfer !== false;
 
   /** @type {Worker & { proxy: Record<string, function> }} */
-  class Worker extends globalThis.Worker {
+  class Worker extends sabayon.Worker {
     constructor(url, options) {
-      const { port1: channel, port2 } = new MessageChannel;
+      const serviceWorker = !native && options?.serviceWorker;
+      const { notify } = serviceWorker ? sabayon.Atomics : Atomics;
+      const { port1: channel, port2 } = new (
+        serviceWorker ? sabayon.MessageChannel : MessageChannel
+      );
       const [ next, resolve ] = nextResolver(Number);
       const callbacks = new Map;
       const proxied = create(null);
-      const noServiceWorker = !options?.serviceWorker;
-      const commit = native ? notify : sabayon.Atomics.notify;
       const OK = native ? UID : ID;
+
+      if (serviceWorker) sabayon.register(serviceWorker);
 
       let resolving = '';
 
@@ -73,10 +75,9 @@ export default options => {
         return promise;
       };
 
-      const arg = assign({ type: 'module' }, options);
-      const self = native ? super(url, arg) : new sabayon.Worker(url, arg);
+      super(url, assign({ type: 'module' }, options));
 
-      self.proxy = new Proxy(proxied, {
+      this.proxy = new Proxy(proxied, {
         get: (_, name) => {
           // the curse of potentially awaiting proxies in the wild
           // requires this ugly guard around `then`
@@ -98,11 +99,11 @@ export default options => {
         set
       });
 
-      self.postMessage(sabayon.ignore([OK, noServiceWorker]), [port2]);
+      super.postMessage([OK, !!serviceWorker], [port2]);
 
       // @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
       if (OK) {
-        self.addEventListener('message', event => {
+        super.addEventListener('message', event => {
           const { data } = event;
           if (data?.ID === OK) {
             stop(event);
@@ -128,12 +129,10 @@ export default options => {
             i32[1] = result === void 0 ? 0 : encode(result, i32.buffer);
             // at index 0 we set the SharedArrayBuffer as ready
             i32[0] = 1;
-            commit(i32, 0);
+            notify(i32, 0);
           }
         }
       };
-
-      return self;
     }
   }
 

@@ -1,4 +1,4 @@
-import * as sabayon from 'sabayon/worker';
+import withResolvers from '@webreflection/utils/with-resolvers';
 
 import nextResolver from 'next-resolver';
 
@@ -17,22 +17,29 @@ import {
   stop,
 } from './utils.js';
 
-// wait for the channel before resolving
-const bootstrap = Promise.withResolvers();
+import {
+  Atomics,
+  SharedArrayBuffer,
+  postMessage,
+  register,
+} from './sabayon/index.js';
 
-sabayon.addEventListener(
+// wait for the channel before resolving
+const bootstrap = withResolvers();
+
+addEventListener(
   'message',
   event => {
     stop(event);
-    const [ID, noServiceWorker] = event.data;
-    const channel = event.ports[0];
-    bootstrap.resolve({ ID, SW: !noServiceWorker, channel })
+    const [ID, SW] = event.data;
+    // console.log('coincident', [ID, SW]);
+    bootstrap.resolve({ ID, SW, channel: event.ports[0] });
   },
   { once: true }
 );
 
 export default async options => {
-  const { ID, SW, channel } = await bootstrap.promise;
+  const { ID, SW, channel } = await register().then(() => bootstrap.promise);
   const WORKAROUND = !!ID;
   const direct = native || !!SW;
   const transform = options?.transform;
@@ -41,12 +48,12 @@ export default async options => {
 
   let i32a, pause, wait;
   if (direct) {
-    const sab = new sabayon.SharedArrayBuffer(
+    const sab = new SharedArrayBuffer(
       options?.minByteLength || minByteLength,
       { maxByteLength: options?.maxByteLength || maxByteLength }
     );
-    i32a = new sabayon.Int32Array(sab);
-    ({ pause, wait } = sabayon.Atomics);
+    i32a = new Int32Array(sab);
+    ({ pause, wait } = Atomics);
     // prefer the fast path when possible
     if (pause && !WORKAROUND && !(sab instanceof ArrayBuffer)) {
       wait = (view, index) => {
@@ -70,7 +77,7 @@ export default async options => {
           const data = [i32a, name, transform ? args.map(transform) : args];
           // synchronous request
           if (direct) {
-            if (WORKAROUND) sabayon.postMessage({ ID, data }, transfer);
+            if (WORKAROUND) postMessage({ ID, data }, transfer);
             else channel.postMessage(data, transfer);
             wait(i32a, 0);
             i32a[0] = 0;
