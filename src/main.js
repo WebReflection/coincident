@@ -6,6 +6,8 @@ import { encoder } from 'reflected-ffi/encoder';
 
 import * as transferred from './transfer.js';
 
+import * as sabayon from './sabayon/index.js';
+
 import {
   ID,
   assign,
@@ -22,8 +24,6 @@ import {
 //       this workaround would be gone too!
 const UID = 'InstallTrigger' in globalThis ? ID : '';
 
-const { notify } = Atomics;
-
 const Number = value => value;
 
 const info = name => {
@@ -38,12 +38,19 @@ export default options => {
   const checkTransferred = options?.transfer !== false;
 
   /** @type {Worker & { proxy: Record<string, function> }} */
-  class Worker extends globalThis.Worker {
+  class Worker extends sabayon.Worker {
     constructor(url, options) {
-      const { port1: channel, port2 } = new MessageChannel;
+      const serviceWorker = !native && options?.serviceWorker;
+      const { notify } = serviceWorker ? sabayon.Atomics : Atomics;
+      const { port1: channel, port2 } = new (
+        serviceWorker ? sabayon.MessageChannel : MessageChannel
+      );
       const [ next, resolve ] = nextResolver(Number);
       const callbacks = new Map;
       const proxied = create(null);
+      const OK = native ? UID : ID;
+
+      if (serviceWorker) sabayon.register(serviceWorker);
 
       let resolving = '';
 
@@ -68,7 +75,9 @@ export default options => {
         return promise;
       };
 
-      super(url, assign({ type: 'module' }, options)).proxy = new Proxy(proxied, {
+      super(url, assign({ type: 'module' }, options));
+
+      this.proxy = new Proxy(proxied, {
         get: (_, name) => {
           // the curse of potentially awaiting proxies in the wild
           // requires this ugly guard around `then`
@@ -90,13 +99,13 @@ export default options => {
         set
       });
 
-      super.postMessage(UID, [port2]);
+      super.postMessage([OK, !!serviceWorker], [port2]);
 
       // @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
-      if (native && UID) {
+      if (OK) {
         super.addEventListener('message', event => {
           const { data } = event;
-          if (data?.ID === UID) {
+          if (data?.ID === OK) {
             stop(event);
             channel.onmessage(data);
           }

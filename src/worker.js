@@ -1,3 +1,5 @@
+import withResolvers from '@webreflection/utils/with-resolvers';
+
 import nextResolver from 'next-resolver';
 
 import { decoder } from 'reflected-ffi/decoder';
@@ -15,27 +17,37 @@ import {
   stop,
 } from './utils.js';
 
+import {
+  Atomics,
+  SharedArrayBuffer,
+  postMessage,
+  register,
+} from './sabayon/index.js';
+
 // wait for the channel before resolving
-const bootstrap = Promise.withResolvers();
+const bootstrap = withResolvers();
 
 addEventListener(
   'message',
   event => {
     stop(event);
-    bootstrap.resolve([event.data, event.ports[0]])
+    const [ID, SW] = event.data;
+    // console.log('coincident', [ID, SW]);
+    bootstrap.resolve({ ID, SW, channel: event.ports[0] });
   },
   { once: true }
 );
 
 export default async options => {
-  const [ID, channel] = await bootstrap.promise;
-  const WORKAROUND = native && !!ID;
+  const { ID, SW, channel } = await register().then(() => bootstrap.promise);
+  const WORKAROUND = !!ID;
+  const direct = native || !!SW;
   const transform = options?.transform;
   const decode = (options?.decoder || decoder)(defaults);
   const checkTransferred = options?.transfer !== false;
 
   let i32a, pause, wait;
-  if (native) {
+  if (direct) {
     const sab = new SharedArrayBuffer(
       options?.minByteLength || minByteLength,
       { maxByteLength: options?.maxByteLength || maxByteLength }
@@ -64,7 +76,7 @@ export default async options => {
           const transfer = transferred.get(checkTransferred, args);
           const data = [i32a, name, transform ? args.map(transform) : args];
           // synchronous request
-          if (native) {
+          if (direct) {
             if (WORKAROUND) postMessage({ ID, data }, transfer);
             else channel.postMessage(data, transfer);
             wait(i32a, 0);
@@ -99,6 +111,7 @@ export default async options => {
   return {
     native,
     proxy,
+    sync: direct,
     transfer: transferred.set,
   };
 };

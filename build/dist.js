@@ -68,4 +68,12 @@ export default [
       file: './dist/server/worker.js',
     }
   },
+  {
+    plugins,
+    input: './src/sabayon/sw.js',
+    output: {
+      esModule: true,
+      file: './dist/sw.js',
+    }
+  },
 ];
