@@ -144,7 +144,7 @@ else {
   }
   // Main
   else {
-    const UID = ID;
+    const UID = [ID, Math.random()].join('-').replace(/\W/g, '-');
 
     const bc = new BroadcastChannel(BROADCAST_CHANNEL_UID);
     bc.onmessage = async event => {
