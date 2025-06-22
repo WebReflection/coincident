@@ -44,8 +44,12 @@ export default async options => {
     ({ pause, wait } = Atomics);
     // prefer the fast path when possible
     if (pause && !WORKAROUND && !(sab instanceof ArrayBuffer)) {
+      const MAX_SPIN_LOCK = options?.maxSpinLock || Infinity;
+      const $wait = wait;
       wait = (view, index) => {
-        while (view[index] < 1) pause();
+        let spin = 0;
+        while (view[index] < 1 && spin++ < MAX_SPIN_LOCK) pause();
+        if (view[index] < 1) $wait(view, index);
       };
     }
   }
