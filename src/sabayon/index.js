@@ -3,11 +3,9 @@ import BROADCAST_CHANNEL_UID from './bid.js';
 import { SharedArrayBuffer as SAB, native } from '@webreflection/utils/shared-array-buffer';
 import withResolvers from '@webreflection/utils/with-resolvers';
 import nextResolver from 'next-resolver';
-import { ID } from '../utils.js';
+import { ID, stop } from '../utils.js';
 
-const { isArray } = Array;
-const { isView } = ArrayBuffer;
-const { defineProperty, values } = Object;
+const { defineProperty } = Object;
 
 const [next, resolve] = nextResolver();
 let [bootstrap, promise] = next();
@@ -20,9 +18,12 @@ let [bootstrap, promise] = next();
 
 let register = /** @type {sabayon} */(() => promise);
 
+let track = () => {};
+
 let {
   Atomics,
   MessageChannel,
+  MessagePort,
   SharedArrayBuffer,
   Worker,
   postMessage,
@@ -38,64 +39,41 @@ else {
     target.addEventListener(...args);
   };
 
-  const extend = (target, literal) => {
-    for (const key in literal) {
-      literal[key] = {
-        value: literal[key],
-        configurable: true,
-        writable: true,
-      };
-    }
-    return Object.create(target, literal);
-  };
-
   // Web Worker
   if ('importScripts' in globalThis) {
-    const intercept = (set, data, view) => {
-      if (view && typeof view === 'object' && !set.has(view)) {
-        set.add(view);
-        if (isView(view)) {
-          // avoid DataView or other views to be considered for waiting
-          if (view instanceof Int32Array && view.buffer instanceof SharedArrayBuffer) {
-            const id = ids++;
-            views.set(view, id);
-            return [UID, id, view, data];
-          }
-        }
-        else {
-          const array = isArray(view) ? view : values(view);
-          for (let i = 0; i < array.length; i++) {
-            const details = intercept(set, data, array[i]);
-            if (details) return details;
-          }
-        }
-      }
+    track = view => {
+      views.set(view, null);
     };
 
-    const interceptor = method => function postMessage(data, ...rest) {
+    const transform = data => {
+      const view = data[0];
+      const id = ids++;
+      views.set(view, id);
+      return [id, view, data];
+    };
+
+    const _postMessage = postMessage;
+    postMessage = function $postMessage(data, transfer) {
       if (ready) {
-        const details = intercept(new Set, data, data);
-        method.call(this, (details || data), ...rest);
+        const details = { ID: data.ID, data: transform(data.data) };
+        _postMessage(details, transfer);
       }
-      else {
-        promise.then(() => postMessage(data, ...rest));
+      else promise.then(() => this.postMessage(data, transfer));
+    }
+
+    MessagePort = class extends MessagePort {
+      postMessage(data, transfer) {
+        if (ready) super.postMessage(transform(data), transfer);
+        else promise.then(() => this.postMessage(data, transfer));
       }
-    };
-
-    postMessage = interceptor(postMessage);
-
-    const { prototype } = globalThis.MessagePort;
-    prototype.postMessage = interceptor(prototype.postMessage);
+    }
 
     addListener(
       globalThis,
       'message',
       event => {
-        let { data } = event;
-        // console.log('sabayon', data);
-        if (isArray(data) && typeof data.at(1) === 'string')
-          event.stopImmediatePropagation();
-        resolve(bootstrap, data);
+        stop(event);
+        resolve(bootstrap, event.data);
       },
       { once: true }
     );
@@ -104,36 +82,25 @@ else {
     const { wait } = Atomics;
     const { parse } = JSON;
 
-    const Async = value => ({ value, async: true });
-
-    const Request = (view, sync) => {
+    const Request = view => {
       const xhr = new XMLHttpRequest;
-      xhr.open('POST', `${SW}?sabayon`, sync);
+      xhr.open('POST', `${SW}?sabayon`, false);
+      xhr.setRequestHeader('Content-Type', 'application/json');
       xhr.send(`["${UID}",${views.get(view)}]`);
       return xhr;
     };
 
     const Response = (view, xhr) => {
       view.set(parse(xhr.responseText));
-      views.delete(view);
       return 'ok';
     };
 
-    Atomics = extend(Atomics, {
+    Atomics = {
       wait: (view, ..._) => views.has(view) ?
-        Response(view, Request(view, false)) :
+        Response(view, Request(view)) :
         wait(view, ..._)
       ,
-      waitAsync: (view, ..._) => {
-        if (views.has(view)) {
-          const { promise, resolve } = withResolvers();
-          const xhr = Request(view, true);
-          xhr.onloadend = () => resolve(Response(view, xhr));
-          return Async(promise);
-        }
-        return wait(view, ..._);
-      },
-    });
+    };
 
     let UID, SW, ready = false, ids = Math.random();
 
@@ -153,7 +120,6 @@ else {
         for (const [view, [id, wr]] of views) {
           if (id === vid) {
             await wr.promise;
-            views.delete(view);
             let length = view.length;
             while (length-- && !view[length]);
             bc.postMessage([swid, view.slice(0, length + 1)]);
@@ -163,20 +129,16 @@ else {
       }
     };
 
-    const interceptData = event => {
-      let { data } = event;
-      if (isArray(data) && data.at(0) === UID) {
-        const [_, id, view, value] = data;
-        views.set(view, [id, withResolvers()]);
-        defineProperty(event, 'data', { value });
-      }
+    const intercept = event => {
+      const [id, view, value] = event.data;
+      views.set(view, [id, withResolvers()]);
+      defineProperty(event, 'data', { value });
     };
 
     MessageChannel = class extends MessageChannel {
       constructor() {
         super();
-        addListener(this.port1, 'message', interceptData);
-        addListener(this.port2, 'message', interceptData);
+        addListener(this.port1, 'message', intercept);
       }
     };
 
@@ -187,28 +149,22 @@ else {
        */
       constructor(scriptURL, options) {
         super(scriptURL, options);
-        if (SW) {
-          super.postMessage([UID, SW]);
-          addListener(this, 'message', interceptData);
-        }
+        super.postMessage([UID, SW]);
       }
     };
 
     const { notify } = Atomics;
-    Atomics = Object.create(Atomics, {
-      notify: {
-        configurable: true,
-        writable: true,
-        value: (view, ..._) => {
-          const details = views.get(view);
-          if (details) {
-            details[1].resolve();
-            return 0;
-          }
-          return notify(view, ..._);
-        },
+    Atomics = {
+      notify(view, ..._) {
+        const details = views.get(view);
+        if (details) {
+          details[1].resolve();
+          return 0;
+        }
+        // this will throw with a proper error
+        return notify(view, ..._);
       },
-    });
+    };
 
     let SW = '';
     let serviceWorker = null;
@@ -255,8 +211,10 @@ else {
 export {
   Atomics,
   MessageChannel,
+  MessagePort,
   SharedArrayBuffer,
   Worker,
   postMessage,
   register,
+  track,
 };

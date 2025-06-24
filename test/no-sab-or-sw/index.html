@@ -13,7 +13,11 @@
 
     const { proxy } = new Worker('./worker.js', options);
 
-    proxy.href = () => location.href;
+    const { proxy: p2 } = new Worker('./worker.js', options);
+
+    let invokes = 0;
+    proxy.href = () => location.href + String(invokes++);
+    p2.href = () => location.href + String(invokes++);
 
     console.log('main invoking worker', await proxy.sum(1, 2, 3, 4));
   </script>

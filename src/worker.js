@@ -6,6 +6,8 @@ import { decoder } from 'reflected-ffi/decoder';
 
 import * as transferred from './transfer.js';
 
+import * as sabayon from './sabayon/index.js';
+
 import {
   create,
   defaults,
@@ -17,29 +19,30 @@ import {
   stop,
 } from './utils.js';
 
-import {
-  Atomics,
-  SharedArrayBuffer,
-  postMessage,
-  register,
-} from './sabayon/index.js';
+const { setPrototypeOf } = Reflect;
+let { postMessage } = globalThis;
 
 // wait for the channel before resolving
 const bootstrap = withResolvers();
+const MPP = sabayon.MessagePort.prototype;
 
 addEventListener(
   'message',
   event => {
     stop(event);
     const [ID, SW] = event.data;
-    // console.log('coincident', [ID, SW]);
-    bootstrap.resolve({ ID, SW, channel: event.ports[0] });
+    const [channel] = event.ports;
+    if (SW) {
+      setPrototypeOf(channel, MPP);
+      if (ID) postMessage = sabayon.postMessage;
+    }
+    bootstrap.resolve([ID, SW, channel]);
   },
   { once: true }
 );
 
 export default async options => {
-  const { ID, SW, channel } = await register().then(() => bootstrap.promise);
+  const [ID, SW, channel] = await sabayon.register().then(() => bootstrap.promise);
   const WORKAROUND = !!ID;
   const direct = native || !!SW;
   const transform = options?.transform;
@@ -48,17 +51,24 @@ export default async options => {
 
   let i32a, pause, wait;
   if (direct) {
-    const sab = new SharedArrayBuffer(
+    const SAB = SW ? sabayon.SharedArrayBuffer : SharedArrayBuffer;
+    const sab = new SAB(
       options?.minByteLength || minByteLength,
       { maxByteLength: options?.maxByteLength || maxByteLength }
     );
     i32a = new Int32Array(sab);
-    ({ pause, wait } = Atomics);
-    // prefer the fast path when possible
-    if (pause && !WORKAROUND && !(sab instanceof ArrayBuffer)) {
-      wait = (view, index) => {
-        while (view[index] < 1) pause();
-      };
+    if (SW) {
+      ({ wait } = sabayon.Atomics);
+      sabayon.track(i32a);
+    }
+    else {
+      ({ pause, wait } = Atomics);
+      // prefer the fast path when possible
+      if (pause && !WORKAROUND) {
+        wait = (view, index) => {
+          while (view[index] < 1) pause();
+        };
+      }
     }
   }
 
@@ -99,14 +109,16 @@ export default async options => {
     set
   });
 
-  channel.onmessage = async ({ data }) => {
+  channel.addEventListener('message', async ({ data }) => {
     if (typeof data[0] === 'string')
       resolve.apply(null, data);
     else {
       await result(data, proxied, transform);
       channel.postMessage(data);
     }
-  };
+  });
+
+  channel.start();
 
   return {
     native,

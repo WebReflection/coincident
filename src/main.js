@@ -32,6 +32,18 @@ const info = name => {
   return name;
 };
 
+// @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
+class MessageEvent extends Event {
+  #data;
+  constructor(data) {
+    super('message');
+    this.#data = data;
+  }
+  get data() {
+    return this.#data;
+  }
+}
+
 export default options => {
   const transform = options?.transform;
   const encode = (options?.encoder || encoder)(defaults);
@@ -40,15 +52,14 @@ export default options => {
   /** @type {Worker & { proxy: Record<string, function> }} */
   class Worker extends sabayon.Worker {
     constructor(url, options) {
-      const serviceWorker = !native && options?.serviceWorker;
-      const { notify } = serviceWorker ? sabayon.Atomics : Atomics;
+      const serviceWorker = native ? '' : (options?.serviceWorker || '');
+      const { notify } = (serviceWorker ? sabayon.Atomics : Atomics);
       const { port1: channel, port2 } = new (
         serviceWorker ? sabayon.MessageChannel : MessageChannel
       );
       const [ next, resolve ] = nextResolver(Number);
       const callbacks = new Map;
       const proxied = create(null);
-      const OK = native ? UID : ID;
 
       if (serviceWorker) sabayon.register(serviceWorker);
 
@@ -99,20 +110,20 @@ export default options => {
         set
       });
 
-      super.postMessage([OK, !!serviceWorker], [port2]);
-
       // @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
-      if (OK) {
+      if (UID && (native || serviceWorker)) {
         super.addEventListener('message', event => {
           const { data } = event;
-          if (data?.ID === OK) {
+          if (data?.ID === UID) {
             stop(event);
-            channel.onmessage(data);
+            channel.dispatchEvent(new MessageEvent(data.data));
           }
         });
       }
 
-      channel.onmessage = async ({ data }) => {
+      super.postMessage([UID, serviceWorker], [port2]);
+
+      channel.addEventListener('message', async ({ data }) => {
         const i32 = data[0];
         const type = typeof i32;
         if (type === 'number')
@@ -132,7 +143,9 @@ export default options => {
             notify(i32, 0);
           }
         }
-      };
+      });
+
+      channel.start();
     }
   }
 
