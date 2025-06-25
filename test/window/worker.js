@@ -1,5 +1,5 @@
 import coincident from '../../dist/window/worker.js';
-const { proxy, window, isWindowProxy } = await coincident();
+const { proxy, window, isWindowProxy } = await coincident({ timeout: 0 });
 
 console.assert((await window.import('./module.js')).default === 'OK', 'window.import');
 
