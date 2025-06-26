@@ -1,5 +1,8 @@
 {
   "name": "coincident",
+  "bin": {
+    "coincident": "cli.cjs"
+  },
   "version": "4.0.12",
   "description": "An Atomics based Proxy to simplify, and synchronize, Worker related tasks",
   "scripts": {
