@@ -8,7 +8,7 @@ import coincident from '../main.js';
 
 export default options => {
   const esm = options?.import;
-  const timeout = options?.timeout;
+  const timeout = options?.timeout ?? -1;
   const exports = coincident({
     ...options,
     encoder: options?.encoder || directEncoder,
@@ -21,9 +21,9 @@ export default options => {
       const { proxy } = super(url, options);
       const { direct, reflect, terminate } = local({
         ...options,
-        timeout,
         buffer: true,
         reflect: proxy[WORKER],
+        timeout: options?.timeout ?? timeout,
         remote(event) { if (event instanceof Event) patchEvent(event); },
         module: options?.import || esm || (name => import(new URL(name, location).href)),
       });

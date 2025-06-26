@@ -46,6 +46,7 @@ class MessageEvent extends Event {
 
 export default options => {
   const transform = options?.transform;
+  const timeout = options?.timeout ?? -1;
   const encode = (options?.encoder || encoder)(defaults);
   const checkTransferred = options?.transfer !== false;
 
@@ -121,7 +122,7 @@ export default options => {
         });
       }
 
-      super.postMessage([UID, serviceWorker], [port2]);
+      super.postMessage([UID, serviceWorker, options?.timeout ?? timeout], [port2]);
 
       channel.addEventListener('message', async ({ data }) => {
         const i32 = data[0];

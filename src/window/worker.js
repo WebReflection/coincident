@@ -18,7 +18,13 @@ export default /** @type {Coincident} */ async options => {
     decoder: options?.decoder || directDecoder,
   });
 
-  const ffi = remote({ ...options, buffer: true, reflect: exports.proxy[MAIN] });
+  const ffi = remote({
+    ...options,
+    buffer: true,
+    reflect: exports.proxy[MAIN],
+    timeout: exports.timeout,
+  });
+
   exports.proxy[WORKER] = ffi.reflect;
 
   return {
