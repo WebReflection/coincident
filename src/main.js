@@ -17,6 +17,7 @@ import {
   result,
   set,
   stop,
+  ffi_timeout,
 } from './utils.js';
 
 // @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
@@ -46,7 +47,7 @@ class MessageEvent extends Event {
 
 export default options => {
   const transform = options?.transform;
-  const timeout = options?.timeout ?? -1;
+  const timeout = ffi_timeout(options);
   const encode = (options?.encoder || encoder)(defaults);
   const checkTransferred = options?.transfer !== false;
 
@@ -122,7 +123,7 @@ export default options => {
         });
       }
 
-      super.postMessage([UID, serviceWorker, options?.timeout ?? timeout], [port2]);
+      super.postMessage([UID, serviceWorker, ffi_timeout(options, timeout)], [port2]);
 
       channel.addEventListener('message', async ({ data }) => {
         const i32 = data[0];

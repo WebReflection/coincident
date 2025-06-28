@@ -39,6 +39,10 @@ const stop = event => {
   event.preventDefault();
 };
 
+export const ffi_timeout = (options, fallback = -1) => (
+  options?.reflected_ffi_timeout ?? fallback
+);
+
 export {
   ID,
   assign,

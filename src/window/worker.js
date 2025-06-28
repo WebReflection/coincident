@@ -22,7 +22,7 @@ export default /** @type {Coincident} */ async options => {
     ...options,
     buffer: true,
     reflect: exports.proxy[MAIN],
-    timeout: exports.timeout,
+    timeout: exports.ffi_timeout,
   });
 
   exports.proxy[WORKER] = ffi.reflect;

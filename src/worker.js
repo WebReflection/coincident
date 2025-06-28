@@ -30,19 +30,19 @@ addEventListener(
   'message',
   event => {
     stop(event);
-    const [ID, SW, timeout] = event.data;
+    const [ID, SW, ffi_timeout] = event.data;
     const [channel] = event.ports;
     if (SW) {
       setPrototypeOf(channel, MPP);
       if (ID) postMessage = sabayon.postMessage;
     }
-    bootstrap.resolve([ID, SW, timeout, channel]);
+    bootstrap.resolve([ID, SW, ffi_timeout, channel]);
   },
   { once: true }
 );
 
 export default async options => {
-  const [ID, SW, timeout, channel] = await sabayon.register().then(() => bootstrap.promise);
+  const [ID, SW, ffi_timeout, channel] = await sabayon.register().then(() => bootstrap.promise);
   const WORKAROUND = !!ID;
   const direct = native || !!SW;
   const transform = options?.transform;
@@ -123,7 +123,7 @@ export default async options => {
   return {
     native,
     proxy,
-    timeout,
+    ffi_timeout,
     sync: direct,
     transfer: transferred.set,
   };

@@ -5,10 +5,11 @@ import { encoder as directEncoder } from 'reflected-ffi/encoder';
 import { MAIN, WORKER } from './constants.js';
 
 import coincident from '../main.js';
+import { ffi_timeout } from '../utils.js';
 
 export default options => {
   const esm = options?.import;
-  const timeout = options?.timeout ?? -1;
+  const timeout = ffi_timeout(options);
   const exports = coincident({
     ...options,
     encoder: options?.encoder || directEncoder,
@@ -23,7 +24,7 @@ export default options => {
         ...options,
         buffer: true,
         reflect: proxy[WORKER],
-        timeout: options?.timeout ?? timeout,
+        timeout: ffi_timeout(options, timeout),
         remote(event) { if (event instanceof Event) patchEvent(event); },
         module: options?.import || esm || (name => import(new URL(name, location).href)),
       });
