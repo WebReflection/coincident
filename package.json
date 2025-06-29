@@ -27,7 +27,7 @@
     "mini-coi": "^0.4.2",
     "rollup": "^4.44.1",
     "static-handler": "^0.5.3",
-    "ws": "^8.18.2"
+    "ws": "^8.18.3"
   },
   "type": "module",
   "exports": {
@@ -50,7 +50,7 @@
   "dependencies": {
     "@webreflection/utils": "^0.1.1",
     "next-resolver": "^0.1.4",
-    "reflected-ffi": "^0.5.5"
+    "reflected-ffi": "^0.5.6"
   },
   "repository": {
     "type": "git",
