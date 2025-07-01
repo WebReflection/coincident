@@ -3,8 +3,27 @@ import server from './server/server.js';
 export default (options = {}) => {
   const { bun, wss } = options;
   const sockets = new Map;
+  const ffi = {
+    assign(value, ...rest) {
+      for (const coincident of sockets.values())
+        coincident.ffi.assign(value, ...rest);
+      return value;
+    },
+    evaluate(...args) {
+      for (const coincident of sockets.values())
+        coincident.ffi.evaluate(...args);
+      return value;
+    },
+    direct(value) {
+      for (const coincident of sockets.values())
+        coincident.ffi.direct(value);
+      return value;
+    },
+  };
+
   if (bun) {
     return {
+      ffi,
       open(ws) {
         sockets.set(ws, server(ws, options));
       },
@@ -27,12 +46,6 @@ export default (options = {}) => {
     });
     ws.prependListener('message', coincident.onmessage);
   });
-  return {
-    direct(value) {
-      for (const coincident of sockets.values())
-        coincident.direct(value);
-      return value;
-    },
-    sockets,
-  };
+
+  return { ffi, sockets };
 };

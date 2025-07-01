@@ -7,7 +7,7 @@
       import coincident from '../../dist/window/main.js';
       globalThis[Symbol.for('coincident')] = 'Symbol.for("coincident") 🥳';
 
-      const { Worker } = coincident();
+      const { Worker } = coincident({ reflected_ffi_timeout: 0 });
       globalThis.worker = new Worker('./worker.js', { serviceWorker: '../sw.js' });
       const { proxy } = globalThis.worker;
       proxy.greetings = () => {

@@ -6,6 +6,8 @@ import { encoder } from 'reflected-ffi/encoder';
 
 import * as transferred from './transfer.js';
 
+import * as sabayon from './sabayon/index.js';
+
 import {
   ID,
   assign,
@@ -15,14 +17,13 @@ import {
   result,
   set,
   stop,
+  ffi_timeout,
 } from './utils.js';
 
 // @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
 // Note: InstallTrigger is deprecated so once it's gone I do hope
 //       this workaround would be gone too!
 const UID = 'InstallTrigger' in globalThis ? ID : '';
-
-const { notify } = Atomics;
 
 const Number = value => value;
 
@@ -32,18 +33,37 @@ const info = name => {
   return name;
 };
 
+// @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
+class MessageEvent extends Event {
+  #data;
+  constructor(data) {
+    super('message');
+    this.#data = data;
+  }
+  get data() {
+    return this.#data;
+  }
+}
+
 export default options => {
   const transform = options?.transform;
+  const timeout = ffi_timeout(options);
   const encode = (options?.encoder || encoder)(defaults);
   const checkTransferred = options?.transfer !== false;
 
   /** @type {Worker & { proxy: Record<string, function> }} */
-  class Worker extends globalThis.Worker {
+  class Worker extends sabayon.Worker {
     constructor(url, options) {
-      const { port1: channel, port2 } = new MessageChannel;
+      const serviceWorker = native ? '' : (options?.serviceWorker || '');
+      const { notify } = (serviceWorker ? sabayon.Atomics : Atomics);
+      const { port1: channel, port2 } = new (
+        serviceWorker ? sabayon.MessageChannel : MessageChannel
+      );
       const [ next, resolve ] = nextResolver(Number);
       const callbacks = new Map;
       const proxied = create(null);
+
+      if (serviceWorker) sabayon.register(serviceWorker);
 
       let resolving = '';
 
@@ -68,7 +88,9 @@ export default options => {
         return promise;
       };
 
-      super(url, assign({ type: 'module' }, options)).proxy = new Proxy(proxied, {
+      super(url, assign({ type: 'module' }, options));
+
+      this.proxy = new Proxy(proxied, {
         get: (_, name) => {
           // the curse of potentially awaiting proxies in the wild
           // requires this ugly guard around `then`
@@ -90,20 +112,20 @@ export default options => {
         set
       });
 
-      super.postMessage(UID, [port2]);
-
       // @bug https://bugzilla.mozilla.org/show_bug.cgi?id=1956778
-      if (native && UID) {
+      if (UID && (native || serviceWorker)) {
         super.addEventListener('message', event => {
           const { data } = event;
           if (data?.ID === UID) {
             stop(event);
-            channel.onmessage(data);
+            channel.dispatchEvent(new MessageEvent(data.data));
           }
         });
       }
 
-      channel.onmessage = async ({ data }) => {
+      super.postMessage([UID, serviceWorker, ffi_timeout(options, timeout)], [port2]);
+
+      channel.addEventListener('message', async ({ data }) => {
         const i32 = data[0];
         const type = typeof i32;
         if (type === 'number')
@@ -123,7 +145,9 @@ export default options => {
             notify(i32, 0);
           }
         }
-      };
+      });
+
+      channel.start();
     }
   }
 

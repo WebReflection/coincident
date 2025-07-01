@@ -1,8 +1,12 @@
+import withResolvers from '@webreflection/utils/with-resolvers';
+
 import nextResolver from 'next-resolver';
 
 import { decoder } from 'reflected-ffi/decoder';
 
 import * as transferred from './transfer.js';
+
+import * as sabayon from './sabayon/index.js';
 
 import {
   create,
@@ -15,38 +19,56 @@ import {
   stop,
 } from './utils.js';
 
+const { setPrototypeOf } = Reflect;
+let { postMessage } = globalThis;
+
 // wait for the channel before resolving
-const bootstrap = Promise.withResolvers();
+const bootstrap = withResolvers();
+const MPP = sabayon.MessagePort.prototype;
 
 addEventListener(
   'message',
   event => {
     stop(event);
-    bootstrap.resolve([event.data, event.ports[0]])
+    const [ID, SW, ffi_timeout] = event.data;
+    const [channel] = event.ports;
+    if (SW) {
+      setPrototypeOf(channel, MPP);
+      if (ID) postMessage = sabayon.postMessage;
+    }
+    bootstrap.resolve([ID, SW, ffi_timeout, channel]);
   },
   { once: true }
 );
 
 export default async options => {
-  const [ID, channel] = await bootstrap.promise;
-  const WORKAROUND = native && !!ID;
+  const [ID, SW, ffi_timeout, channel] = await sabayon.register().then(() => bootstrap.promise);
+  const WORKAROUND = !!ID;
+  const direct = native || !!SW;
   const transform = options?.transform;
   const decode = (options?.decoder || decoder)(defaults);
   const checkTransferred = options?.transfer !== false;
 
   let i32a, pause, wait;
-  if (native) {
-    const sab = new SharedArrayBuffer(
+  if (direct) {
+    const SAB = SW ? sabayon.SharedArrayBuffer : SharedArrayBuffer;
+    const sab = new SAB(
       options?.minByteLength || minByteLength,
       { maxByteLength: options?.maxByteLength || maxByteLength }
     );
     i32a = new Int32Array(sab);
-    ({ pause, wait } = Atomics);
-    // prefer the fast path when possible
-    if (pause && !WORKAROUND && !(sab instanceof ArrayBuffer)) {
-      wait = (view, index) => {
-        while (view[index] < 1) pause();
-      };
+    if (SW) {
+      ({ wait } = sabayon.Atomics);
+      sabayon.track(i32a);
+    }
+    else {
+      ({ pause, wait } = Atomics);
+      // prefer the fast path when possible
+      if (pause && !WORKAROUND) {
+        wait = (view, index) => {
+          while (view[index] < 1) pause();
+        };
+      }
     }
   }
 
@@ -64,7 +86,7 @@ export default async options => {
           const transfer = transferred.get(checkTransferred, args);
           const data = [i32a, name, transform ? args.map(transform) : args];
           // synchronous request
-          if (native) {
+          if (direct) {
             if (WORKAROUND) postMessage({ ID, data }, transfer);
             else channel.postMessage(data, transfer);
             wait(i32a, 0);
@@ -87,18 +109,22 @@ export default async options => {
     set
   });
 
-  channel.onmessage = async ({ data }) => {
+  channel.addEventListener('message', async ({ data }) => {
     if (typeof data[0] === 'string')
       resolve.apply(null, data);
     else {
       await result(data, proxied, transform);
       channel.postMessage(data);
     }
-  };
+  });
+
+  channel.start();
 
   return {
     native,
     proxy,
+    ffi_timeout,
+    sync: direct,
     transfer: transferred.set,
   };
 };

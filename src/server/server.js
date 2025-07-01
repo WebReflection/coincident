@@ -5,6 +5,7 @@ import { isArray } from 'reflected-ffi/utils';
 
 import { MAIN_WS } from './constants.js';
 import { decode, encode } from './direct.js';
+import { ffi_timeout } from '../utils.js';
 
 const { String } = globalThis;
 
@@ -32,6 +33,7 @@ export default (ws, options) => {
               ...options,
               module,
               buffer: true,
+              timeout: ffi_timeout(options),
               reflect(...args) {
                 const [uid, promise] = next();
                 ws.send(encode([uid, args]));

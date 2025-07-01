@@ -31,7 +31,7 @@ console.timeEnd('Server');
 
 
 console.time('window.import("uhtml")');
-const { render, html } = await window.import('https://esm.run/uhtml');
+const { render, html } = await window.import('https://cdn.jsdelivr.net/npm/uhtml/+esm');
 console.timeEnd('window.import("uhtml")');
 
 console.time('Main');
