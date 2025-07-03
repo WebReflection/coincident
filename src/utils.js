@@ -39,6 +39,8 @@ const stop = event => {
   event.preventDefault();
 };
 
+export const ffi_no_symbol = options => !!options?.reflected_ffi_no_symbol;
+
 export const ffi_timeout = (options, fallback = -1) => (
   options?.reflected_ffi_timeout ?? fallback
 );

@@ -23,6 +23,7 @@ export default /** @type {Coincident} */ async options => {
     buffer: true,
     reflect: exports.proxy[MAIN],
     timeout: exports.ffi_timeout,
+    noSymbol: exports.ffi_no_symbol,
   });
 
   exports.proxy[WORKER] = ffi.reflect;

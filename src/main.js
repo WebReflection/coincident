@@ -17,6 +17,7 @@ import {
   result,
   set,
   stop,
+  ffi_no_symbol,
   ffi_timeout,
 } from './utils.js';
 
@@ -123,7 +124,12 @@ export default options => {
         });
       }
 
-      super.postMessage([UID, serviceWorker, ffi_timeout(options, timeout)], [port2]);
+      super.postMessage([
+        UID,
+        serviceWorker,
+        ffi_timeout(options, timeout),
+        ffi_no_symbol(options),
+      ], [port2]);
 
       channel.addEventListener('message', async ({ data }) => {
         const i32 = data[0];
