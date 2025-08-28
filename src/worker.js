@@ -49,7 +49,7 @@ export default async options => {
   const decode = (options?.decoder || decoder)(defaults);
   const checkTransferred = options?.transfer !== false;
 
-  let i32a, pause, wait;
+  let i32a, load, pause, wait;
   if (direct) {
     const SAB = SW ? sabayon.SharedArrayBuffer : SharedArrayBuffer;
     const sab = new SAB(
@@ -62,11 +62,11 @@ export default async options => {
       sabayon.track(i32a);
     }
     else {
-      ({ pause, wait } = Atomics);
+      ({ load, pause, wait } = Atomics);
       // prefer the fast path when possible
-      if (pause && !WORKAROUND) {
+      if (pause) {
         wait = (view, index) => {
-          while (view[index] < 1) pause();
+          do { pause() } while (load(view, index) < 1);
         };
       }
     }
