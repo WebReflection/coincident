@@ -32,6 +32,8 @@
   "type": "module",
   "exports": {
     "./main": "./src/main.js",
+    "./sw": "./src/sabayon/sw.js",
+    "./sw/listeners": "./src/sabayon/listeners.js",
     "./worker": "./src/worker.js",
     "./window/main": "./src/window/main.js",
     "./window/worker": "./src/window/worker.js",

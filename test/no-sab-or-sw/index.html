@@ -9,7 +9,7 @@
     const { Worker } = coincident();
 
     const options = { type: 'module' };
-    if (location.search === '?sw') options.serviceWorker = './sw.js';
+    if (location.search === '?sw') options.serviceWorker = './sw.js?ignored';
 
     const { proxy } = new Worker('./worker.js', options);
 

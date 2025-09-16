@@ -85,9 +85,11 @@ else {
     const Request = view => {
       const xhr = new XMLHttpRequest;
       xhr.open('POST', `${SW}?sabayon`, false);
+      xhr.setRequestHeader('Pragma', 'no-cache');
       xhr.setRequestHeader('Content-Type', 'application/json');
+      xhr.setRequestHeader('Cache-Control', 'no-cache, no-store, max-age=0');
       xhr.send(`["${UID}",${views.get(view)}]`);
-      return xhr;
+      return xhr.status ? xhr : (console.warn('⚠️ Service Worker Issue'), Request(view));
     };
 
     const Response = (view, xhr) => {
@@ -199,7 +201,8 @@ else {
     register = /** @type {sabayon} */((serviceWorkerURL, options) => {
       if (!serviceWorker) {
         // resolve the fully qualified URL for Blob based workers
-        SW = new URL(serviceWorkerURL, location.href).href;
+        const sw = new URL(serviceWorkerURL, location.href);
+        SW = `${sw.protocol}//${sw.host}${sw.pathname}`;
         activate(navigator.serviceWorker, options);
         serviceWorker = promise;
       }
