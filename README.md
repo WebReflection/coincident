@@ -115,7 +115,7 @@ const {
 The `Worker` class returned by `coincident()` has these features:
 
   * it always starts a *Worker* as `{ type: "module" }` <sup><sub>( mostly because the worker needs to `await coincident()` on bootstrap )</sub></sup>
-  * it optionally accepts a `{ serviceWorker: "../sw.js" }` to help *sabayon* falling back to synchronous behavior, which is mandatory to use any *DOM* or `window` related functionality
+  * it optionally accepts a `{ serviceWorker: "../sw.js" }` to help *coincident* falling back to synchronous behavior, which is mandatory to use any *DOM* or `window` related functionality
   * it provides to each instance a `proxy` reference where utilities, as *callbacks*, can be assigned or asynchronously awaited if exposed within *worker*'s code
 
 ```js
@@ -357,14 +357,15 @@ This is the preferred way to use this module or any module depending on it, mean
   * be sure your server is providing those headers as explained in *MDN*
   * bootstrap a local server that provides such headers for local tests: `npx mini-coi ./` is all you need to enable these headers locally, but the utility doesn't do much more than serving files with those headers enabled
   * use `<script src="./mini-coi.js"></script>` on top of your `<head>` node in your *HTML* templates to use automatically a *ServiceWorker* that force-enable those headers for any request made frm any client. This woks on *GitHub* pages too, and every other static files handler for local projects
-  * use the *ServiceWorker* logic enabled out of the box by passing the file `npx sabayon ./public/sw.js` to *Worker* constructors, so that such *SW* can be used to polyfill the *sync* case
-  * provide your own *ServiceWorker* file whenever a *Worker* is created, out of the `{ serviceWorker: '../sw.js' }` extra option, as long as it imports utilities from [sabayon](https://github.com/WebReflection/sabayon#readme), as explained in its [ServiceWorker related details](https://github.com/WebReflection/sabayon?tab=readme-ov-file#service-worker)
+  * use the *ServiceWorker* logic enabled out of the box by passing the file `npx coincident ./public/sw.js` to *Worker* constructors, so that such *SW* can be used to polyfill the *sync* case
+  * provide your own *ServiceWorker* file whenever a *Worker* is created, out of the `{ serviceWorker: '../sw.js' }` extra option
 
 The latter 2 points will inevitably fallback to a *polyfilled* version of the native possible performance but it should be *good enough* to enable your logic around *workers* invoking, or reaching, synchronous *main* thread related tasks.
 
+
 #### Enable only async SharedArrayBuffer features
 
-This module by default does fallback to a *SAB* polyfill, meaning *async* notification of any buffer are still granted to be executed or succeed, thanks to [sabayon](https://github.com/WebReflection/sabayon#readme) underlying module.
+This module by default does fallback to a *SAB* polyfill, meaning *async* notification of any buffer are still granted to be executed or succeed.
 
 This scenario is **ideal** when:
 
@@ -381,3 +382,9 @@ As long as these enabled use cases are clear, here the caveats:
 If all of this is clear, it's possible to use *coincident* module as bridge between *worker* exported features / utilities consumed asynchronously by the *main* thread any time it needs to.
 
 This still unlocks tons of use cases out there, but it's definitively a constrained and limited experience.
+
+#### XMLHttpRequest synchronous fallback
+
+If your application has issues with headers needed to enable *SharedArrayBuffer* on your project/page, as example *iframes* or other remote related things don't work as expected, you can still use a *Service Worker* based fallback that intercepts synchronous *xhr* calls.
+
+To create the file out of the box use `npx coincident ./sw.js` then pass that file to *coincident* while initializing as `{ serviceWorker: './sw.js' }`. This will be a tad slower than just headers enabled via `mini-coi` or your server and it might have issues on iOS devices due their rate-limits and *SW killl switch* but there's literally nothing else I could do to prevent those devices from stop working via *ServiceWorker* and *Apple* is well aware of all the issues they have around this topic so let's hope for the best.
