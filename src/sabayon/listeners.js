@@ -1,4 +1,5 @@
 import BROADCAST_CHANNEL_UID from './bid.js';
+import headers from './headers.js';
 
 import nextResolver from 'next-resolver';
 
@@ -8,11 +9,7 @@ const { stringify } = JSON;
 const options = {
   status: 200,
   statusText: 'OK',
-  headers: {
-    'Pragma': 'no-cache',
-    'Content-Type': 'application/json',
-    'Cache-Control': 'no-cache, no-store, max-age=0',
-  },
+  headers,
 };
 
 const ok = value => new Response(`[${value.join(',')}]`, options);

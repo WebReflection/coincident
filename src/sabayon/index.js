@@ -1,11 +1,12 @@
 import BROADCAST_CHANNEL_UID from './bid.js';
+import headers from './headers.js';
 
 import { SharedArrayBuffer as SAB, native } from '@webreflection/utils/shared-array-buffer';
 import withResolvers from '@webreflection/utils/with-resolvers';
 import nextResolver from 'next-resolver';
 import { ID, stop } from '../utils.js';
 
-const { defineProperty } = Object;
+const { defineProperty, entries } = Object;
 
 const [next, resolve] = nextResolver();
 let [bootstrap, promise] = next();
@@ -81,13 +82,12 @@ else {
     // <Atomics Patch>
     const { wait } = Atomics;
     const { parse } = JSON;
+    const cache = entries(headers);
 
     const Request = view => {
       const xhr = new XMLHttpRequest;
       xhr.open('POST', `${SW}?sabayon`, false);
-      xhr.setRequestHeader('Pragma', 'no-cache');
-      xhr.setRequestHeader('Content-Type', 'application/json');
-      xhr.setRequestHeader('Cache-Control', 'no-cache, no-store, max-age=0');
+      for (const [key, value] of cache) xhr.setRequestHeader(key, value);
       xhr.send(`["${UID}",${views.get(view)}]`);
       return xhr;
     };
