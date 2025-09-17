@@ -89,7 +89,7 @@ else {
       xhr.setRequestHeader('Content-Type', 'application/json');
       xhr.setRequestHeader('Cache-Control', 'no-cache, no-store, max-age=0');
       xhr.send(`["${UID}",${views.get(view)}]`);
-      return xhr.status ? xhr : (console.warn('⚠️ Service Worker Issue'), Request(view));
+      return xhr;
     };
 
     const Response = (view, xhr) => {

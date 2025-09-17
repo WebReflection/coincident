@@ -1,5 +1,5 @@
 import coincident from '../../dist/window/worker.js';
-const { proxy, native, sync } = await coincident();
+const { proxy, native, sync, window } = await coincident();
 
 console.table({ native, sync });
 
@@ -10,3 +10,5 @@ console.log(
   sync ? 'synchronously' : 'asynchronously',
   sync ? proxy.href() : await proxy.href()
 );
+
+window?.document?.body?.append('OK ');
