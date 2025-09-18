@@ -8,7 +8,7 @@
 
     const { Worker } = coincident();
 
-    const options = { type: 'module', serviceWorker: './sw.js?_=' + Date.now() };
+    const options = { type: 'module', serviceWorker: './sw.js' };
     const { proxy } = new Worker('./worker.js', options);
 
     let count = 0;
