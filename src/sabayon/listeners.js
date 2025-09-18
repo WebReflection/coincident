@@ -2,8 +2,10 @@ import BROADCAST_CHANNEL_UID from './bid.js';
 
 import nextResolver from 'next-resolver';
 
-const [next, resolve] = nextResolver();
+const { isArray } = Array;
 const { stringify } = JSON;
+const [next, resolve] = nextResolver();
+const stopImmediatePropagation = event => event.stopImmediatePropagation();
 
 const ok = value => new Response(`[${value.join(',')}]`);
 const error = message => new Response(stringify(message));
@@ -18,7 +20,7 @@ export const activate = event => event.waitUntil(clients.claim());
 export const fetch = event => {
   const { request: r } = event;
   if (r.method === 'POST' && r.url === url) {
-    event.stopImmediatePropagation();
+    stopImmediatePropagation(event);
     event.respondWith(r.json().then(
       ([wid, vid]) => {
         const [swid, promise] = next();
@@ -31,3 +33,10 @@ export const fetch = event => {
 };
 
 export const install = () => skipWaiting();
+
+addEventListener('message', event => {
+  const { data } = event;
+  if (isArray(data) && data.length === 2 && data[0] === BROADCAST_CHANNEL_UID) {
+    stopImmediatePropagation(event);
+  }
+});

@@ -192,8 +192,12 @@ else {
           if (w.state === 'activated') {
             if (c) {
               // allow ServiceWorker swap on different URL
-              if (controller.scriptURL === SW)
+              if (controller.scriptURL === SW) {
+                setInterval(() => {
+                  controller.postMessage([BROADCAST_CHANNEL_UID, Math.random()]);
+                }, 300);
                 return resolve(bootstrap);
+              }
               r.unregister();
             }
             location.reload();
