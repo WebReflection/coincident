@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script type="module">
+    import coincident from '../../dist/window/main.js';
+
+    const { Worker } = coincident();
+
+    const options = { type: 'module', serviceWorker: './sw.js?_=' + Date.now() };
+    const { proxy } = new Worker('./worker.js', options);
+
+    let count = 0;
+    proxy.increment = () => {
+      document.body.textContent = `incremented ${++count} times`;
+      return count;
+    };
+  </script>
+</head>
+</html>

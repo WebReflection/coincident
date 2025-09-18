@@ -2,6 +2,5 @@
 .nyc_output
 v8.log
 coverage/
-dist/
 node_modules/
 coincident-*

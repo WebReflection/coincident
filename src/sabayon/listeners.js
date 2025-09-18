@@ -1,19 +1,12 @@
 import BROADCAST_CHANNEL_UID from './bid.js';
-import headers from './headers.js';
 
 import nextResolver from 'next-resolver';
 
 const [next, resolve] = nextResolver();
 const { stringify } = JSON;
 
-const options = {
-  status: 200,
-  statusText: 'OK',
-  headers,
-};
-
-const ok = value => new Response(`[${value.join(',')}]`, options);
-const error = message => new Response(stringify(message), options);
+const ok = value => new Response(`[${value.join(',')}]`);
+const error = message => new Response(stringify(message));
 
 const { protocol, host, pathname } = location;
 const url = `${protocol}//${host}${pathname}?sabayon`;

@@ -1,4 +1,4 @@
 // ⚠️ AUTOMATICALLY GENERATED - DO NOT CHANGE
-const CHANNEL = 'c94ce314';
+const CHANNEL = 'e82c94fb';
 export const MAIN = '=' + CHANNEL;
 export const WORKER = '-' + CHANNEL;
