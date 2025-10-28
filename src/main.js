@@ -138,8 +138,10 @@ export default options => {
             channel.postMessage(data);
           else {
             const result = data[2] || data[1];
+            const value = result === void 0 ? 0 : encode(result, i32.buffer);
             // at index 1 we store the written length or 0, if undefined
-            i32[1] = result === void 0 ? 0 : encode(result, i32.buffer);
+            // if the result contained Blobs or Files we need to await for it
+            i32[1] = typeof value === 'number' ? value : await value;
             // at index 0 we set the SharedArrayBuffer as ready
             i32[0] = 1;
             notify(i32, 0);

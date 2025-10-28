@@ -22,8 +22,8 @@ export default options => {
       const ws = (this.#ws = new WebSocket(websocket));
       ws.onerror = console.error;
       ws.onclose = () => super.terminate();
-      ws.onopen = () => {
-        ws.send(encode([MAIN_WS]));
+      ws.onopen = async () => {
+        ws.send(await encode([MAIN_WS]));
         resolve(uid);
       };
       ws.onmessage = async event => {
@@ -38,13 +38,13 @@ export default options => {
             data[1] = null;
             data[2] = error;
           }
-          ws.send(encode(data));
+          ws.send(await encode(data));
         }
       };
       proxy[MAIN_WS] = async (...args) => {
         await opened;
         const [uid, promise] = next();
-        ws.send(encode([uid, args]));
+        ws.send(await encode([uid, args]));
         return promise;
       };
     }

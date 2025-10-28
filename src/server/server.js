@@ -34,9 +34,9 @@ export default (ws, options) => {
               module,
               buffer: true,
               timeout: ffi_timeout(options),
-              reflect(...args) {
+              reflect: async (...args) => {
                 const [uid, promise] = next();
-                ws.send(encode([uid, args]));
+                ws.send(await encode([uid, args]));
                 resolvers.add(resolve.bind(null, uid));
                 return promise;
               },
@@ -60,7 +60,7 @@ export default (ws, options) => {
             data[1] = null;
             data[2] = error;
           }
-          ws.send(encode(data));
+          ws.send(await encode(data));
         }
       }
     }

@@ -5,8 +5,8 @@ import { Array, Buffer } from 'reflected-ffi/buffer';
 const buffer = new Array;
 const encoder = directEncoder({ Array: Buffer });
 
-export const encode = value => {
-  const length = encoder(value, buffer);
+export const encode = async value => {
+  const length = await encoder(value, buffer);
   return length ? buffer.value : buffer;
 };
 
