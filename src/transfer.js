@@ -1,5 +1,7 @@
 //@ts-check
 
+import { isArray } from 'reflected-ffi/utils';
+
 /** @type {ArrayBuffer[]} */
 const nothing = [];
 
@@ -13,7 +15,7 @@ const buffers = new WeakSet;
  */
 export const get = (check, args) => {
   let transfer = nothing;
-  if (check && buffers.has(args.at(-1) || nothing)) {
+  if (check && isArray(args.at(-1)) && buffers.has(args.at(-1))) {
     transfer = args.pop();
     buffers.delete(transfer);
   }
