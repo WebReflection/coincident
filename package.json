@@ -3,7 +3,7 @@
   "bin": {
     "coincident": "cli.cjs"
   },
-  "version": "4.1.0",
+  "version": "4.1.1",
   "description": "An Atomics based Proxy to simplify, and synchronize, Worker related tasks",
   "scripts": {
     "build": "node build/constants.cjs && node build/index.cjs && cp src/sync.js src/window/sync.js && rollup --config build/dist.js && npm run sw",
