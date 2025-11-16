@@ -22,6 +22,14 @@ export default [
   },
   {
     plugins,
+    input: './src/sync.js',
+    output: {
+      esModule: true,
+      file: './dist/sync.js',
+    }
+  },
+  {
+    plugins,
     input: './src/window/main.js',
     output: {
       esModule: true,
@@ -34,6 +42,14 @@ export default [
     output: {
       esModule: true,
       file: './dist/window/worker.js',
+    }
+  },
+  {
+    plugins,
+    input: './src/window/sync.js',
+    output: {
+      esModule: true,
+      file: './dist/window/sync.js',
     }
   },
   {
