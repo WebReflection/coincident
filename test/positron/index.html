@@ -3,13 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PyScript ❤️ Positron</title>
     <style>body{font-family:Arial, Helvetica, sans-serif}</style>
-    <script type="module">
-      import coincident from '../../dist/server/main.js';
-      const { Worker } = coincident({
-        ws: `ws://${location.host}/`
-      });
-      new Worker('./worker.js');
-    </script>
+    <script type="module" src="./pyscript.js" mpy="./main.py?v=1.0.0"></script>
 </head>
+<body>
+  <p>Loading system details ...</p>
+</body>
 </html>
