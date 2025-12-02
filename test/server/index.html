@@ -7,7 +7,7 @@
     <script type="module">
       import coincident from '../../dist/server/main.js';
       const { Worker } = coincident({
-        ws: 'ws://localhost:8080/'
+        ws: `ws://${location.host}/`
       });
       new Worker('./worker.js');
     </script>
