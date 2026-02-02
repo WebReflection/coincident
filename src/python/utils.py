@@ -7,6 +7,38 @@ import inspect
 callable_types = ('isclass', 'iscoroutine', 'iscoroutinefunction', 'isfunction', 'isgenerator', 'isgeneratorfunction', 'ismethod')
 primitive_types = (str, int, float, bool, type(None))
 
+import builtins
+
+instanceof = builtins.isinstance
+subclassof = builtins.issubclass
+
+def augment(check, method):
+  def wrapper(ref, cls):
+    if check(ref, cls):
+      return True
+
+    if check(ref, Proxy):
+      values = []
+      if check(cls, (tuple, list)):
+        for c in cls:
+          if check(c, Proxy):
+            values.append(c.__remote__)
+
+      elif check(cls, Proxy):
+        values.append(cls.__remote__)
+
+      if values:
+        request(ref.__remote__, method, values)
+        return True
+
+    return False
+
+  return wrapper
+
+builtins.isinstance = augment(instanceof, "__instancecheck__")
+builtins.issubclass = augment(subclassof, "__subclasscheck__")
+
+
 def compare(method, ref, other):
   # TODO: if other is remote call it while if local TBD
   request(ref, method, other)
@@ -24,22 +56,24 @@ def result(value):
 def request(remote, method, *args, **kwargs):
   print("request", id(remote), method, args, kwargs)
 
+# from fr import FinalizationRegistry
+# fr = FinalizationRegistry(lambda ref: request(ref, "__del__"))
+# fr.register(self, ref)
+
 class Proxy:
   # Object lifecycle & representation
   def __init__(self, ref):
     object.__setattr__(self, "__remote__", ref)
-    # TODO: implement a finalizer, i.e.
-    # fr = FinaliazionRegistry(lambda ref: request(ref, "__del__"))
+    # TODO: ensure a finalizer, i.e.
     # fr.register(self, ref)
 
   # This requires a finalizer in the mpy runtime or
   # https://docs.python.org/3/library/weakref.html#weakref.finalize
-  # when the proxy is gone, this method should be called somehow
+  # but it cannot really work without the native behavior because
+  # it would need the reference will be held, hence cannot be collected.
+  # In MicroPython this doesn't exist on userland anyway.
   # def __del__(self):
   #   request(self.__remote__, "__del__")
-
-  #TODO: isinstance?
-
 
   # repr(p) -> () {}
   def __repr__(self):

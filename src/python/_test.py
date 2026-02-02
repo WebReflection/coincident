@@ -6,6 +6,8 @@ class Test(dict):
 
 o = Proxy(Test())
 
+assert not isinstance(o, Test)
+
 with o as f:
   print("__enter__", f)
 
