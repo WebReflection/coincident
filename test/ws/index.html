@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebSocket Example</title>
+</head>
+<body>
+    <h1>GFG WebSocket Example</h1>
+    <input type="text" id="inputText" placeholder="Type something...">
+    <button id="submitButton">Submit</button>
+    <div id="container"></div>
+
+    <script>
+        // Create a WebSocket connection to the server
+        const socket = new WebSocket('ws://localhost:8000/');
+
+        // Function to display messages on the web page
+        function showMessage(message) {
+            const messageContainer = document.getElementById('container');
+            const messageElement = document.createElement('div');
+            messageElement.textContent = message;
+            messageContainer.appendChild(messageElement);
+        }
+
+        // Event handler for when the connection is established
+        socket.addEventListener('open', (event) => {
+            showMessage('Connected to server.');
+        });
+
+        // Event handler for receiving messages from the server
+        socket.onmessage = (event) => {
+            showMessage("You sent : " + event.data)
+        }
+
+        // Event handler for when the connection is closed
+        socket.addEventListener('close', (event) => {
+            showMessage('Connection closed.');
+        });
+
+        const inputText = document.getElementById("inputText");
+        const submitButton = document.getElementById("submitButton");
+
+        submitButton.addEventListener("click", function() {
+            const inputValue = inputText.value;
+            socket.send(inputValue)
+        });
+
+    </script>
+</body>
+</html>

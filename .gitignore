@@ -4,3 +4,5 @@ v8.log
 coverage/
 node_modules/
 coincident-*
+env/
+__pycache__/
